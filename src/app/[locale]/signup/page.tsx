@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { signup, clearError, clearSignupSuccess } from "@/lib/redux/authSlice";
 
 export default function SignupPage() {
+  const t = useTranslations("signup");
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { loading, error, signupSuccess } = useAppSelector(
@@ -42,13 +43,9 @@ export default function SignupPage() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Check your email</h2>
+          <h2 className="text-2xl font-bold mb-2">{t("successTitle")}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            We&apos;ve sent a verification link to{" "}
-            <span className="font-medium text-gray-900 dark:text-white">
-              {email}
-            </span>
-            . Click the link to activate your account.
+            {t("successMessage", { email })}
           </p>
           <button
             onClick={() => {
@@ -57,7 +54,7 @@ export default function SignupPage() {
             }}
             className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
           >
-            Go to Sign In
+            {t("goToSignIn")}
           </button>
         </div>
       </div>
@@ -74,9 +71,9 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8">
-          <h1 className="text-2xl font-bold mb-1">Create your account</h1>
+          <h1 className="text-2xl font-bold mb-1">{t("title")}</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-            Start building forms in minutes
+            {t("subtitle")}
           </p>
 
           {error && (
@@ -91,14 +88,15 @@ export default function SignupPage() {
                 htmlFor="name"
                 className="block text-sm font-medium mb-1.5"
               >
-                Name <span className="text-gray-400">(optional)</span>
+                {t("nameLabel")}{" "}
+                <span className="text-gray-400">{t("nameOptional")}</span>
               </label>
               <input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
+                placeholder={t("namePlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
               />
             </div>
@@ -108,7 +106,7 @@ export default function SignupPage() {
                 htmlFor="email"
                 className="block text-sm font-medium mb-1.5"
               >
-                Email
+                {t("emailLabel")}
               </label>
               <input
                 id="email"
@@ -116,7 +114,7 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
               />
             </div>
@@ -126,7 +124,7 @@ export default function SignupPage() {
                 htmlFor="password"
                 className="block text-sm font-medium mb-1.5"
               >
-                Password
+                {t("passwordLabel")}
               </label>
               <input
                 id="password"
@@ -135,7 +133,7 @@ export default function SignupPage() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 8 characters"
+                placeholder={t("passwordPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
               />
             </div>
@@ -145,17 +143,17 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? t("submitting") : t("submit")}
             </button>
           </form>
 
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
-            Already have an account?{" "}
+            {t("haveAccount")}{" "}
             <Link
               href="/signin"
               className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
             >
-              Sign in
+              {t("signInLink")}
             </Link>
           </p>
         </div>

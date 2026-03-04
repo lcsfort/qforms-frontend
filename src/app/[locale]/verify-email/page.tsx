@@ -2,10 +2,12 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 
 function VerifyEmailContent() {
+  const t = useTranslations("verifyEmail");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -17,7 +19,7 @@ function VerifyEmailContent() {
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setMessage("No verification token provided.");
+      setMessage(t("noToken"));
       return;
     }
 
@@ -31,7 +33,7 @@ function VerifyEmailContent() {
         setStatus("error");
         setMessage(err.message);
       });
-  }, [token]);
+  }, [token, t]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 px-4">
@@ -39,7 +41,7 @@ function VerifyEmailContent() {
         {status === "loading" && (
           <>
             <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6" />
-            <h2 className="text-xl font-bold">Verifying your email...</h2>
+            <h2 className="text-xl font-bold">{t("verifying")}</h2>
           </>
         )}
 
@@ -60,13 +62,13 @@ function VerifyEmailContent() {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-2">Email Verified!</h2>
+            <h2 className="text-2xl font-bold mb-2">{t("successTitle")}</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
             <Link
               href="/signin"
               className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
-              Sign In
+              {t("signIn")}
             </Link>
           </>
         )}
@@ -88,13 +90,13 @@ function VerifyEmailContent() {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-2">Verification Failed</h2>
+            <h2 className="text-2xl font-bold mb-2">{t("errorTitle")}</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
             <Link
               href="/signup"
               className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
-              Try Again
+              {t("tryAgain")}
             </Link>
           </>
         )}

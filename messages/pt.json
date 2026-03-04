@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "signIn": "Entrar",
+    "getStarted": "Começar"
+  },
+  "hero": {
+    "badge": "Movido por IA",
+    "titleLine1": "Descreva.",
+    "titleLine2": "A IA Constrói.",
+    "subtitle": "Diga à IA o que precisa — uma pesquisa, um formulário de cadastro, um quiz de feedback — e receba um formulário pronto para compartilhar em segundos. Sem arrastar, sem soltar, sem código.",
+    "cta": "Gere Seu Primeiro Formulário",
+    "ctaSecondary": "Veja Como Funciona",
+    "freeToStart": "Grátis para começar",
+    "noCreditCard": "Sem cartão de crédito",
+    "cancelAnytime": "Cancele quando quiser"
+  },
+  "features": {
+    "heading": "Formulários reinventados com IA",
+    "subheading": "Pare de construir formulários manualmente. Deixe a IA cuidar da estrutura, lógica e design.",
+    "aiGeneration": {
+      "title": "Geração com IA",
+      "desc": "Descreva seu formulário em português e a IA cria instantaneamente — campos, lógica e layout incluídos."
+    },
+    "smartFields": {
+      "title": "Sugestões Inteligentes",
+      "desc": "A IA entende o contexto e sugere os tipos de campo, regras de validação e lógica condicional certos."
+    },
+    "shareEmbed": {
+      "title": "Compartilhe Instantaneamente",
+      "desc": "Obtenha um link compartilhável ou código de incorporação assim que seu formulário estiver pronto. Colete respostas imediatamente."
+    }
+  },
+  "footer": {
+    "rights": "Todos os direitos reservados.",
+    "privacy": "Privacidade",
+    "terms": "Termos"
+  },
+  "signup": {
+    "title": "Crie sua conta",
+    "subtitle": "Comece a gerar formulários com IA",
+    "nameLabel": "Nome",
+    "nameOptional": "(opcional)",
+    "namePlaceholder": "João Silva",
+    "emailLabel": "Email",
+    "emailPlaceholder": "voce@exemplo.com",
+    "passwordLabel": "Senha",
+    "passwordPlaceholder": "Mín. 8 caracteres",
+    "submit": "Criar Conta",
+    "submitting": "Criando conta...",
+    "haveAccount": "Já tem uma conta?",
+    "signInLink": "Entrar",
+    "successTitle": "Verifique seu email",
+    "successMessage": "Enviamos um link de verificação para {email}. Clique no link para ativar sua conta.",
+    "goToSignIn": "Ir para Login"
+  },
+  "signin": {
+    "title": "Bem-vindo de volta",
+    "subtitle": "Entre na sua conta QForms",
+    "emailLabel": "Email",
+    "emailPlaceholder": "voce@exemplo.com",
+    "passwordLabel": "Senha",
+    "passwordPlaceholder": "Digite sua senha",
+    "submit": "Entrar",
+    "submitting": "Entrando...",
+    "noAccount": "Não tem uma conta?",
+    "signUpLink": "Cadastre-se"
+  },
+  "verifyEmail": {
+    "verifying": "Verificando seu email...",
+    "successTitle": "Email Verificado!",
+    "signIn": "Entrar",
+    "errorTitle": "Verificação Falhou",
+    "tryAgain": "Tentar Novamente",
+    "noToken": "Nenhum token de verificação fornecido."
+  },
+  "dashboard": {
+    "emailNotVerified": "Email não verificado",
+    "signOut": "Sair",
+    "welcome": "Bem-vindo{name, select, empty {} other {, {name}}}!",
+    "subtitle": "Seu painel está pronto. Descreva um formulário e deixe a IA fazer o resto.",
+    "emptyTitle": "Gere seu primeiro formulário",
+    "emptyDesc": "Diga à IA que tipo de formulário você precisa e ela gerará os campos, a lógica e o design para você.",
+    "generateBtn": "Gerar com IA"
+  },
+  "language": {
+    "label": "Idioma",
+    "en": "English",
+    "pt": "Português"
+  }
+}

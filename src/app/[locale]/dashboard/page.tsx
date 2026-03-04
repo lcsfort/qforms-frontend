@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile, logout } from "@/lib/redux/authSlice";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user, token } = useAppSelector((state) => state.auth);
@@ -41,19 +44,20 @@ export default function DashboardPage() {
             <span className="text-indigo-600">Q</span>Forms
           </span>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {user.email}
             </span>
             {!user.isEmailVerified && (
               <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full">
-                Email not verified
+                {t("emailNotVerified")}
               </span>
             )}
             <button
               onClick={handleLogout}
               className="text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
             >
-              Sign Out
+              {t("signOut")}
             </button>
           </div>
         </div>
@@ -61,10 +65,10 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold mb-2">
-          Welcome{user.name ? `, ${user.name}` : ""}!
+          {t("welcome", { name: user.name || "empty" })}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          Your dashboard is ready. Start building your first form.
+          {t("subtitle")}
         </p>
 
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-12 text-center">
@@ -83,13 +87,12 @@ export default function DashboardPage() {
               />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold mb-2">Create your first form</h2>
+          <h2 className="text-lg font-semibold mb-2">{t("emptyTitle")}</h2>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-            Get started by creating a new form from scratch or choosing a
-            template.
+            {t("emptyDesc")}
           </p>
           <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm">
-            New Form
+            {t("generateBtn")}
           </button>
         </div>
       </main>

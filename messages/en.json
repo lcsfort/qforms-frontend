@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "signIn": "Sign In",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "Powered by AI",
+    "titleLine1": "Describe It.",
+    "titleLine2": "AI Builds It.",
+    "subtitle": "Just tell AI what you need — a survey, a registration form, a feedback quiz — and get a polished, ready-to-share form in seconds. No dragging, no dropping, no coding.",
+    "cta": "Generate Your First Form",
+    "ctaSecondary": "See How It Works",
+    "freeToStart": "Free to start",
+    "noCreditCard": "No credit card",
+    "cancelAnytime": "Cancel anytime"
+  },
+  "features": {
+    "heading": "Forms, reinvented with AI",
+    "subheading": "Stop building forms by hand. Let AI handle the structure, logic, and design.",
+    "aiGeneration": {
+      "title": "AI Form Generation",
+      "desc": "Describe your form in plain English and AI creates it instantly — fields, logic, and layout included."
+    },
+    "smartFields": {
+      "title": "Smart Field Suggestions",
+      "desc": "AI understands context and suggests the right field types, validation rules, and conditional logic."
+    },
+    "shareEmbed": {
+      "title": "Instant Share & Embed",
+      "desc": "Get a shareable link or embed code the moment your form is ready. Collect responses immediately."
+    }
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
+  "signup": {
+    "title": "Create your account",
+    "subtitle": "Start generating forms with AI",
+    "nameLabel": "Name",
+    "nameOptional": "(optional)",
+    "namePlaceholder": "John Doe",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Min. 8 characters",
+    "submit": "Create Account",
+    "submitting": "Creating account...",
+    "haveAccount": "Already have an account?",
+    "signInLink": "Sign in",
+    "successTitle": "Check your email",
+    "successMessage": "We've sent a verification link to {email}. Click the link to activate your account.",
+    "goToSignIn": "Go to Sign In"
+  },
+  "signin": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your QForms account",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Sign In",
+    "submitting": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Sign up"
+  },
+  "verifyEmail": {
+    "verifying": "Verifying your email...",
+    "successTitle": "Email Verified!",
+    "signIn": "Sign In",
+    "errorTitle": "Verification Failed",
+    "tryAgain": "Try Again",
+    "noToken": "No verification token provided."
+  },
+  "dashboard": {
+    "emailNotVerified": "Email not verified",
+    "signOut": "Sign Out",
+    "welcome": "Welcome{name, select, empty {} other {, {name}}}!",
+    "subtitle": "Your dashboard is ready. Describe a form and let AI do the rest.",
+    "emptyTitle": "Generate your first form",
+    "emptyDesc": "Tell AI what kind of form you need and it will generate the fields, logic, and design for you.",
+    "generateBtn": "Generate with AI"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "pt": "Português"
+  }
+}

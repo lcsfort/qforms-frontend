@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, type FormEvent, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { signin, clearError } from "@/lib/redux/authSlice";
 
 export default function SigninPage() {
+  const t = useTranslations("signin");
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { loading, error, token } = useAppSelector((state) => state.auth);
@@ -36,9 +37,9 @@ export default function SigninPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8">
-          <h1 className="text-2xl font-bold mb-1">Welcome back</h1>
+          <h1 className="text-2xl font-bold mb-1">{t("title")}</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-            Sign in to your QForms account
+            {t("subtitle")}
           </p>
 
           {error && (
@@ -53,7 +54,7 @@ export default function SigninPage() {
                 htmlFor="email"
                 className="block text-sm font-medium mb-1.5"
               >
-                Email
+                {t("emailLabel")}
               </label>
               <input
                 id="email"
@@ -61,7 +62,7 @@ export default function SigninPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
               />
             </div>
@@ -71,7 +72,7 @@ export default function SigninPage() {
                 htmlFor="password"
                 className="block text-sm font-medium mb-1.5"
               >
-                Password
+                {t("passwordLabel")}
               </label>
               <input
                 id="password"
@@ -79,7 +80,7 @@ export default function SigninPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t("passwordPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
               />
             </div>
@@ -89,17 +90,17 @@ export default function SigninPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("submitting") : t("submit")}
             </button>
           </form>
 
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
-            Don&apos;t have an account?{" "}
+            {t("noAccount")}{" "}
             <Link
               href="/signup"
               className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
             >
-              Sign up
+              {t("signUpLink")}
             </Link>
           </p>
         </div>
