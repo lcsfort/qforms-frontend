@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 export default function Home() {
   const t = useTranslations();
@@ -56,7 +57,8 @@ export default function Home() {
           <Link href="/" className="text-xl font-bold tracking-tight">
             <span className="text-indigo-600">Q</span>Forms
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <ThemeSwitcher />
             <LanguageSwitcher />
             <Link
               href="/signin"

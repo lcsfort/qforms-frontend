@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile, logout } from "@/lib/redux/authSlice";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -43,7 +44,8 @@ export default function DashboardPage() {
           <span className="text-xl font-bold tracking-tight">
             <span className="text-indigo-600">Q</span>Forms
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <ThemeSwitcher />
             <LanguageSwitcher />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {user.email}
