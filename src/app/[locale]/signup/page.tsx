@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { signup, clearError, clearSignupSuccess } from "@/lib/redux/authSlice";
 
 export default function SignupPage() {
   const t = useTranslations("signup");
+  const locale = useLocale();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { loading, error, signupSuccess } = useAppSelector(
@@ -21,7 +22,7 @@ export default function SignupPage() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     dispatch(clearError());
-    dispatch(signup({ email, password, name: name || undefined }));
+    dispatch(signup({ email, password, name: name || undefined, locale }));
   };
 
   if (signupSuccess) {

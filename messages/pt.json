@@ -86,5 +86,12 @@
     "label": "Idioma",
     "en": "English",
     "pt": "Português"
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "tagline": "Essa escapou.",
+    "description": "A página que você procura não existe ou foi movida. Sem problemas — volte e crie algo novo.",
+    "backHome": "Voltar ao início",
+    "createForm": "Criar formulário"
   }
 }
