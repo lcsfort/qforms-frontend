@@ -3,56 +3,53 @@
 import { useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { signup } from "@/lib/redux/authSlice";
-import { getSignupSchema } from "@/lib/validation";
+import { api } from "@/lib/api";
+import { getForgotPasswordSchema } from "@/lib/validation";
 
-export default function SignupPage() {
-  const t = useTranslations("signup");
+export default function ForgotPasswordPage() {
+  const t = useTranslations("forgotPassword");
   const locale = useLocale();
-  const dispatch = useAppDispatch();
-  const { loading } = useAppSelector((state) => state.auth);
-
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
-  const [signupDone, setSignupDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setApiError(null);
     setFieldErrors({});
 
-    const schema = getSignupSchema({
+    const schema = getForgotPasswordSchema({
       emailRequired: t("validation.emailRequired"),
       emailInvalid: t("validation.emailInvalid"),
-      passwordRequired: t("validation.passwordRequired"),
-      passwordMin: t("validation.passwordMin"),
-      passwordPattern: t("validation.passwordPattern"),
     });
 
     schema
-      .validate({ name: name || undefined, email, password }, { abortEarly: false })
-      .then((values) => {
-        dispatch(signup({ email: values.email, password: values.password, name: values.name, locale }))
-          .unwrap()
-          .then(() => setSignupDone(true))
-          .catch((err: unknown) => setApiError(err as string));
+      .validate({ email }, { abortEarly: false })
+      .then(() => {
+        setLoading(true);
+        return api.requestPasswordReset({ email: email.trim(), locale });
       })
-      .catch((err: { inner?: Array<{ path?: string; message: string }> }) => {
-        const errors: Record<string, string> = {};
-        if (err.inner) {
-          for (const e of err.inner) {
-            if (e.path) errors[e.path] = e.message;
+      .then(() => setSuccess(true))
+      .catch((err: unknown) => {
+        if (err && typeof err === "object" && "inner" in err) {
+          const errors: Record<string, string> = {};
+          const inner = (err as { inner?: Array<{ path?: string; message: string }> }).inner;
+          if (inner) {
+            for (const e of inner) {
+              if (e.path && e.path !== "password") errors[e.path] = e.message;
+            }
           }
+          setFieldErrors(errors);
+        } else {
+          setApiError((err as Error).message ?? "Something went wrong");
         }
-        setFieldErrors(errors);
-      });
+      })
+      .finally(() => setLoading(false));
   };
 
-  if (signupDone) {
+  if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 px-4">
         <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 text-center">
@@ -73,13 +70,13 @@ export default function SignupPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">{t("successTitle")}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {t("successMessage", { email })}
+            {t("successMessage")}
           </p>
           <Link
             href="/signin"
             className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
           >
-            {t("goToSignIn")}
+            {t("backToSignIn")}
           </Link>
         </div>
       </div>
@@ -110,24 +107,6 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label
-                htmlFor="name"
-                className="block text-sm font-medium mb-1.5"
-              >
-                {t("nameLabel")}{" "}
-                <span className="text-gray-400">{t("nameOptional")}</span>
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t("namePlaceholder")}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
-              />
-            </div>
-
-            <div>
-              <label
                 htmlFor="email"
                 className="block text-sm font-medium mb-1.5"
               >
@@ -144,45 +123,11 @@ export default function SignupPage() {
                 placeholder={t("emailPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
                 aria-invalid={!!fieldErrors.email}
-                aria-describedby={fieldErrors.email ? "email-error" : undefined}
               />
               {fieldErrors.email && (
-                <div id="email-error" role="alert" className="mt-1.5 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm p-2.5">
-                  <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
-                    <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                  </svg>
+                <p className="mt-1.5 text-sm text-amber-600 dark:text-amber-400" role="alert">
                   {fieldErrors.email}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium mb-1.5"
-              >
-                {t("passwordLabel")}
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors((prev) => { const next = { ...prev }; delete next.password; return next; });
-                }}
-                placeholder={t("passwordPlaceholder")}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
-                aria-invalid={!!fieldErrors.password}
-                aria-describedby={fieldErrors.password ? "password-error" : undefined}
-              />
-              {fieldErrors.password && (
-                <div id="password-error" role="alert" className="mt-1.5 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm p-2.5">
-                  <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
-                    <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                  </svg>
-                  {fieldErrors.password}
-                </div>
+                </p>
               )}
             </div>
 
@@ -196,12 +141,11 @@ export default function SignupPage() {
           </form>
 
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
-            {t("haveAccount")}{" "}
             <Link
               href="/signin"
               className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
             >
-              {t("signInLink")}
+              {t("backToSignIn")}
             </Link>
           </p>
         </div>

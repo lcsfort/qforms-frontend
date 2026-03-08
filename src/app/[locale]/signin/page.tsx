@@ -111,12 +111,20 @@ export default function SigninPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium mb-1.5"
-              >
-                {t("passwordLabel")}
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium"
+                >
+                  {t("passwordLabel")}
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  {t("forgotPassword")}
+                </Link>
+              </div>
               <input
                 id="password"
                 type="password"
