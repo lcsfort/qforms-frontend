@@ -12,24 +12,29 @@ export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { user, token } = useAppSelector((state) => state.auth);
+  const { user, token, hydrated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!token) {
       router.push("/signin");
+      return;
+    }
+    if (user && !user.isEmailVerified) {
+      router.push("/verify-email-required");
       return;
     }
     if (!user) {
       dispatch(fetchProfile());
     }
-  }, [token, user, dispatch, router]);
+  }, [hydrated, token, user, dispatch, router]);
 
   const handleLogout = () => {
     dispatch(logout());
     router.push("/");
   };
 
-  if (!user) {
+  if (!hydrated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />

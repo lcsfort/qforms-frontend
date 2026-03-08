@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { api } from "../api";
 
 interface User {
@@ -11,6 +11,7 @@ interface User {
 interface AuthState {
   user: User | null;
   token: string | null;
+  hydrated: boolean;
   loading: boolean;
   error: string | null;
   signupSuccess: boolean;
@@ -18,7 +19,8 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
+  token: null,
+  hydrated: false,
   loading: false,
   error: null,
   signupSuccess: false,
@@ -61,7 +63,10 @@ export const fetchProfile = createAsyncThunk(
       const state = getState() as { auth: AuthState };
       return await api.getProfile(state.auth.token!);
     } catch (err: unknown) {
-      const error = err as { message?: string };
+      const error = err as { message?: string; status?: number; response?: { email?: string } };
+      if (error.status === 403 && error.response?.email) {
+        return rejectWithValue({ emailVerificationRequired: true, email: error.response.email });
+      }
       return rejectWithValue(error.message ?? "Failed to fetch profile");
     }
   }
@@ -71,6 +76,12 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    hydrateAuth(state) {
+      if (typeof window !== "undefined") {
+        state.token = localStorage.getItem("token");
+      }
+      state.hydrated = true;
+    },
     logout(state) {
       state.user = null;
       state.token = null;
@@ -121,7 +132,25 @@ const authSlice = createSlice({
       .addCase(fetchProfile.fulfilled, (state, action) => {
         state.user = action.payload;
       })
-      .addCase(fetchProfile.rejected, (state) => {
+      .addCase(fetchProfile.rejected, (state, action) => {
+        const payload = action.payload as
+          | string
+          | { emailVerificationRequired?: boolean; email?: string }
+          | undefined;
+        if (
+          payload &&
+          typeof payload === "object" &&
+          payload.emailVerificationRequired &&
+          payload.email
+        ) {
+          state.user = {
+            id: "",
+            email: payload.email,
+            name: null,
+            isEmailVerified: false,
+          };
+          return;
+        }
         state.user = null;
         state.token = null;
         if (typeof window !== "undefined") {
@@ -131,5 +160,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, clearSignupSuccess } = authSlice.actions;
+export const { hydrateAuth, logout, clearError, clearSignupSuccess } = authSlice.actions;
 export default authSlice.reducer;

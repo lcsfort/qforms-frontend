@@ -17,35 +17,34 @@ function VerifyEmailContent() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage(t("noToken"));
-      return;
-    }
+    if (!token) return;
 
     api
       .verifyEmail(token)
-      .then((res) => {
+      .then(() => {
         setStatus("success");
-        setMessage(res.message);
+        setMessage(t("successMessage"));
       })
-      .catch((err: Error) => {
+      .catch(() => {
         setStatus("error");
-        setMessage(err.message);
+        setMessage(t("errorMessage"));
       });
   }, [token, t]);
+
+  const effectiveStatus = !token ? "error" : status;
+  const effectiveMessage = !token ? t("noToken") : message;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 px-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 text-center">
-        {status === "loading" && (
+        {effectiveStatus === "loading" && (
           <>
             <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6" />
             <h2 className="text-xl font-bold">{t("verifying")}</h2>
           </>
         )}
 
-        {status === "success" && (
+        {effectiveStatus === "success" && (
           <>
             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg
@@ -63,7 +62,7 @@ function VerifyEmailContent() {
               </svg>
             </div>
             <h2 className="text-2xl font-bold mb-2">{t("successTitle")}</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{effectiveMessage}</p>
             <Link
               href="/signin"
               className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
@@ -73,7 +72,7 @@ function VerifyEmailContent() {
           </>
         )}
 
-        {status === "error" && (
+        {effectiveStatus === "error" && (
           <>
             <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg
@@ -91,7 +90,7 @@ function VerifyEmailContent() {
               </svg>
             </div>
             <h2 className="text-2xl font-bold mb-2">{t("errorTitle")}</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{effectiveMessage}</p>
             <Link
               href="/signup"
               className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"

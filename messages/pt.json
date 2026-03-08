@@ -1,7 +1,9 @@
 {
   "nav": {
     "signIn": "Entrar",
-    "getStarted": "Começar"
+    "getStarted": "Começar",
+    "dashboard": "Painel",
+    "signOut": "Sair"
   },
   "hero": {
     "badge": "Movido por IA",
@@ -44,14 +46,20 @@
     "emailLabel": "Email",
     "emailPlaceholder": "voce@exemplo.com",
     "passwordLabel": "Senha",
-    "passwordPlaceholder": "Mín. 8 caracteres",
+    "passwordPlaceholder": "Mín. 8 caracteres, maiúscula, minúscula, número e especial (@$!%*?&)",
     "submit": "Criar Conta",
     "submitting": "Criando conta...",
     "haveAccount": "Já tem uma conta?",
     "signInLink": "Entrar",
     "successTitle": "Verifique seu email",
     "successMessage": "Enviamos um link de verificação para {email}. Clique no link para ativar sua conta.",
-    "goToSignIn": "Ir para Login"
+    "goToSignIn": "Ir para Login",
+    "validation": {
+      "emailRequired": "Email é obrigatório",
+      "emailInvalid": "Digite um endereço de email válido",
+      "passwordRequired": "Senha é obrigatória",
+      "passwordMin": "A senha deve ter pelo menos 8 caracteres"
+    }
   },
   "signin": {
     "title": "Bem-vindo de volta",
@@ -63,13 +71,20 @@
     "submit": "Entrar",
     "submitting": "Entrando...",
     "noAccount": "Não tem uma conta?",
-    "signUpLink": "Cadastre-se"
+    "signUpLink": "Cadastre-se",
+    "validation": {
+      "emailRequired": "Email é obrigatório",
+      "emailInvalid": "Digite um endereço de email válido",
+      "passwordRequired": "Senha é obrigatória"
+    }
   },
   "verifyEmail": {
     "verifying": "Verificando seu email...",
     "successTitle": "Email Verificado!",
+    "successMessage": "Seu email foi verificado. Você já pode entrar.",
     "signIn": "Entrar",
     "errorTitle": "Verificação Falhou",
+    "errorMessage": "Link de verificação inválido ou expirado. Solicite um novo.",
     "tryAgain": "Tentar Novamente",
     "noToken": "Nenhum token de verificação fornecido."
   },
@@ -86,6 +101,13 @@
     "label": "Idioma",
     "en": "English",
     "pt": "Português"
+  },
+  "verifyRequired": {
+    "title": "Verifique seu e-mail",
+    "description": "Você precisa verificar seu e-mail antes de usar a plataforma. Enviamos um link para sua caixa de entrada — clique para continuar.",
+    "resend": "Reenviar e-mail de verificação",
+    "resendSuccess": "E-mail enviado. Confira sua caixa de entrada.",
+    "signOut": "Sair"
   },
   "notFound": {
     "title": "Página não encontrada",

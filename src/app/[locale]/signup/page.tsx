@@ -2,30 +2,56 @@
 
 import { useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { signup, clearError, clearSignupSuccess } from "@/lib/redux/authSlice";
+import { signup } from "@/lib/redux/authSlice";
+import { getSignupSchema } from "@/lib/validation";
 
 export default function SignupPage() {
   const t = useTranslations("signup");
   const locale = useLocale();
   const dispatch = useAppDispatch();
-  const router = useRouter();
-  const { loading, error, signupSuccess } = useAppSelector(
-    (state) => state.auth
-  );
+  const { loading } = useAppSelector((state) => state.auth);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [signupDone, setSignupDone] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    dispatch(clearError());
-    dispatch(signup({ email, password, name: name || undefined, locale }));
+    setApiError(null);
+    setFieldErrors({});
+
+    const schema = getSignupSchema({
+      emailRequired: t("validation.emailRequired"),
+      emailInvalid: t("validation.emailInvalid"),
+      passwordRequired: t("validation.passwordRequired"),
+      passwordMin: t("validation.passwordMin"),
+    });
+
+    schema
+      .validate({ name: name || undefined, email, password }, { abortEarly: false })
+      .then((values) => {
+        dispatch(signup({ email: values.email, password: values.password, name: values.name, locale }))
+          .unwrap()
+          .then(() => setSignupDone(true))
+          .catch((err: unknown) => setApiError(err as string));
+      })
+      .catch((err: { inner?: Array<{ path?: string; message: string }> }) => {
+        const errors: Record<string, string> = {};
+        if (err.inner) {
+          for (const e of err.inner) {
+            if (e.path) errors[e.path] = e.message;
+          }
+        }
+        setFieldErrors(errors);
+      });
   };
 
-  if (signupSuccess) {
+  if (signupDone) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 px-4">
         <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 text-center">
@@ -48,15 +74,12 @@ export default function SignupPage() {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             {t("successMessage", { email })}
           </p>
-          <button
-            onClick={() => {
-              dispatch(clearSignupSuccess());
-              router.push("/signin");
-            }}
+          <Link
+            href="/signin"
             className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
           >
             {t("goToSignIn")}
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -77,13 +100,13 @@ export default function SignupPage() {
             {t("subtitle")}
           </p>
 
-          {error && (
+          {apiError && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg p-3 mb-4">
-              {error}
+              {apiError}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label
                 htmlFor="name"
@@ -112,12 +135,24 @@ export default function SignupPage() {
               <input
                 id="email"
                 type="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors((prev) => { const next = { ...prev }; delete next.email; return next; });
+                }}
                 placeholder={t("emailPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
               />
+              {fieldErrors.email && (
+                <div id="email-error" role="alert" className="mt-1.5 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm p-2.5">
+                  <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                    <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  {fieldErrors.email}
+                </div>
+              )}
             </div>
 
             <div>
@@ -130,13 +165,24 @@ export default function SignupPage() {
               <input
                 id="password"
                 type="password"
-                required
-                minLength={8}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) setFieldErrors((prev) => { const next = { ...prev }; delete next.password; return next; });
+                }}
                 placeholder={t("passwordPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
+                aria-invalid={!!fieldErrors.password}
+                aria-describedby={fieldErrors.password ? "password-error" : undefined}
               />
+              {fieldErrors.password && (
+                <div id="password-error" role="alert" className="mt-1.5 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm p-2.5">
+                  <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                    <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  {fieldErrors.password}
+                </div>
+              )}
             </div>
 
             <button

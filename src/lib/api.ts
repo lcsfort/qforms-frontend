@@ -1,9 +1,19 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 function getLocale(): string {
-  if (typeof document === "undefined") return "en";
-  const lang = document.documentElement.lang;
-  return lang === "pt" ? "pt" : "en";
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined")
+      return "en";
+    const w = window as Window & { location?: { pathname?: string } };
+    if (!w.location || typeof w.location.pathname !== "string") return "en";
+    const pathname = w.location.pathname;
+    if (pathname.startsWith("/pt")) return "pt";
+    if (pathname.startsWith("/en")) return "en";
+    const lang = document.documentElement?.lang;
+    return lang === "pt" ? "pt" : "en";
+  } catch {
+    return "en";
+  }
 }
 
 async function request<T>(
@@ -11,13 +21,15 @@ async function request<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const locale = getLocale();
+  const { headers: optionsHeaders, ...restOptions } = options;
   const res = await fetch(`${API_URL}${endpoint}`, {
+    ...restOptions,
     headers: {
       "Content-Type": "application/json",
       "Accept-Language": locale,
-      ...options.headers,
+      "X-Locale": locale,
+      ...(optionsHeaders as Record<string, string>),
     },
-    ...options,
   });
 
   const data = await res.json();
@@ -26,7 +38,13 @@ async function request<T>(
     const message = Array.isArray(data.message)
       ? data.message.join(", ")
       : data.message;
-    throw new Error(message ?? "Something went wrong");
+    const err = new Error(message ?? "Something went wrong") as Error & {
+      status?: number;
+      response?: Record<string, unknown>;
+    };
+    err.status = res.status;
+    err.response = data as Record<string, unknown>;
+    throw err;
   }
 
   return data as T;
@@ -70,4 +88,33 @@ export const api = {
     }>("/auth/profile", {
       headers: { Authorization: `Bearer ${token}` },
     }),
+
+  resendVerificationEmail: async (token: string, locale?: string) => {
+    const loc = locale ?? getLocale();
+    const body = JSON.stringify({ locale: loc });
+    const res = await fetch(`${API_URL}/auth/resend-verification-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "Accept-Language": loc,
+        "X-Locale": loc,
+      },
+      body,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const message = Array.isArray(data.message)
+        ? data.message.join(", ")
+        : data.message;
+      const err = new Error(message ?? "Something went wrong") as Error & {
+        status?: number;
+        response?: Record<string, unknown>;
+      };
+      err.status = res.status;
+      err.response = data as Record<string, unknown>;
+      throw err;
+    }
+    return data as { message: string };
+  },
 };
