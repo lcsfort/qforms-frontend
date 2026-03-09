@@ -140,6 +140,13 @@
     "en": "English",
     "pt": "Português"
   },
+  "appMenu": {
+    "profile": "Profile",
+    "help": "Help",
+    "signOut": "Sign Out",
+    "theme": "Theme",
+    "language": "Language"
+  },
   "verifyRequired": {
     "title": "Verify your email",
     "description": "You need to verify your email address before using the platform. We sent a link to your inbox — click it to continue.",

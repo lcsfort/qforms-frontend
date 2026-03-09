@@ -4,9 +4,8 @@ import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { fetchProfile, logout } from "@/lib/redux/authSlice";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { fetchProfile } from "@/lib/redux/authSlice";
+import { AppMenu } from "@/components/AppMenu";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -29,11 +28,6 @@ export default function DashboardPage() {
     }
   }, [hydrated, token, user, dispatch, router]);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push("/");
-  };
-
   if (!hydrated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -43,42 +37,26 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-xl font-bold tracking-tight">
-            <span className="text-indigo-600">Q</span>Forms
-          </span>
-          <div className="flex items-center gap-3">
-            <ThemeSwitcher />
-            <LanguageSwitcher />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {user.email}
-            </span>
-            {!user.isEmailVerified && (
-              <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full">
-                {t("emailNotVerified")}
-              </span>
-            )}
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-            >
-              {t("signOut")}
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[var(--background)]">
+      <div className="fixed top-4 left-4 z-50">
+        <AppMenu />
+      </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
+      <main className="max-w-4xl mx-auto px-6 pt-20 pb-12">
         <h1 className="text-3xl font-bold mb-2">
           {t("welcome", { name: user.name || "empty" })}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-[var(--muted)] mb-8">
           {t("subtitle")}
         </p>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-12 text-center">
+        {!user.isEmailVerified && (
+          <div className="mb-6 px-4 py-3 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 text-yellow-700 dark:text-yellow-400 text-sm">
+            {t("emailNotVerified")}
+          </div>
+        )}
+
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-12 text-center">
           <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <svg
               className="w-8 h-8 text-indigo-600 dark:text-indigo-400"
@@ -95,7 +73,7 @@ export default function DashboardPage() {
             </svg>
           </div>
           <h2 className="text-lg font-semibold mb-2">{t("emptyTitle")}</h2>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
+          <p className="text-[var(--muted)] text-sm mb-6">
             {t("emptyDesc")}
           </p>
           <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm">

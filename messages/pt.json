@@ -140,6 +140,13 @@
     "en": "English",
     "pt": "Português"
   },
+  "appMenu": {
+    "profile": "Perfil",
+    "help": "Ajuda",
+    "signOut": "Sair",
+    "theme": "Tema",
+    "language": "Idioma"
+  },
   "verifyRequired": {
     "title": "Verifique seu e-mail",
     "description": "Você precisa verificar seu e-mail antes de usar a plataforma. Enviamos um link para sua caixa de entrada — clique para continuar.",
