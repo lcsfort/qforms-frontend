@@ -75,8 +75,48 @@ export function getResetPasswordSchema(m: ResetPasswordValidationMessages) {
   });
 }
 
+export type UpdateNameValidationMessages = {
+  nameRequired: string;
+};
+
+export function getUpdateNameSchema(m: UpdateNameValidationMessages) {
+  return yup.object({
+    name: yup.string().required(m.nameRequired).min(1, m.nameRequired),
+  });
+}
+
+export type ChangePasswordValidationMessages = {
+  currentPasswordRequired: string;
+  newPasswordRequired: string;
+  newPasswordMin: string;
+  newPasswordPattern: string;
+  confirmPasswordRequired: string;
+  confirmPasswordMatch: string;
+};
+
+export function getChangePasswordSchema(m: ChangePasswordValidationMessages) {
+  return yup.object({
+    currentPassword: yup.string().required(m.currentPasswordRequired),
+    newPassword: yup
+      .string()
+      .required(m.newPasswordRequired)
+      .min(8, m.newPasswordMin)
+      .matches(PASSWORD_REGEX, m.newPasswordPattern),
+    confirmNewPassword: yup
+      .string()
+      .required(m.confirmPasswordRequired)
+      .oneOf([yup.ref("newPassword")], m.confirmPasswordMatch),
+  });
+}
+
 export type SignupValues = yup.InferType<ReturnType<typeof getSignupSchema>>;
 export type SigninValues = yup.InferType<ReturnType<typeof getSigninSchema>>;
 export type ResetPasswordValues = yup.InferType<
   ReturnType<typeof getResetPasswordSchema>
+>;
+export type UpdateNameValues = yup.InferType<
+  ReturnType<typeof getUpdateNameSchema>
+>;
+export type ChangePasswordValues = yup.InferType<
+  ReturnType<typeof getChangePasswordSchema>
 >;

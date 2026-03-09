@@ -147,6 +147,36 @@
     "theme": "Tema",
     "language": "Idioma"
   },
+  "profile": {
+    "title": "Perfil",
+    "personalInfo": "Informações pessoais",
+    "emailLabel": "Email",
+    "nameLabel": "Nome",
+    "namePlaceholder": "Seu nome",
+    "saveBtn": "Salvar",
+    "saving": "Salvando...",
+    "nameSaved": "Nome atualizado com sucesso.",
+    "changePassword": "Alterar senha",
+    "currentPasswordLabel": "Senha atual",
+    "currentPasswordPlaceholder": "Digite sua senha atual",
+    "newPasswordLabel": "Nova senha",
+    "newPasswordPlaceholder": "Mín. 8 caracteres, maiúscula, minúscula, número e especial (@$!%*?&)",
+    "confirmPasswordLabel": "Confirmar nova senha",
+    "confirmPasswordPlaceholder": "Repita a nova senha",
+    "changePasswordBtn": "Alterar senha",
+    "changingPassword": "Alterando...",
+    "passwordChanged": "Senha alterada com sucesso.",
+    "backToDashboard": "Voltar ao painel",
+    "validation": {
+      "nameRequired": "Nome é obrigatório",
+      "currentPasswordRequired": "Senha atual é obrigatória",
+      "newPasswordRequired": "Nova senha é obrigatória",
+      "newPasswordMin": "A senha deve ter pelo menos 8 caracteres",
+      "newPasswordPattern": "A senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (@$!%*?&)",
+      "confirmPasswordRequired": "Confirme sua nova senha",
+      "confirmPasswordMatch": "As senhas devem coincidir"
+    }
+  },
   "verifyRequired": {
     "title": "Verifique seu e-mail",
     "description": "Você precisa verificar seu e-mail antes de usar a plataforma. Enviamos um link para sua caixa de entrada — clique para continuar.",

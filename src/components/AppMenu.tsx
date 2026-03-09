@@ -247,7 +247,7 @@ export function AppMenu() {
                 </svg>
               }
               label={t("profile")}
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); intlRouter.push("/profile"); }}
             />
             <MenuItem
               icon={

@@ -147,6 +147,36 @@
     "theme": "Theme",
     "language": "Language"
   },
+  "profile": {
+    "title": "Profile",
+    "personalInfo": "Personal information",
+    "emailLabel": "Email",
+    "nameLabel": "Name",
+    "namePlaceholder": "Your name",
+    "saveBtn": "Save",
+    "saving": "Saving...",
+    "nameSaved": "Name updated successfully.",
+    "changePassword": "Change password",
+    "currentPasswordLabel": "Current password",
+    "currentPasswordPlaceholder": "Enter your current password",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "Min. 8 chars, upper, lower, number, special (@$!%*?&)",
+    "confirmPasswordLabel": "Confirm new password",
+    "confirmPasswordPlaceholder": "Repeat your new password",
+    "changePasswordBtn": "Change password",
+    "changingPassword": "Changing...",
+    "passwordChanged": "Password changed successfully.",
+    "backToDashboard": "Back to dashboard",
+    "validation": {
+      "nameRequired": "Name is required",
+      "currentPasswordRequired": "Current password is required",
+      "newPasswordRequired": "New password is required",
+      "newPasswordMin": "Password must be at least 8 characters",
+      "newPasswordPattern": "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&)",
+      "confirmPasswordRequired": "Please confirm your new password",
+      "confirmPasswordMatch": "Passwords must match"
+    }
+  },
   "verifyRequired": {
     "title": "Verify your email",
     "description": "You need to verify your email address before using the platform. We sent a link to your inbox — click it to continue.",

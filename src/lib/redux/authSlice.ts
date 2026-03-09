@@ -97,6 +97,9 @@ const authSlice = createSlice({
     clearSignupSuccess(state) {
       state.signupSuccess = false;
     },
+    setUser(state, action: PayloadAction<User>) {
+      state.user = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -160,5 +163,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { hydrateAuth, logout, clearError, clearSignupSuccess } = authSlice.actions;
+export const { hydrateAuth, logout, clearError, clearSignupSuccess, setUser } = authSlice.actions;
 export default authSlice.reducer;

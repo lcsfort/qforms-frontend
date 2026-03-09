@@ -101,6 +101,28 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
+  updateName: (token: string, data: { name: string }) =>
+    request<{
+      id: string;
+      email: string;
+      name: string | null;
+      isEmailVerified: boolean;
+    }>("/auth/profile/name", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (
+    token: string,
+    data: { currentPassword: string; newPassword: string },
+  ) =>
+    request<{ message: string }>("/auth/profile/change-password", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
   resendVerificationEmail: async (token: string, locale?: string) => {
     const loc = locale ?? getLocale();
     const body = JSON.stringify({ locale: loc });
