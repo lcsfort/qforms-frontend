@@ -64,9 +64,11 @@ export default function ProfilePage() {
 
         <NameCard user={user} token={token!} />
 
-        <div className="mt-6">
-          <PasswordCard token={token!} />
-        </div>
+        {user.authProvider !== "google" && (
+          <div className="mt-6">
+            <PasswordCard token={token!} />
+          </div>
+        )}
       </main>
     </div>
   );
@@ -76,7 +78,7 @@ function NameCard({
   user,
   token,
 }: {
-  user: { id: string; email: string; name: string | null; isEmailVerified: boolean };
+  user: { id: string; email: string; name: string | null; isEmailVerified: boolean; authProvider?: "local" | "google" };
   token: string;
 }) {
   const t = useTranslations("profile");

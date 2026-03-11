@@ -5,13 +5,14 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { signup } from "@/lib/redux/authSlice";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { getSignupSchema } from "@/lib/validation";
 
 export default function SignupPage() {
   const t = useTranslations("signup");
   const locale = useLocale();
   const dispatch = useAppDispatch();
-  const { loading } = useAppSelector((state) => state.auth);
+  const { loading, error: authError } = useAppSelector((state) => state.auth);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -101,9 +102,9 @@ export default function SignupPage() {
             {t("subtitle")}
           </p>
 
-          {apiError && (
+          {(apiError ?? authError) && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg p-3 mb-4">
-              {apiError}
+              {apiError ?? authError}
             </div>
           )}
 
@@ -193,6 +194,12 @@ export default function SignupPage() {
             >
               {loading ? t("submitting") : t("submit")}
             </button>
+
+            <GoogleSignInButton
+              mode="signup"
+              disabled={loading}
+              className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm transition-colors [&>div]:!flex [&>div]:!justify-center [&>div]:!w-full"
+            />
           </form>
 
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">

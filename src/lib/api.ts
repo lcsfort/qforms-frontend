@@ -97,6 +97,7 @@ export const api = {
       email: string;
       name: string | null;
       isEmailVerified: boolean;
+      authProvider?: "local" | "google";
     }>("/auth/profile", {
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -107,6 +108,7 @@ export const api = {
       email: string;
       name: string | null;
       isEmailVerified: boolean;
+      authProvider?: "local" | "google";
     }>("/auth/profile/name", {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },

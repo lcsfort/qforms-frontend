@@ -65,6 +65,9 @@
   "signin": {
     "title": "Bem-vindo de volta",
     "subtitle": "Entre na sua conta QForms",
+    "signInWithGoogle": "Entrar com Google",
+    "signInWithGoogleSignup": "Cadastrar com Google",
+    "googleNotConfigured": "Não configurado",
     "emailLabel": "Email",
     "emailPlaceholder": "voce@exemplo.com",
     "passwordLabel": "Senha",

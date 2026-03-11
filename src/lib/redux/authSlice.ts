@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { api } from "../api";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string | null;
   isEmailVerified: boolean;
+  authProvider?: "local" | "google";
 }
 
 interface AuthState {
@@ -100,6 +101,12 @@ const authSlice = createSlice({
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
     },
+    setToken(state, action: PayloadAction<string>) {
+      state.token = action.payload;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", action.payload);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -163,5 +170,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { hydrateAuth, logout, clearError, clearSignupSuccess, setUser } = authSlice.actions;
+export const { hydrateAuth, logout, clearError, clearSignupSuccess, setUser, setToken } = authSlice.actions;
 export default authSlice.reducer;
