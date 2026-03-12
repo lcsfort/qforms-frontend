@@ -29,6 +29,7 @@ export default function FormEditorPage() {
   const formId = params.id as string;
 
   const { currentForm, loading } = useAppSelector((state) => state.forms);
+  const { token, hydrated } = useAppSelector((state) => state.auth);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -47,8 +48,13 @@ export default function FormEditorPage() {
   );
 
   useEffect(() => {
+    if (!hydrated) return;
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
     dispatch(fetchForm(formId));
-  }, [dispatch, formId]);
+  }, [dispatch, formId, hydrated, token, router]);
 
   useEffect(() => {
     if (currentForm) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -69,6 +69,10 @@ export default function ProfilePage() {
             <PasswordCard token={token!} />
           </div>
         )}
+
+        <div className="mt-6">
+          <AiSettingsCard token={token!} />
+        </div>
       </main>
     </div>
   );
@@ -318,6 +322,268 @@ function PasswordCard({ token }: { token: string }) {
         >
           {saving ? t("changingPassword") : t("changePasswordBtn")}
         </button>
+      </form>
+    </div>
+  );
+}
+
+const MODELS_BY_PROVIDER: Record<string, { id: string; label: string }[]> = {
+  gemini: [
+    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+    { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+  ],
+  openai: [
+    { id: "gpt-4.1", label: "GPT-4.1" },
+    { id: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
+    { id: "gpt-4o", label: "GPT-4o" },
+    { id: "gpt-4o-mini", label: "GPT-4o Mini" },
+    { id: "o3-mini", label: "o3-mini" },
+  ],
+  claude: [
+    { id: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
+    { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
+  ],
+};
+
+function AiSettingsCard({ token }: { token: string }) {
+  const t = useTranslations("profile.aiSettings");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [provider, setProvider] = useState<string | null>(null);
+  const [model, setModel] = useState<string | null>(null);
+  const [customModel, setCustomModel] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const isCustomModel = useMemo(() => {
+    if (!provider || !model) return false;
+    const known = MODELS_BY_PROVIDER[provider] ?? [];
+    return !known.some((m) => m.id === model);
+  }, [provider, model]);
+
+  const loadSettings = useCallback(async () => {
+    try {
+      const data = await api.getAiSettings(token);
+      setProvider(data.provider);
+      setHasApiKey(data.hasApiKey);
+      if (data.model) {
+        const known = MODELS_BY_PROVIDER[data.provider ?? ""] ?? [];
+        if (known.some((m) => m.id === data.model)) {
+          setModel(data.model);
+          setCustomModel("");
+        } else {
+          setModel("__custom__");
+          setCustomModel(data.model);
+        }
+      } else {
+        setModel(null);
+        setCustomModel("");
+      }
+    } catch {
+      /* ignore load errors */
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const clearMessages = () => {
+    setSuccess(null);
+    setApiError(null);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearMessages();
+    setSaving(true);
+
+    const resolvedModel = model === "__custom__" ? customModel : model;
+
+    try {
+      const data = await api.updateAiSettings(token, {
+        provider,
+        model: resolvedModel,
+        apiKey: apiKey || undefined,
+      });
+      setProvider(data.provider);
+      setHasApiKey(data.hasApiKey);
+      setApiKey("");
+      if (data.model) {
+        const known = MODELS_BY_PROVIDER[data.provider ?? ""] ?? [];
+        if (known.some((m) => m.id === data.model)) {
+          setModel(data.model);
+          setCustomModel("");
+        } else {
+          setModel("__custom__");
+          setCustomModel(data.model);
+        }
+      }
+      setSuccess(t("saved"));
+    } catch {
+      setApiError(t("error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClear = async () => {
+    clearMessages();
+    setSaving(true);
+    try {
+      await api.updateAiSettings(token, {
+        provider: null,
+        model: null,
+        apiKey: null,
+      });
+      setProvider(null);
+      setModel(null);
+      setCustomModel("");
+      setApiKey("");
+      setHasApiKey(false);
+      setSuccess(t("cleared"));
+    } catch {
+      setApiError(t("error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleProviderChange = (newProvider: string) => {
+    clearMessages();
+    setProvider(newProvider || null);
+    setModel(null);
+    setCustomModel("");
+    setApiKey("");
+    setHasApiKey(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
+        <div className="animate-pulse h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4" />
+        <div className="animate-pulse h-4 w-full bg-gray-200 dark:bg-gray-700 rounded" />
+      </div>
+    );
+  }
+
+  const providerModels = provider ? (MODELS_BY_PROVIDER[provider] ?? []) : [];
+
+  return (
+    <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
+      <h2 className="text-lg font-semibold mb-1">{t("title")}</h2>
+      <p className="text-sm text-[var(--muted)] mb-5">{t("description")}</p>
+
+      <form onSubmit={handleSave} noValidate>
+        <div className="mb-4">
+          <label htmlFor="ai-provider" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+            {t("providerLabel")}
+          </label>
+          <select
+            id="ai-provider"
+            value={provider ?? ""}
+            onChange={(e) => handleProviderChange(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
+          >
+            <option value="">{t("providerNone")}</option>
+            <option value="gemini">{t("providerGemini")}</option>
+            <option value="openai">{t("providerOpenai")}</option>
+            <option value="claude">{t("providerClaude")}</option>
+          </select>
+        </div>
+
+        {provider && (
+          <>
+            <div className="mb-4">
+              <label htmlFor="ai-model" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+                {t("modelLabel")}
+              </label>
+              <select
+                id="ai-model"
+                value={isCustomModel ? "__custom__" : (model ?? "")}
+                onChange={(e) => {
+                  clearMessages();
+                  const val = e.target.value;
+                  setModel(val || null);
+                  if (val !== "__custom__") setCustomModel("");
+                }}
+                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
+              >
+                <option value="">—</option>
+                {providerModels.map((m) => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
+                ))}
+                <option value="__custom__">{t("modelCustom")}</option>
+              </select>
+
+              {(model === "__custom__" || isCustomModel) && (
+                <input
+                  type="text"
+                  value={customModel}
+                  onChange={(e) => { setCustomModel(e.target.value); clearMessages(); }}
+                  placeholder={t("modelPlaceholder")}
+                  className="mt-2 w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
+                />
+              )}
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="ai-api-key" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+                {t("apiKeyLabel")}
+                {hasApiKey && !apiKey && (
+                  <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
+                    ({t("apiKeySet")})
+                  </span>
+                )}
+              </label>
+              <input
+                id="ai-api-key"
+                type="password"
+                value={apiKey}
+                onChange={(e) => { setApiKey(e.target.value); clearMessages(); }}
+                placeholder={hasApiKey ? "••••••••••••" : t("apiKeyPlaceholder")}
+                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
+              />
+              <p className="text-xs text-[var(--muted)] mt-1">{t("apiKeyHint")}</p>
+            </div>
+          </>
+        )}
+
+        {apiError && (
+          <p className="text-red-500 text-sm mt-1 mb-3">{apiError}</p>
+        )}
+        {success && (
+          <p className="text-green-600 dark:text-green-400 text-sm mt-1 mb-3">{success}</p>
+        )}
+
+        <div className="flex items-center gap-3">
+          {provider && (
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-[var(--primary)] hover:opacity-90 text-white font-semibold px-5 py-2.5 rounded-lg transition-opacity text-sm disabled:opacity-50 cursor-pointer"
+            >
+              {saving ? t("saving") : t("save")}
+            </button>
+          )}
+
+          {provider && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleClear}
+              className="text-sm text-[var(--muted)] hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {t("clear")}
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

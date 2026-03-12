@@ -178,6 +178,28 @@
       "newPasswordPattern": "A senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (@$!%*?&)",
       "confirmPasswordRequired": "Confirme sua nova senha",
       "confirmPasswordMatch": "As senhas devem coincidir"
+    },
+    "aiSettings": {
+      "title": "Configuração de IA",
+      "description": "Conecte seu próprio provedor de IA e chave de API para geração de formulários. Se não configurado, o padrão da plataforma será utilizado.",
+      "providerLabel": "Provedor de IA",
+      "providerNone": "Padrão da plataforma",
+      "providerGemini": "Google Gemini",
+      "providerOpenai": "OpenAI",
+      "providerClaude": "Anthropic Claude",
+      "modelLabel": "Modelo",
+      "modelCustom": "Personalizado",
+      "modelPlaceholder": "Insira o ID do modelo",
+      "apiKeyLabel": "Chave de API",
+      "apiKeyPlaceholder": "Insira sua chave de API",
+      "apiKeySet": "Chave configurada",
+      "apiKeyHint": "Sua chave é encriptada e armazenada com segurança.",
+      "save": "Salvar",
+      "saving": "Salvando...",
+      "saved": "Configurações de IA salvas.",
+      "clear": "Resetar para padrão",
+      "cleared": "Configurações de IA removidas. O padrão da plataforma será utilizado.",
+      "error": "Falha ao salvar configurações de IA."
     }
   },
   "verifyRequired": {

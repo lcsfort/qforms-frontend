@@ -216,6 +216,33 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
+  getAiSettings: (token: string) =>
+    request<{
+      provider: string | null;
+      model: string | null;
+      hasApiKey: boolean;
+    }>("/auth/profile/ai-settings", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  updateAiSettings: (
+    token: string,
+    data: {
+      provider?: string | null;
+      model?: string | null;
+      apiKey?: string | null;
+    },
+  ) =>
+    request<{
+      provider: string | null;
+      model: string | null;
+      hasApiKey: boolean;
+    }>("/auth/profile/ai-settings", {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
   resendVerificationEmail: async (token: string, locale?: string) => {
     const loc = locale ?? getLocale();
     const body = JSON.stringify({ locale: loc });

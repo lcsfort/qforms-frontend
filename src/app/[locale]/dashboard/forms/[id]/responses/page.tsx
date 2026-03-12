@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { useRouter, Link } from "@/i18n/navigation";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { api } from "@/lib/api";
 import type { Form, FormField, FormResponse } from "@/lib/types";
@@ -11,15 +11,20 @@ import type { Form, FormField, FormResponse } from "@/lib/types";
 export default function ResponsesPage() {
   const t = useTranslations("forms.responsesPage");
   const params = useParams();
+  const router = useRouter();
   const formId = params.id as string;
-  const { token } = useAppSelector((state) => state.auth);
+  const { token, hydrated } = useAppSelector((state) => state.auth);
 
   const [form, setForm] = useState<Form | null>(null);
   const [responses, setResponses] = useState<FormResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    if (!hydrated) return;
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
     Promise.all([
       api.getForm(token, formId),
       api.getFormResponses(token, formId),
@@ -29,7 +34,7 @@ export default function ResponsesPage() {
         setResponses(r);
       })
       .finally(() => setLoading(false));
-  }, [token, formId]);
+  }, [hydrated, token, formId, router]);
 
   if (loading) {
     return (

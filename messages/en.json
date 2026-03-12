@@ -178,6 +178,28 @@
       "newPasswordPattern": "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&)",
       "confirmPasswordRequired": "Please confirm your new password",
       "confirmPasswordMatch": "Passwords must match"
+    },
+    "aiSettings": {
+      "title": "AI Configuration",
+      "description": "Connect your own AI provider and API key for form generation. If not configured, the platform default will be used.",
+      "providerLabel": "AI Provider",
+      "providerNone": "Platform default",
+      "providerGemini": "Google Gemini",
+      "providerOpenai": "OpenAI",
+      "providerClaude": "Anthropic Claude",
+      "modelLabel": "Model",
+      "modelCustom": "Custom",
+      "modelPlaceholder": "Enter model ID",
+      "apiKeyLabel": "API Key",
+      "apiKeyPlaceholder": "Enter your API key",
+      "apiKeySet": "Key is set",
+      "apiKeyHint": "Your key is encrypted and stored securely.",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "AI settings saved.",
+      "clear": "Reset to default",
+      "cleared": "AI settings cleared. Platform default will be used.",
+      "error": "Failed to save AI settings."
     }
   },
   "verifyRequired": {

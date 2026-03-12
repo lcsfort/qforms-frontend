@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -12,8 +12,16 @@ export default function NewFormPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { generating } = useAppSelector((state) => state.forms);
+  const { token, hydrated } = useAppSelector((state) => state.auth);
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!token) {
+      router.push("/signin");
+    }
+  }, [hydrated, token, router]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
