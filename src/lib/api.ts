@@ -1,3 +1,5 @@
+import type { Form, FormResponse, GeneratedFormSchema } from "./types";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 function getLocale(): string {
@@ -123,6 +125,95 @@ export const api = {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
+    }),
+
+  // --- Forms ---
+
+  listForms: (token: string) =>
+    request<Form[]>("/forms", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getForm: (token: string, id: string) =>
+    request<Form>(`/forms/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  createForm: (
+    token: string,
+    data: {
+      title: string;
+      description?: string;
+      schema: unknown[];
+      settings?: Record<string, unknown>;
+    },
+  ) =>
+    request<Form>("/forms", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  updateForm: (
+    token: string,
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      schema?: unknown[];
+      settings?: Record<string, unknown>;
+    },
+  ) =>
+    request<Form>(`/forms/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  deleteForm: (token: string, id: string) =>
+    request<{ message: string }>(`/forms/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  publishForm: (token: string, id: string) =>
+    request<Form>(`/forms/${id}/publish`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  unpublishForm: (token: string, id: string) =>
+    request<Form>(`/forms/${id}/unpublish`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  generateFormSchema: (token: string, prompt: string) =>
+    request<GeneratedFormSchema>("/forms/generate", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ prompt }),
+    }),
+
+  getPublicForm: (slug: string) =>
+    request<{
+      id: string;
+      title: string;
+      description: string | null;
+      slug: string;
+      schema: unknown[];
+      settings: Record<string, unknown>;
+    }>(`/forms/public/${slug}`),
+
+  submitFormResponse: (slug: string, data: Record<string, unknown>) =>
+    request<{ id: string }>(`/forms/public/${slug}/responses`, {
+      method: "POST",
+      body: JSON.stringify({ data }),
+    }),
+
+  getFormResponses: (token: string, formId: string) =>
+    request<FormResponse[]>(`/forms/${formId}/responses`, {
+      headers: { Authorization: `Bearer ${token}` },
     }),
 
   resendVerificationEmail: async (token: string, locale?: string) => {
