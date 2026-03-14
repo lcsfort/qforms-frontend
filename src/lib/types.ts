@@ -35,12 +35,20 @@ export interface FormField {
   options?: FormFieldOption[];
 }
 
+export type FormMaxWidth = "sm" | "md" | "lg" | "xl" | "2xl" | "full";
+
 export interface FormSettings {
   submit_message?: string;
   allow_multiple_submissions?: boolean;
   require_login?: boolean;
   collect_ip?: boolean;
   redirect_url?: string;
+
+  max_width?: FormMaxWidth;
+  min_height?: number;
+  columns?: 1 | 2 | 3;
+  header_image_url?: string;
+  header_height?: number;
 }
 
 export interface Form {

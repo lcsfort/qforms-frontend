@@ -4,8 +4,21 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
-import type { FormField, FormSettings } from "@/lib/types";
+import type { FormField, FormSettings, FormMaxWidth } from "@/lib/types";
 import { FormRenderer } from "@/components/FormRenderer";
+
+const WIDTH_CLASSES: Record<FormMaxWidth, string> = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  "2xl": "max-w-2xl",
+  full: "max-w-full",
+};
+
+function getWidthClass(w?: FormMaxWidth): string {
+  return WIDTH_CLASSES[w ?? "lg"] ?? "max-w-lg";
+}
 
 export default function PublicFormPage() {
   const t = useTranslations("forms.publicForm");
@@ -93,25 +106,40 @@ export default function PublicFormPage() {
     );
   }
 
+  const widthClass = getWidthClass(form.settings.max_width);
+  const headerUrl = form.settings.header_image_url;
+  const headerHeight = form.settings.header_height ?? 200;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4">
-      <div className="max-w-lg mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
-          <h1 className="text-2xl font-bold mb-1">{form.title}</h1>
-          {form.description && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{form.description}</p>
+      <div className={`${widthClass} mx-auto`}>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+          {headerUrl && (
+            <div
+              className="w-full bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${headerUrl})`,
+                height: `${headerHeight}px`,
+              }}
+            />
           )}
-          <FormRenderer
-            fields={form.schema}
-            settings={form.settings}
-            onSubmit={handleSubmit}
-            submitLabel={t("submit")}
-          />
-          {submitError && (
-            <div className="mt-4 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm">
-              {submitError}
-            </div>
-          )}
+          <div className="p-8">
+            <h1 className="text-2xl font-bold mb-1">{form.title}</h1>
+            {form.description && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{form.description}</p>
+            )}
+            <FormRenderer
+              fields={form.schema}
+              settings={form.settings}
+              onSubmit={handleSubmit}
+              submitLabel={t("submit")}
+            />
+            {submitError && (
+              <div className="mt-4 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm">
+                {submitError}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

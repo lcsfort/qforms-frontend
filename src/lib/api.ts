@@ -243,6 +243,28 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  uploadFile: async (token: string, file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_URL}/uploads`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const message = Array.isArray(data.message)
+        ? data.message.join(", ")
+        : data.message;
+      const err = new Error(message ?? "Upload failed") as Error & {
+        status?: number;
+      };
+      err.status = res.status;
+      throw err;
+    }
+    return data as { url: string };
+  },
+
   resendVerificationEmail: async (token: string, locale?: string) => {
     const loc = locale ?? getLocale();
     const body = JSON.stringify({ locale: loc });

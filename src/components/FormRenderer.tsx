@@ -92,8 +92,11 @@ function normalizeField(f: FormField, index: number): FormField {
   };
 }
 
+const FULL_WIDTH_TYPES = new Set(["textarea", "file"]);
+
 export function FormRenderer({
   fields,
+  settings,
   onSubmit,
   submitLabel = "Submit",
   fieldClassNames,
@@ -105,6 +108,9 @@ export function FormRenderer({
         .map((f, i) => normalizeField(f as FormField, i))
         .sort((a, b) => a.order - b.order)
     : [];
+
+  const columns = settings?.columns ?? 1;
+  const minHeight = settings?.min_height ?? 0;
 
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const init: Record<string, unknown> = {};
@@ -149,29 +155,49 @@ export function FormRenderer({
     }
   };
 
+  const gridClass =
+    columns === 3
+      ? "grid grid-cols-1 sm:grid-cols-3 gap-4"
+      : columns === 2
+        ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
+        : "space-y-5";
+
   return (
-    <form onSubmit={handleSubmit} className={className ?? "space-y-5"} noValidate>
-      {sorted.map((field) => {
-        const Component = fieldRegistry[field.type];
-        if (!Component) return null;
-        return (
-          <Component
-            key={field.id}
-            field={field}
-            value={values[field.id]}
-            onChange={(v) => handleChange(field.id, v)}
-            error={errors[field.id]}
-            disabled={disabled || submitting}
-            className={fieldClassNames?.wrapper}
-            inputClassName={fieldClassNames?.input}
-            labelClassName={fieldClassNames?.label}
-          />
-        );
-      })}
+    <form
+      onSubmit={handleSubmit}
+      className={className ?? ""}
+      style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
+      noValidate
+    >
+      <div className={gridClass}>
+        {sorted.map((field) => {
+          const Component = fieldRegistry[field.type];
+          if (!Component) return null;
+          const spanFull =
+            columns > 1 && FULL_WIDTH_TYPES.has(field.type);
+          return (
+            <div
+              key={field.id}
+              className={spanFull ? "col-span-full" : undefined}
+            >
+              <Component
+                field={field}
+                value={values[field.id]}
+                onChange={(v) => handleChange(field.id, v)}
+                error={errors[field.id]}
+                disabled={disabled || submitting}
+                className={fieldClassNames?.wrapper}
+                inputClassName={fieldClassNames?.input}
+                labelClassName={fieldClassNames?.label}
+              />
+            </div>
+          );
+        })}
+      </div>
       <button
         type="submit"
         disabled={disabled || submitting}
-        className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full mt-6 py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {submitting ? (
           <span className="inline-flex items-center gap-2">
