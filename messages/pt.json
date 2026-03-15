@@ -225,6 +225,8 @@
     "published": "Publicado",
     "responses": "{count, plural, =0 {Sem respostas} one {1 resposta} other {# respostas}}",
     "createdAt": "Criado em {date}",
+    "cancel": "Cancelar",
+    "deleteTitle": "Excluir formulário?",
     "deleteConfirm": "Tem certeza que deseja excluir este formulário?",
     "deleted": "Formulário excluído",
     "generate": {
@@ -289,8 +291,16 @@
       "shareLink": "Link de Compartilhamento",
       "copyLink": "Copiar Link",
       "linkCopied": "Link copiado!",
+      "openFullPagePreview": "Abrir pré-visualização em página completa",
+      "previewTooltip": "Pré-visualizar (página completa)",
+      "copyRespondentLinkTooltip": "Copiar link do formulário",
       "deleteForm": "Excluir Formulário",
-      "backToForms": "Voltar aos formulários"
+      "backToForms": "Voltar aos formulários",
+      "designSection": "Design",
+      "pageBackground": "Fundo da página",
+      "formBackground": "Fundo do formulário",
+      "defaultColor": "Padrão",
+      "hexPlaceholder": "#hex"
     },
     "publicForm": {
       "notFound": "Formulário não encontrado",

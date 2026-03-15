@@ -23,24 +23,42 @@ export function RadioField({
           {field.label}
           {field.required && <span className="text-red-500 ml-0.5">*</span>}
         </legend>
-        <div className="space-y-2 mt-1" role="radiogroup">
-          {field.options?.map((opt) => (
-            <label
-              key={opt.value}
-              className="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-            >
-              <input
-                type="radio"
-                name={field.id}
-                value={opt.value}
-                checked={value === opt.value}
-                onChange={() => onChange(opt.value)}
-                disabled={disabled}
-                className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-indigo-500"
-              />
-              {opt.label}
-            </label>
-          ))}
+        <div className="space-y-2.5 mt-2" role="radiogroup">
+          {field.options?.map((opt) => {
+            const isSelected = value === opt.value;
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg border cursor-pointer transition-all text-sm ${
+                  isSelected
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-gray-900 dark:text-gray-100"
+                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <span
+                  className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    isSelected
+                      ? "border-indigo-600 bg-indigo-600"
+                      : "border-gray-300 dark:border-gray-500"
+                  }`}
+                >
+                  {isSelected && (
+                    <span className="w-2 h-2 rounded-full bg-white" />
+                  )}
+                </span>
+                <input
+                  type="radio"
+                  name={field.id}
+                  value={opt.value}
+                  checked={isSelected}
+                  onChange={() => onChange(opt.value)}
+                  disabled={disabled}
+                  className="sr-only"
+                />
+                {opt.label}
+              </label>
+            );
+          })}
         </div>
       </fieldset>
       {field.help_text && !error && (

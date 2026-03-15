@@ -33,23 +33,43 @@ export function CheckboxField({
           {field.label}
           {field.required && <span className="text-red-500 ml-0.5">*</span>}
         </legend>
-        <div className="space-y-2 mt-1">
-          {field.options?.map((opt) => (
-            <label
-              key={opt.value}
-              className="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-            >
-              <input
-                type="checkbox"
-                value={opt.value}
-                checked={selected.includes(opt.value)}
-                onChange={() => toggle(opt.value)}
-                disabled={disabled}
-                className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
-              />
-              {opt.label}
-            </label>
-          ))}
+        <div className="space-y-2.5 mt-2">
+          {field.options?.map((opt) => {
+            const isChecked = selected.includes(opt.value);
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg border cursor-pointer transition-all text-sm ${
+                  isChecked
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-gray-900 dark:text-gray-100"
+                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <span
+                  className={`w-[18px] h-[18px] rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    isChecked
+                      ? "border-indigo-600 bg-indigo-600"
+                      : "border-gray-300 dark:border-gray-500"
+                  }`}
+                >
+                  {isChecked && (
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                <input
+                  type="checkbox"
+                  value={opt.value}
+                  checked={isChecked}
+                  onChange={() => toggle(opt.value)}
+                  disabled={disabled}
+                  className="sr-only"
+                />
+                {opt.label}
+              </label>
+            );
+          })}
         </div>
       </fieldset>
       {field.help_text && !error && (

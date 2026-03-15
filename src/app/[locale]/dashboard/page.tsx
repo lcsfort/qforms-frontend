@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile } from "@/lib/redux/authSlice";
 import { fetchForms, deleteForm } from "@/lib/redux/formsSlice";
 import { AppMenu } from "@/components/AppMenu";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, token, hydrated } = useAppSelector((state) => state.auth);
   const { forms, loading: formsLoading } = useAppSelector((state) => state.forms);
+  const [deleteFormId, setDeleteFormId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -37,9 +39,15 @@ export default function DashboardPage() {
     }
   }, [token, user?.isEmailVerified, dispatch]);
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(tf("deleteConfirm"))) return;
-    dispatch(deleteForm(id));
+  const handleDeleteClick = (id: string) => {
+    setDeleteFormId(id);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteFormId) {
+      dispatch(deleteForm(deleteFormId));
+      setDeleteFormId(null);
+    }
   };
 
   if (!hydrated || !user) {
@@ -137,7 +145,7 @@ export default function DashboardPage() {
                     </svg>
                   </Link>
                   <button
-                    onClick={() => handleDelete(form.id)}
+                    onClick={() => handleDeleteClick(form.id)}
                     className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500"
                     title={tf("editor.deleteForm")}
                   >
@@ -151,6 +159,17 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      <ConfirmDialog
+        open={deleteFormId !== null}
+        onClose={() => setDeleteFormId(null)}
+        onConfirm={handleDeleteConfirm}
+        title={tf("deleteTitle")}
+        message={tf("deleteConfirm")}
+        confirmLabel={tf("editor.deleteForm")}
+        cancelLabel={tf("cancel")}
+        variant="danger"
+      />
     </div>
   );
 }

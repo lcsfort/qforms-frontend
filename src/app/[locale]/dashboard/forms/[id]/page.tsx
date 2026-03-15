@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef, type DragEvent, type ChangeEvent } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
@@ -12,81 +12,25 @@ import {
   unpublishForm,
   deleteForm,
 } from "@/lib/redux/formsSlice";
-import type { FormField, FieldType, FormSettings, FormFieldOption, FormMaxWidth } from "@/lib/types";
-import { FormRenderer } from "@/components/FormRenderer";
-import { api } from "@/lib/api";
-
-const WIDTH_CLASSES: Record<FormMaxWidth, string> = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  "2xl": "max-w-2xl",
-  full: "max-w-full",
-};
+import type { FormField, FieldType, FormSettings, FormFieldOption } from "@/lib/types";
+import { DesignPanel } from "@/components/DesignPanel";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const FIELD_TYPES: FieldType[] = [
   "text", "textarea", "email", "number", "select", "radio", "checkbox", "date", "file", "rating",
 ];
 
-const WIDTH_OPTIONS: { value: FormMaxWidth; label: string; icon: string }[] = [
-  { value: "sm", label: "widthNarrow", icon: "S" },
-  { value: "md", label: "widthMedium", icon: "M" },
-  { value: "lg", label: "widthLarge", icon: "L" },
-  { value: "xl", label: "widthWide", icon: "XL" },
-  { value: "2xl", label: "widthExtraWide", icon: "2X" },
-  { value: "full", label: "widthFull", icon: "W" },
-];
-
-const COLUMN_OPTIONS: { value: 1 | 2 | 3; label: string }[] = [
-  { value: 1, label: "columnsOne" },
-  { value: 2, label: "columnsTwo" },
-  { value: 3, label: "columnsThree" },
-];
-
 function SettingsPanel({
   settings,
   setSettings,
-  token,
   t,
 }: {
   settings: FormSettings;
   setSettings: (s: FormSettings) => void;
-  token: string;
   t: (key: string) => string;
 }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-
-  const handleFileUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    setUploading(true);
-    try {
-      const { url } = await api.uploadFile(token, file);
-      setSettings({ ...settings, header_image_url: url });
-    } catch {
-      // upload failed silently
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const onDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileUpload(file);
-  };
-
-  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileUpload(file);
-  };
-
   return (
     <div className="space-y-6">
-      {/* Submission Section */}
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-5">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">{t("submissionSection")}</h3>
         <div>
@@ -109,159 +53,6 @@ function SettingsPanel({
           {t("allowMultiple")}
         </label>
       </div>
-
-      {/* Layout Section */}
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">{t("layoutSection")}</h3>
-
-        {/* Width */}
-        <div>
-          <label className="block text-sm font-medium mb-2">{t("formWidth")}</label>
-          <div className="grid grid-cols-6 gap-1.5">
-            {WIDTH_OPTIONS.map((opt) => {
-              const active = (settings.max_width ?? "lg") === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setSettings({ ...settings, max_width: opt.value })}
-                  className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg border text-xs font-medium transition-all ${
-                    active
-                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-400 text-gray-600 dark:text-gray-400"
-                  }`}
-                >
-                  <span className="text-base font-bold">{opt.icon}</span>
-                  <span className="truncate w-full text-center">{t(opt.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Columns */}
-        <div>
-          <label className="block text-sm font-medium mb-2">{t("columns")}</label>
-          <div className="grid grid-cols-3 gap-2">
-            {COLUMN_OPTIONS.map((opt) => {
-              const active = (settings.columns ?? 1) === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setSettings({ ...settings, columns: opt.value })}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-                    active
-                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-400 text-gray-600 dark:text-gray-400"
-                  }`}
-                >
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: opt.value }).map((_, i) => (
-                      <div key={i} className={`${active ? "bg-indigo-500" : "bg-gray-400"} rounded-sm`} style={{ width: `${16 / opt.value}px`, height: "16px" }} />
-                    ))}
-                  </div>
-                  {t(opt.label)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Min Height */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">{t("minHeight")}</label>
-          <input
-            type="number"
-            min={0}
-            step={50}
-            value={settings.min_height ?? 0}
-            onChange={(e) => setSettings({ ...settings, min_height: parseInt(e.target.value) || 0 })}
-            placeholder={t("minHeightPlaceholder")}
-            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-      </div>
-
-      {/* Header Section */}
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">{t("headerSection")}</h3>
-
-        {/* Header Image */}
-        <div>
-          <label className="block text-sm font-medium mb-2">{t("headerImage")}</label>
-          {settings.header_image_url ? (
-            <div className="relative rounded-xl overflow-hidden border border-[var(--border)]">
-              <div
-                className="w-full bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${settings.header_image_url})`,
-                  height: `${settings.header_height ?? 200}px`,
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setSettings({ ...settings, header_image_url: undefined })}
-                className="absolute top-2 right-2 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-medium shadow-lg transition-colors"
-              >
-                {t("headerImageRemove")}
-              </button>
-            </div>
-          ) : (
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={onDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`flex flex-col items-center justify-center gap-2 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
-                dragOver
-                  ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
-                  : "border-gray-300 dark:border-gray-600 hover:border-gray-400"
-              }`}
-            >
-              {uploading ? (
-                <>
-                  <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                  <span className="text-sm text-[var(--muted)]">{t("headerImageUploading")}</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                  </svg>
-                  <span className="text-sm text-[var(--muted)]">{t("headerImageUpload")}</span>
-                </>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={onFileChange}
-                className="hidden"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Header Height */}
-        {settings.header_image_url && (
-          <div>
-            <label className="block text-sm font-medium mb-1.5">{t("headerHeight")}</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={100}
-                max={500}
-                step={10}
-                value={settings.header_height ?? 200}
-                onChange={(e) => setSettings({ ...settings, header_height: parseInt(e.target.value) })}
-                className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-              />
-              <span className="text-sm font-mono w-14 text-right text-[var(--muted)]">{settings.header_height ?? 200}px</span>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -282,11 +73,12 @@ export default function FormEditorPage() {
   const [description, setDescription] = useState("");
   const [fields, setFields] = useState<FormField[]>([]);
   const [settings, setSettings] = useState<FormSettings>({});
-  const [activeTab, setActiveTab] = useState<"fields" | "settings" | "preview">("fields");
+  const [activeTab, setActiveTab] = useState<"fields" | "settings">("fields");
   const [editingField, setEditingField] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const sortedFields = useMemo(
     () =>
@@ -331,6 +123,11 @@ export default function FormEditorPage() {
       ).unwrap();
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
+      try {
+        sessionStorage.removeItem(`formPreviewDraft:${formId}`);
+      } catch {
+        // ignore
+      }
     } finally {
       setSaving(false);
     }
@@ -345,9 +142,13 @@ export default function FormEditorPage() {
     dispatch(unpublishForm(formId));
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(tf("deleteConfirm"))) return;
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     await dispatch(deleteForm(formId)).unwrap();
+    setShowDeleteConfirm(false);
     router.push("/dashboard");
   };
 
@@ -412,12 +213,31 @@ export default function FormEditorPage() {
     updateField(fieldId, { options: field.options.filter((_, i) => i !== optIdx) });
   };
 
-  const copyShareLink = () => {
-    if (!currentForm) return;
-    const url = `${window.location.origin}/f/${currentForm.slug}`;
-    navigator.clipboard.writeText(url);
+  const locale = (params.locale as string) ?? "en";
+  const respondentLink = typeof window !== "undefined" && currentForm?.slug
+    ? `${window.location.origin}/${locale}/f/${currentForm.slug}`
+    : "";
+
+  const copyRespondentLink = () => {
+    if (!respondentLink) return;
+    navigator.clipboard.writeText(respondentLink);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const openPreview = () => {
+    const draft = {
+      title,
+      description,
+      schema: fields,
+      settings,
+    };
+    try {
+      sessionStorage.setItem(`formPreviewDraft:${formId}`, JSON.stringify(draft));
+    } catch {
+      // ignore quota or parse errors
+    }
+    window.open(`/${locale}/dashboard/forms/${formId}/preview`, "_blank", "noopener,noreferrer");
   };
 
   if (loading || !currentForm) {
@@ -430,7 +250,22 @@ export default function FormEditorPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <main className="max-w-5xl mx-auto px-6 pt-8 pb-12">
+      <div className="relative max-w-5xl mx-auto px-6 pt-8 pb-12">
+        {/* Design panel — floats outside the centered content on the right (hidden on Configurações) */}
+        {token && activeTab !== "settings" && (
+          <aside
+            className="fixed top-48 w-64 z-30 hidden xl:block"
+            style={{ left: "min(calc((100vw + 67rem) / 2 + 1.5rem), calc(100vw - 17rem))" }}
+          >
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-lg">
+              <div className="max-h-[80vh] overflow-y-auto">
+                <DesignPanel settings={settings} setSettings={setSettings} token={token} t={t} />
+              </div>
+            </div>
+          </aside>
+        )}
+
+        <main>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Link
@@ -443,6 +278,52 @@ export default function FormEditorPage() {
             {t("backToForms")}
           </Link>
           <div className="flex items-center gap-2">
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={openPreview}
+                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-[var(--muted)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors inline-flex"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <span
+                role="tooltip"
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none whitespace-nowrap z-50"
+              >
+                {t("previewTooltip")}
+              </span>
+            </div>
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={copyRespondentLink}
+                disabled={!respondentLink}
+                className={`p-2 rounded-lg border inline-flex transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  linkCopied
+                    ? "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400"
+                    : "border-gray-300 dark:border-gray-600 text-[var(--muted)] hover:bg-gray-50 dark:hover:bg-gray-800"
+                }`}
+              >
+                {linkCopied ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                  </svg>
+                )}
+              </button>
+              <span
+                role="tooltip"
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none whitespace-nowrap z-50"
+              >
+                {linkCopied ? t("linkCopied") : t("copyRespondentLinkTooltip")}
+              </span>
+            </div>
             <button
               onClick={handleSave}
               disabled={saving}
@@ -468,6 +349,23 @@ export default function FormEditorPage() {
           </div>
         </div>
 
+        {/* Tabs — above title card */}
+        <div className="flex gap-1 mb-6 bg-[var(--card)] border border-[var(--border)] rounded-xl p-1">
+          {(["fields", "settings"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === tab
+                  ? "bg-indigo-600 text-white"
+                  : "text-[var(--muted)] hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
+            >
+              {tab === "fields" ? t("fields") : t("settings")}
+            </button>
+          ))}
+        </div>
+
         {/* Title + Description */}
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 mb-6">
           <input
@@ -486,267 +384,209 @@ export default function FormEditorPage() {
           />
         </div>
 
-        {/* Share Link */}
-        {currentForm.status === "published" && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-              </svg>
-              <span className="font-medium">{t("shareLink")}:</span>
-              <code className="text-xs bg-green-100 dark:bg-green-900/40 px-2 py-0.5 rounded">
-                {typeof window !== "undefined" ? `${window.location.origin}/f/${currentForm.slug}` : `/f/${currentForm.slug}`}
-              </code>
-            </div>
-            <button
-              onClick={copyShareLink}
-              className="text-sm text-green-700 dark:text-green-400 font-medium hover:underline"
-            >
-              {linkCopied ? t("linkCopied") : t("copyLink")}
-            </button>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-[var(--card)] border border-[var(--border)] rounded-xl p-1">
-          {(["fields", "settings", "preview"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? "bg-indigo-600 text-white"
-                  : "text-[var(--muted)] hover:bg-gray-100 dark:hover:bg-gray-800"
-              }`}
-            >
-              {tab === "fields" ? t("fields") : tab === "settings" ? t("settings") : t("preview")}
-            </button>
-          ))}
-        </div>
-
-        {/* Fields Tab */}
-        {activeTab === "fields" && (
-          <div>
-            {fields.length === 0 ? (
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-8 text-center">
-                <p className="text-[var(--muted)] text-sm">{t("noFields")}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {sortedFields.map((field, idx) => (
-                    <div
-                      key={field.id}
-                      className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden"
-                    >
-                      {/* Field header */}
+            {/* Fields Tab */}
+            {activeTab === "fields" && (
+              <div>
+                {fields.length === 0 ? (
+                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-8 text-center">
+                    <p className="text-[var(--muted)] text-sm">{t("noFields")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {sortedFields.map((field, idx) => (
                       <div
-                        className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                        onClick={() => setEditingField(editingField === field.id ? null : field.id)}
+                        key={field.id}
+                        className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-mono text-[var(--muted)] w-6">{idx + 1}</span>
-                          <span className="font-medium text-sm">{field.label}</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[var(--muted)]">
-                            {tft(field.type)}
-                          </span>
-                          {field.required && (
-                            <span className="text-xs text-red-500 font-medium">*</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); moveField(field.id, "up"); }}
-                            disabled={idx === 0}
-                            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
-                            title={t("moveUp")}
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); moveField(field.id, "down"); }}
-                            disabled={idx === fields.length - 1}
-                            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
-                            title={t("moveDown")}
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
-                            className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors"
-                            title={t("removeField")}
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Field editor */}
-                      {editingField === field.id && (
-                        <div className="px-4 pb-4 border-t border-[var(--border)] pt-4 space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldLabel")}</label>
-                              <input
-                                type="text"
-                                value={field.label}
-                                onChange={(e) => updateField(field.id, { label: e.target.value })}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldType")}</label>
-                              <select
-                                value={field.type}
-                                onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                              >
-                                {FIELD_TYPES.map((ft) => (
-                                  <option key={ft} value={ft}>{tft(ft)}</option>
-                                ))}
-                              </select>
-                            </div>
+                        <div
+                          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                          onClick={() => setEditingField(editingField === field.id ? null : field.id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-mono text-[var(--muted)] w-6">{idx + 1}</span>
+                            <span className="font-medium text-sm">{field.label}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[var(--muted)]">
+                              {tft(field.type)}
+                            </span>
+                            {field.required && (
+                              <span className="text-xs text-red-500 font-medium">*</span>
+                            )}
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldPlaceholder")}</label>
-                              <input
-                                type="text"
-                                value={field.placeholder ?? ""}
-                                onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldHelpText")}</label>
-                              <input
-                                type="text"
-                                value={field.help_text ?? ""}
-                                onChange={(e) => updateField(field.id, { help_text: e.target.value })}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                              />
-                            </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveField(field.id, "up"); }}
+                              disabled={idx === 0}
+                              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                              title={t("moveUp")}
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveField(field.id, "down"); }}
+                              disabled={idx === fields.length - 1}
+                              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                              title={t("moveDown")}
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                              className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors"
+                              title={t("removeField")}
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
                           </div>
-                          <label className="flex items-center gap-2 text-sm cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={field.required ?? false}
-                              onChange={(e) => updateField(field.id, { required: e.target.checked })}
-                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            {t("fieldRequired")}
-                          </label>
+                        </div>
 
-                          {/* Options editor for select/radio/checkbox */}
-                          {(field.type === "select" || field.type === "radio" || field.type === "checkbox") && (
-                            <div>
-                              <label className="block text-xs font-medium text-[var(--muted)] mb-2">{t("fieldOptions")}</label>
-                              <div className="space-y-2">
-                                {field.options?.map((opt, optIdx) => (
-                                  <div key={optIdx} className="flex items-center gap-2">
-                                    <input
-                                      type="text"
-                                      value={opt.label}
-                                      onChange={(e) => updateOption(field.id, optIdx, { label: e.target.value })}
-                                      placeholder={t("optionLabel")}
-                                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                    <input
-                                      type="text"
-                                      value={opt.value}
-                                      onChange={(e) => updateOption(field.id, optIdx, { value: e.target.value })}
-                                      placeholder={t("optionValue")}
-                                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                    <button
-                                      onClick={() => removeOption(field.id, optIdx)}
-                                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-xs transition-colors"
-                                    >
-                                      {t("removeOption")}
-                                    </button>
-                                  </div>
-                                ))}
-                                <button
-                                  onClick={() => addOption(field.id)}
-                                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                        {editingField === field.id && (
+                          <div className="px-4 pb-4 border-t border-[var(--border)] pt-4 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldLabel")}</label>
+                                <input
+                                  type="text"
+                                  value={field.label}
+                                  onChange={(e) => updateField(field.id, { label: e.target.value })}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldType")}</label>
+                                <select
+                                  value={field.type}
+                                  onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
-                                  + {t("addOption")}
-                                </button>
+                                  {FIELD_TYPES.map((ft) => (
+                                    <option key={ft} value={ft}>{tft(ft)}</option>
+                                  ))}
+                                </select>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldPlaceholder")}</label>
+                                <input
+                                  type="text"
+                                  value={field.placeholder ?? ""}
+                                  onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldHelpText")}</label>
+                                <input
+                                  type="text"
+                                  value={field.help_text ?? ""}
+                                  onChange={(e) => updateField(field.id, { help_text: e.target.value })}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                              </div>
+                            </div>
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={field.required ?? false}
+                                onChange={(e) => updateField(field.id, { required: e.target.checked })}
+                                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              {t("fieldRequired")}
+                            </label>
+
+                            {(field.type === "select" || field.type === "radio" || field.type === "checkbox") && (
+                              <div>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-2">{t("fieldOptions")}</label>
+                                <div className="space-y-2">
+                                  {field.options?.map((opt, optIdx) => (
+                                    <div key={optIdx} className="flex items-center gap-2">
+                                      <input
+                                        type="text"
+                                        value={opt.label}
+                                        onChange={(e) => updateOption(field.id, optIdx, { label: e.target.value })}
+                                        placeholder={t("optionLabel")}
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={opt.value}
+                                        onChange={(e) => updateOption(field.id, optIdx, { value: e.target.value })}
+                                        placeholder={t("optionValue")}
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                      />
+                                      <button
+                                        onClick={() => removeOption(field.id, optIdx)}
+                                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-xs transition-colors"
+                                      >
+                                        {t("removeOption")}
+                                      </button>
+                                    </div>
+                                  ))}
+                                  <button
+                                    onClick={() => addOption(field.id)}
+                                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                                  >
+                                    + {t("addOption")}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <div className="flex flex-wrap gap-2">
+                    {FIELD_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => addField(type)}
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        + {tft(type)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Add field */}
-            <div className="mt-4">
-              <div className="flex flex-wrap gap-2">
-                {FIELD_TYPES.map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => addField(type)}
-                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    + {tft(type)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === "settings" && (
-          <SettingsPanel settings={settings} setSettings={setSettings} token={token!} t={t} />
-        )}
-
-        {/* Preview Tab */}
-        {activeTab === "preview" && (
-          <div className={`${WIDTH_CLASSES[settings.max_width ?? "lg"] ?? "max-w-lg"} mx-auto`}>
-            <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-              {settings.header_image_url && (
-                <div
-                  className="w-full bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${settings.header_image_url})`,
-                    height: `${settings.header_height ?? 200}px`,
-                  }}
-                />
-              )}
-              <div className="p-8">
-                {title && <h2 className="text-xl font-bold mb-1">{title}</h2>}
-                {description && <p className="text-sm text-[var(--muted)] mb-6">{description}</p>}
-                <FormRenderer
-                  fields={fields}
-                  settings={settings}
-                  onSubmit={() => {}}
-                  disabled
-                  submitLabel={t("preview")}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+            {/* Settings Tab */}
+            {activeTab === "settings" && (
+              <SettingsPanel settings={settings} setSettings={setSettings} t={t} />
+            )}
 
         {/* Danger zone */}
         <div className="mt-8 pt-6 border-t border-[var(--border)]">
           <button
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             className="text-sm text-red-500 hover:text-red-600 font-medium transition-colors"
           >
             {t("deleteForm")}
           </button>
         </div>
       </main>
+      </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        title={tf("deleteTitle")}
+        message={tf("deleteConfirm")}
+        confirmLabel={tf("editor.deleteForm")}
+        cancelLabel={tf("cancel")}
+        variant="danger"
+      />
     </div>
   );
 }

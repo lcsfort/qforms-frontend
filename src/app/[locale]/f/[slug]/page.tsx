@@ -109,11 +109,19 @@ export default function PublicFormPage() {
   const widthClass = getWidthClass(form.settings.max_width);
   const headerUrl = form.settings.header_image_url;
   const headerHeight = form.settings.header_height ?? 200;
+  const pageBg = form.settings.page_background_color;
+  const formBg = form.settings.form_background_color;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4">
+    <div
+      className={`min-h-screen py-12 px-4 ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
+      style={pageBg ? { backgroundColor: pageBg } : undefined}
+    >
       <div className={`${widthClass} mx-auto`}>
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+        <div
+          className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-white dark:bg-gray-800" : ""}`}
+          style={formBg ? { backgroundColor: formBg } : undefined}
+        >
           {headerUrl && (
             <div
               className="w-full bg-cover bg-center"

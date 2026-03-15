@@ -49,6 +49,8 @@ export interface FormSettings {
   columns?: 1 | 2 | 3;
   header_image_url?: string;
   header_height?: number;
+  page_background_color?: string;
+  form_background_color?: string;
 }
 
 export interface Form {
