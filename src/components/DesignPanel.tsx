@@ -4,6 +4,89 @@ import { useRef, useState, useEffect, type DragEvent, type ChangeEvent } from "r
 import { api } from "@/lib/api";
 import type { FormSettings, FormMaxWidth } from "@/lib/types";
 
+const FONTS_TO_PRELOAD = 60;
+
+function FontFamilyDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+  defaultLabel,
+  id,
+}: {
+  options: string[];
+  value: string | undefined;
+  onChange: (v: string | undefined) => void;
+  disabled: boolean;
+  defaultLabel: string;
+  id: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  const displayValue = value && value.trim() ? value : defaultLabel;
+  const isDefault = !value || !value.trim();
+
+  return (
+    <div ref={containerRef} className="relative flex-1 min-w-0">
+      <button
+        type="button"
+        id={id}
+        onClick={() => !disabled && setOpen((o) => !o)}
+        disabled={disabled}
+        className="w-full h-8 pl-2.5 pr-8 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs outline-none cursor-pointer disabled:opacity-50 text-left flex items-center truncate"
+      >
+        <span
+          className="truncate"
+          style={isDefault ? undefined : { fontFamily: value ?? undefined }}
+        >
+          {displayValue}
+        </span>
+      </button>
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
+        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+        </svg>
+      </div>
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-0.5 z-50 max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-lg py-1">
+          {options.map((name, idx) => {
+            const isDefaultOption = idx === 0;
+            const selected = (isDefaultOption && isDefault) || (!isDefaultOption && value === name);
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={() => {
+                  onChange(isDefaultOption ? undefined : name);
+                  setOpen(false);
+                }}
+                className={`w-full px-2.5 py-1.5 text-left text-xs transition-colors flex items-center ${
+                  selected ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300" : "hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+                style={isDefaultOption ? undefined : { fontFamily: name }}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const WIDTH_OPTIONS: { value: FormMaxWidth; label: string; icon: string }[] = [
   { value: "sm", label: "widthNarrow", icon: "S" },
   { value: "md", label: "widthMedium", icon: "M" },
@@ -18,6 +101,13 @@ const COLUMN_OPTIONS: { value: 1 | 2 | 3; label: string }[] = [
   { value: 2, label: "columnsTwo" },
   { value: 3, label: "columnsThree" },
 ];
+
+const FONT_SIZE_OPTIONS = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32];
+
+const FALLBACK_FONT_FAMILIES = ["Inter", "Roboto", "Open Sans", "Lexend", "Montserrat", "Lato", "Poppins"];
+
+const GOOGLE_FONTS_API_URL = "https://www.googleapis.com/webfonts/v1/webfonts";
+const FONT_LIST_CACHE_KEY = "qforms_google_fonts_families";
 
 const PRESET_COLORS = [
   "#ffffff",
@@ -141,6 +231,67 @@ export function DesignPanel({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
+  const [fontFamilies, setFontFamilies] = useState<string[]>([]);
+  const [fontFamiliesLoading, setFontFamiliesLoading] = useState(true);
+  const [fontFamiliesError, setFontFamiliesError] = useState(false);
+  const fontPreloadRef = useRef(false);
+
+  useEffect(() => {
+    if (fontFamilies.length <= 1 || fontPreloadRef.current) return;
+    fontPreloadRef.current = true;
+    const toLoad = fontFamilies.slice(1, FONTS_TO_PRELOAD + 1);
+    const params = toLoad.map((f) => `family=${encodeURIComponent(f).replace(/ /g, "+")}`).join("&");
+    const href = `https://fonts.googleapis.com/css2?${params}&display=swap`;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.id = "qforms-design-panel-fonts";
+    document.head.appendChild(link);
+  }, [fontFamilies]);
+
+  useEffect(() => {
+    const defaultLabel = t("fontDefault");
+    const key = process.env.NEXT_PUBLIC_GOOGLE_FONTS_API_KEY;
+    try {
+      const cached = typeof sessionStorage !== "undefined" ? sessionStorage.getItem(FONT_LIST_CACHE_KEY) : null;
+      if (cached) {
+        const parsed = JSON.parse(cached) as string[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFontFamilies([defaultLabel, ...parsed]);
+          setFontFamiliesLoading(false);
+          return;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    if (!key) {
+      setFontFamilies([defaultLabel, ...FALLBACK_FONT_FAMILIES]);
+      setFontFamiliesLoading(false);
+      return;
+    }
+    setFontFamiliesLoading(true);
+    setFontFamiliesError(false);
+    fetch(`${GOOGLE_FONTS_API_URL}?key=${encodeURIComponent(key)}`)
+      .then((res) => res.json())
+      .then((data: { items?: { family: string }[] }) => {
+        const list = Array.isArray(data?.items)
+          ? data.items.map((item) => item.family).filter(Boolean).sort((a, b) => a.localeCompare(b))
+          : FALLBACK_FONT_FAMILIES;
+        setFontFamilies([defaultLabel, ...list]);
+        try {
+          sessionStorage.setItem(FONT_LIST_CACHE_KEY, JSON.stringify(list));
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => {
+        setFontFamiliesError(true);
+        setFontFamilies([defaultLabel, ...FALLBACK_FONT_FAMILIES]);
+      })
+      .finally(() => setFontFamiliesLoading(false));
+  }, [t]);
+
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
     setUploading(true);
@@ -253,6 +404,46 @@ export function DesignPanel({
           />
           <span className="pr-2.5 text-[10px] text-[var(--muted)] font-mono select-none">px</span>
         </div>
+      </div>
+
+      <Divider />
+
+      {/* Text style */}
+      <div className="py-4">
+        <span className="block text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wide mb-3">{t("textStyle")}</span>
+        {[
+          { key: "header" as const, labelKey: "textStyleHeader", family: settings.header_font_family, size: settings.header_font_size, setFamily: (v: string | undefined) => setSettings({ ...settings, header_font_family: v || undefined }), setSize: (v: number | undefined) => setSettings({ ...settings, header_font_size: v }) },
+          { key: "question" as const, labelKey: "textStyleQuestion", family: settings.question_font_family, size: settings.question_font_size, setFamily: (v: string | undefined) => setSettings({ ...settings, question_font_family: v || undefined }), setSize: (v: number | undefined) => setSettings({ ...settings, question_font_size: v }) },
+          { key: "text" as const, labelKey: "textStyleText", family: settings.text_font_family, size: settings.text_font_size, setFamily: (v: string | undefined) => setSettings({ ...settings, text_font_family: v || undefined }), setSize: (v: number | undefined) => setSettings({ ...settings, text_font_size: v }) },
+        ].map((row) => (
+          <div key={row.key} className="mb-3 last:mb-0">
+            <span className="block text-[10px] font-medium text-[var(--muted)] mb-1.5">{t(row.labelKey)}</span>
+            <div className="flex gap-2">
+              <FontFamilyDropdown
+                id={`font-family-${row.key}`}
+                options={fontFamiliesLoading ? [t("fontLoading")] : fontFamilies}
+                value={row.family ?? undefined}
+                onChange={row.setFamily}
+                disabled={fontFamiliesLoading}
+                defaultLabel={fontFamiliesLoading ? t("fontLoading") : t("fontDefault")}
+              />
+              <select
+                value={row.size !== undefined ? row.size : ""}
+                onChange={(e) => { const v = e.target.value; row.setSize(v === "" ? undefined : parseInt(v, 10)); }}
+                className="w-16 h-8 pl-2 pr-6 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs outline-none appearance-none cursor-pointer"
+              >
+                <option value="">—</option>
+                {FONT_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+              <span className="flex items-center text-[10px] text-[var(--muted)] font-mono self-center">px</span>
+            </div>
+          </div>
+        ))}
+        {fontFamiliesError && (
+          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">{t("fontListError")}</p>
+        )}
       </div>
 
       <Divider />

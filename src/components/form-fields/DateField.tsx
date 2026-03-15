@@ -17,10 +17,13 @@ export function DateField({
   className,
   inputClassName,
   labelClassName,
+  labelStyle,
+  helpTextStyle,
+  inputStyle,
 }: FieldProps) {
   return (
     <div className={className}>
-      <label htmlFor={field.id} className={labelClassName ?? DEFAULT_LABEL_CLASS}>
+      <label htmlFor={field.id} className={labelClassName ?? DEFAULT_LABEL_CLASS} style={labelStyle}>
         {field.label}
         {field.required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
@@ -32,6 +35,7 @@ export function DateField({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           className={inputClassName ?? `${DEFAULT_INPUT_CLASS} appearance-none pr-10`}
+          style={inputStyle}
           aria-invalid={!!error}
           aria-describedby={
             error ? `${field.id}-error` : field.help_text ? `${field.id}-help` : undefined
@@ -44,7 +48,7 @@ export function DateField({
         </div>
       </div>
       {field.help_text && !error && (
-        <p id={`${field.id}-help`} className={DEFAULT_HELP_CLASS}>
+        <p id={`${field.id}-help`} className={DEFAULT_HELP_CLASS} style={helpTextStyle}>
           {field.help_text}
         </p>
       )}

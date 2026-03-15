@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { FormField } from "@/lib/types";
 
 export interface FieldProps {
@@ -9,6 +10,9 @@ export interface FieldProps {
   className?: string;
   inputClassName?: string;
   labelClassName?: string;
+  labelStyle?: CSSProperties;
+  helpTextStyle?: CSSProperties;
+  inputStyle?: CSSProperties;
 }
 
 export const DEFAULT_LABEL_CLASS =

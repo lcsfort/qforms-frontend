@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, type FormEvent, type ComponentType } from "react";
+import { useState, useCallback, useMemo, type FormEvent, type ComponentType } from "react";
 import type { FormField, FormSettings } from "@/lib/types";
 import type { FieldProps } from "./form-fields/types";
 import {
@@ -162,6 +162,27 @@ export function FormRenderer({
         ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
         : "space-y-5";
 
+  const labelStyle = useMemo(() => {
+    const s: React.CSSProperties = {};
+    if (settings?.question_font_family) s.fontFamily = settings.question_font_family;
+    if (settings?.question_font_size != null) s.fontSize = `${settings.question_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings?.question_font_family, settings?.question_font_size]);
+
+  const helpTextStyle = useMemo(() => {
+    const s: React.CSSProperties = {};
+    if (settings?.text_font_family) s.fontFamily = settings.text_font_family;
+    if (settings?.text_font_size != null) s.fontSize = `${settings.text_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings?.text_font_family, settings?.text_font_size]);
+
+  const inputStyle = useMemo(() => {
+    const s: React.CSSProperties = {};
+    if (settings?.text_font_family) s.fontFamily = settings.text_font_family;
+    if (settings?.text_font_size != null) s.fontSize = `${settings.text_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings?.text_font_family, settings?.text_font_size]);
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -189,6 +210,9 @@ export function FormRenderer({
                 className={fieldClassNames?.wrapper}
                 inputClassName={fieldClassNames?.input}
                 labelClassName={fieldClassNames?.label}
+                labelStyle={labelStyle}
+                helpTextStyle={helpTextStyle}
+                inputStyle={inputStyle}
               />
             </div>
           );

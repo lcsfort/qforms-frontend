@@ -300,7 +300,14 @@
       "pageBackground": "Page background",
       "formBackground": "Form background",
       "defaultColor": "Default",
-      "hexPlaceholder": "#hex"
+      "hexPlaceholder": "#hex",
+      "textStyle": "Text style",
+      "textStyleHeader": "Header",
+      "textStyleQuestion": "Question",
+      "textStyleText": "Text",
+      "fontDefault": "Default",
+      "fontLoading": "Loading…",
+      "fontListError": "Using a fallback font list."
     },
     "publicForm": {
       "notFound": "Form not found",

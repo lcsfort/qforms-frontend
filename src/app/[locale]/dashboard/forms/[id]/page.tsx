@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
@@ -85,6 +85,56 @@ export default function FormEditorPage() {
       [...fields].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [fields],
   );
+
+  const headerStyle = useMemo((): CSSProperties | undefined => {
+    const s: CSSProperties = {};
+    if (settings.header_font_family) s.fontFamily = settings.header_font_family;
+    if (settings.header_font_size != null) s.fontSize = `${settings.header_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings.header_font_family, settings.header_font_size]);
+
+  const textStyle = useMemo((): CSSProperties | undefined => {
+    const s: CSSProperties = {};
+    if (settings.text_font_family) s.fontFamily = settings.text_font_family;
+    if (settings.text_font_size != null) s.fontSize = `${settings.text_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings.text_font_family, settings.text_font_size]);
+
+  const labelStyle = useMemo((): CSSProperties | undefined => {
+    const s: CSSProperties = {};
+    if (settings.question_font_family) s.fontFamily = settings.question_font_family;
+    if (settings.question_font_size != null) s.fontSize = `${settings.question_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings.question_font_family, settings.question_font_size]);
+
+  const fontFamiliesToLoad = useMemo(() => {
+    const set = new Set<string>();
+    [settings.header_font_family, settings.question_font_family, settings.text_font_family].forEach((f) => {
+      if (f && f.trim()) set.add(f.trim());
+    });
+    return Array.from(set);
+  }, [settings.header_font_family, settings.question_font_family, settings.text_font_family]);
+
+  const googleFontsHref = useMemo(
+    () =>
+      fontFamiliesToLoad.length > 0
+        ? `https://fonts.googleapis.com/css2?${fontFamiliesToLoad.map((f) => `family=${encodeURIComponent(f)}`).join("&")}&display=swap`
+        : null,
+    [fontFamiliesToLoad],
+  );
+
+  useEffect(() => {
+    if (!googleFontsHref) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = googleFontsHref;
+    link.id = "qforms-editor-fonts";
+    document.head.appendChild(link);
+    return () => {
+      const el = document.getElementById("qforms-editor-fonts");
+      if (el) document.head.removeChild(el);
+    };
+  }, [googleFontsHref]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -254,11 +304,11 @@ export default function FormEditorPage() {
         {/* Design panel — floats outside the centered content on the right (hidden on Configurações) */}
         {token && activeTab !== "settings" && (
           <aside
-            className="fixed top-48 w-64 z-30 hidden xl:block"
+            className="fixed top-24 w-64 z-30 hidden xl:block"
             style={{ left: "min(calc((100vw + 67rem) / 2 + 1.5rem), calc(100vw - 17rem))" }}
           >
             <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-lg">
-              <div className="max-h-[80vh] overflow-y-auto">
+              <div className="design-panel-scroll max-h-[80vh] overflow-y-auto overflow-x-hidden">
                 <DesignPanel settings={settings} setSettings={setSettings} token={token} t={t} />
               </div>
             </div>
@@ -373,6 +423,7 @@ export default function FormEditorPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t("formTitle")}
+            style={headerStyle}
             className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500 mb-2"
           />
           <input
@@ -380,6 +431,7 @@ export default function FormEditorPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t("formDescription")}
+            style={textStyle}
             className="w-full text-sm text-[var(--muted)] bg-transparent border-none outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
         </div>
@@ -404,8 +456,8 @@ export default function FormEditorPage() {
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-mono text-[var(--muted)] w-6">{idx + 1}</span>
-                            <span className="font-medium text-sm">{field.label}</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[var(--muted)]">
+                            <span className="font-medium text-sm" style={labelStyle}>{field.label}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[var(--muted)]" style={labelStyle}>
                               {tft(field.type)}
                             </span>
                             {field.required && (
@@ -449,19 +501,21 @@ export default function FormEditorPage() {
                           <div className="px-4 pb-4 border-t border-[var(--border)] pt-4 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldLabel")}</label>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldLabel")}</label>
                                 <input
                                   type="text"
                                   value={field.label}
                                   onChange={(e) => updateField(field.id, { label: e.target.value })}
+                                  style={textStyle}
                                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldType")}</label>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldType")}</label>
                                 <select
                                   value={field.type}
                                   onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
+                                  style={textStyle}
                                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                                   {FIELD_TYPES.map((ft) => (
@@ -472,25 +526,27 @@ export default function FormEditorPage() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldPlaceholder")}</label>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldPlaceholder")}</label>
                                 <input
                                   type="text"
                                   value={field.placeholder ?? ""}
                                   onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
+                                  style={textStyle}
                                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("fieldHelpText")}</label>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldHelpText")}</label>
                                 <input
                                   type="text"
                                   value={field.help_text ?? ""}
                                   onChange={(e) => updateField(field.id, { help_text: e.target.value })}
+                                  style={textStyle}
                                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                             </div>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer" style={labelStyle}>
                               <input
                                 type="checkbox"
                                 checked={field.required ?? false}
@@ -502,7 +558,7 @@ export default function FormEditorPage() {
 
                             {(field.type === "select" || field.type === "radio" || field.type === "checkbox") && (
                               <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-2">{t("fieldOptions")}</label>
+                                <label className="block text-xs font-medium text-[var(--muted)] mb-2" style={labelStyle}>{t("fieldOptions")}</label>
                                 <div className="space-y-2">
                                   {field.options?.map((opt, optIdx) => (
                                     <div key={optIdx} className="flex items-center gap-2">
@@ -511,6 +567,7 @@ export default function FormEditorPage() {
                                         value={opt.label}
                                         onChange={(e) => updateOption(field.id, optIdx, { label: e.target.value })}
                                         placeholder={t("optionLabel")}
+                                        style={textStyle}
                                         className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                       />
                                       <input
@@ -518,6 +575,7 @@ export default function FormEditorPage() {
                                         value={opt.value}
                                         onChange={(e) => updateOption(field.id, optIdx, { value: e.target.value })}
                                         placeholder={t("optionValue")}
+                                        style={textStyle}
                                         className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                       />
                                       <button

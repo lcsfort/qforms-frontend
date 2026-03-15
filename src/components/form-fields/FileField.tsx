@@ -16,13 +16,15 @@ export function FileField({
   disabled,
   className,
   labelClassName,
+  labelStyle,
+  helpTextStyle,
 }: FieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileName = value instanceof File ? value.name : (value as string) ?? "";
 
   return (
     <div className={className}>
-      <label className={labelClassName ?? DEFAULT_LABEL_CLASS}>
+      <label className={labelClassName ?? DEFAULT_LABEL_CLASS} style={labelStyle}>
         {field.label}
         {field.required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
@@ -67,7 +69,7 @@ export function FileField({
         aria-invalid={!!error}
       />
       {field.help_text && !error && (
-        <p className={DEFAULT_HELP_CLASS}>{field.help_text}</p>
+        <p className={DEFAULT_HELP_CLASS} style={helpTextStyle}>{field.help_text}</p>
       )}
       {error && (
         <p role="alert" className={DEFAULT_ERROR_CLASS}>

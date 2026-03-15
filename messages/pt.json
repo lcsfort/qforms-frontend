@@ -300,7 +300,14 @@
       "pageBackground": "Fundo da página",
       "formBackground": "Fundo do formulário",
       "defaultColor": "Padrão",
-      "hexPlaceholder": "#hex"
+      "hexPlaceholder": "#hex",
+      "textStyle": "Estilo de texto",
+      "textStyleHeader": "Cabeçalho",
+      "textStyleQuestion": "Pergunta",
+      "textStyleText": "Texto",
+      "fontDefault": "Padrão",
+      "fontLoading": "Carregando…",
+      "fontListError": "Usando lista de fontes alternativa."
     },
     "publicForm": {
       "notFound": "Formulário não encontrado",

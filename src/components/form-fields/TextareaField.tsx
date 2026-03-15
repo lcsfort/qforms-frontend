@@ -17,10 +17,13 @@ export function TextareaField({
   className,
   inputClassName,
   labelClassName,
+  labelStyle,
+  helpTextStyle,
+  inputStyle,
 }: FieldProps) {
   return (
     <div className={className}>
-      <label htmlFor={field.id} className={labelClassName ?? DEFAULT_LABEL_CLASS}>
+      <label htmlFor={field.id} className={labelClassName ?? DEFAULT_LABEL_CLASS} style={labelStyle}>
         {field.label}
         {field.required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
@@ -34,13 +37,14 @@ export function TextareaField({
         minLength={field.validation?.min_length}
         maxLength={field.validation?.max_length}
         className={inputClassName ?? `${DEFAULT_INPUT_CLASS} resize-y`}
+        style={inputStyle}
         aria-invalid={!!error}
         aria-describedby={
           error ? `${field.id}-error` : field.help_text ? `${field.id}-help` : undefined
         }
       />
       {field.help_text && !error && (
-        <p id={`${field.id}-help`} className={DEFAULT_HELP_CLASS}>
+        <p id={`${field.id}-help`} className={DEFAULT_HELP_CLASS} style={helpTextStyle}>
           {field.help_text}
         </p>
       )}

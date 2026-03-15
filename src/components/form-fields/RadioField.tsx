@@ -15,11 +15,13 @@ export function RadioField({
   disabled,
   className,
   labelClassName,
+  labelStyle,
+  helpTextStyle,
 }: FieldProps) {
   return (
     <div className={className}>
       <fieldset>
-        <legend className={labelClassName ?? DEFAULT_LABEL_CLASS}>
+        <legend className={labelClassName ?? DEFAULT_LABEL_CLASS} style={labelStyle}>
           {field.label}
           {field.required && <span className="text-red-500 ml-0.5">*</span>}
         </legend>
@@ -62,7 +64,7 @@ export function RadioField({
         </div>
       </fieldset>
       {field.help_text && !error && (
-        <p className={DEFAULT_HELP_CLASS}>{field.help_text}</p>
+        <p className={DEFAULT_HELP_CLASS} style={helpTextStyle}>{field.help_text}</p>
       )}
       {error && (
         <p role="alert" className={DEFAULT_ERROR_CLASS}>

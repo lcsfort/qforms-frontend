@@ -51,6 +51,13 @@ export interface FormSettings {
   header_height?: number;
   page_background_color?: string;
   form_background_color?: string;
+
+  header_font_family?: string;
+  header_font_size?: number;
+  question_font_family?: string;
+  question_font_size?: number;
+  text_font_family?: string;
+  text_font_size?: number;
 }
 
 export interface Form {

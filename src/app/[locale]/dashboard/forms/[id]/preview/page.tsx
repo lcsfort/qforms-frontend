@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -79,6 +79,47 @@ export default function FormPreviewPage() {
       .finally(() => setLoading(false));
   }, [token, formId, hydrated, router, locale]);
 
+  const settings = form?.settings;
+
+  const headerStyle = useMemo(() => {
+    if (!settings) return undefined;
+    const s: React.CSSProperties = {};
+    if (settings.header_font_family) s.fontFamily = settings.header_font_family;
+    if (settings.header_font_size != null) s.fontSize = `${settings.header_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings?.header_font_family, settings?.header_font_size]);
+
+  const textStyle = useMemo(() => {
+    if (!settings) return undefined;
+    const s: React.CSSProperties = {};
+    if (settings.text_font_family) s.fontFamily = settings.text_font_family;
+    if (settings.text_font_size != null) s.fontSize = `${settings.text_font_size}px`;
+    return Object.keys(s).length ? s : undefined;
+  }, [settings?.text_font_family, settings?.text_font_size]);
+
+  const fontFamiliesToLoad = useMemo(() => {
+    if (!settings) return [];
+    const set = new Set<string>();
+    [settings.header_font_family, settings.question_font_family, settings.text_font_family].forEach((f) => {
+      if (f && f.trim()) set.add(f.trim());
+    });
+    return Array.from(set);
+  }, [settings?.header_font_family, settings?.question_font_family, settings?.text_font_family]);
+
+  const googleFontsHref =
+    fontFamiliesToLoad.length > 0
+      ? `https://fonts.googleapis.com/css2?${fontFamiliesToLoad.map((f) => `family=${encodeURIComponent(f)}`).join("&")}&display=swap`
+      : null;
+
+  useEffect(() => {
+    if (!googleFontsHref) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = googleFontsHref;
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, [googleFontsHref]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -147,9 +188,9 @@ export default function FormPreviewPage() {
               />
             )}
             <div className="p-8">
-              <h1 className="text-2xl font-bold mb-1">{form.title}</h1>
+              <h1 className="text-2xl font-bold mb-1" style={headerStyle}>{form.title}</h1>
               {form.description && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{form.description}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6" style={textStyle}>{form.description}</p>
               )}
               <FormRenderer
                 fields={form.schema}

@@ -16,6 +16,8 @@ export function RatingField({
   disabled,
   className,
   labelClassName,
+  labelStyle,
+  helpTextStyle,
 }: FieldProps) {
   const rawMax = field.validation?.max;
   const maxRating = Math.min(
@@ -28,7 +30,7 @@ export function RatingField({
 
   return (
     <div className={className}>
-      <label className={labelClassName ?? DEFAULT_LABEL_CLASS}>
+      <label className={labelClassName ?? DEFAULT_LABEL_CLASS} style={labelStyle}>
         {field.label}
         {field.required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
@@ -67,7 +69,7 @@ export function RatingField({
         ))}
       </div>
       {field.help_text && !error && (
-        <p className={DEFAULT_HELP_CLASS}>{field.help_text}</p>
+        <p className={DEFAULT_HELP_CLASS} style={helpTextStyle}>{field.help_text}</p>
       )}
       {error && (
         <p role="alert" className={DEFAULT_ERROR_CLASS}>
