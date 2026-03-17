@@ -188,6 +188,18 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
+  stepFormVersionBack: (token: string, id: string) =>
+    request<Form>(`/forms/${id}/version/back`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  stepFormVersionForward: (token: string, id: string) =>
+    request<Form>(`/forms/${id}/version/forward`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
   generateFormSchema: (token: string, prompt: string) =>
     request<GeneratedFormSchema>("/forms/generate", {
       method: "POST",

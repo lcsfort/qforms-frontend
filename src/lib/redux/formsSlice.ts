@@ -2,11 +2,16 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "../api";
 import type { Form, GeneratedFormSchema } from "../types";
 
+type AutosaveStatus = "idle" | "saving" | "saved" | "error";
+
 interface FormsState {
   forms: Form[];
   currentForm: Form | null;
   loading: boolean;
   generating: boolean;
+  autosaveStatus: AutosaveStatus;
+  versionCursor: number;
+  versionCount: number;
   error: string | null;
 }
 
@@ -15,8 +20,20 @@ const initialState: FormsState = {
   currentForm: null,
   loading: false,
   generating: false,
+  autosaveStatus: "idle",
+  versionCursor: 0,
+  versionCount: 0,
   error: null,
 };
+
+function getVersionMeta(form: Form | null): { versionCursor: number; versionCount: number } {
+  if (!form) return { versionCursor: 0, versionCount: 0 };
+  const versions = Array.isArray(form.versions) ? form.versions : [];
+  const count = versions.length;
+  const cursorRaw = typeof form.version_cursor === "number" ? form.version_cursor : 0;
+  const cursor = count > 0 ? Math.max(0, Math.min(cursorRaw, count - 1)) : 0;
+  return { versionCursor: cursor, versionCount: count };
+}
 
 export const fetchForms = createAsyncThunk(
   "forms/fetchForms",
@@ -137,6 +154,34 @@ export const unpublishForm = createAsyncThunk(
   },
 );
 
+export const stepFormVersionBack = createAsyncThunk(
+  "forms/stepFormVersionBack",
+  async (id: string, { getState, rejectWithValue }) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth
+        .token!;
+      return await api.stepFormVersionBack(token, id);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to move to previous version");
+    }
+  },
+);
+
+export const stepFormVersionForward = createAsyncThunk(
+  "forms/stepFormVersionForward",
+  async (id: string, { getState, rejectWithValue }) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth
+        .token!;
+      return await api.stepFormVersionForward(token, id);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to move to next version");
+    }
+  },
+);
+
 export const generateFormSchema = createAsyncThunk(
   "forms/generateFormSchema",
   async (prompt: string, { getState, rejectWithValue }) => {
@@ -157,12 +202,20 @@ const formsSlice = createSlice({
   reducers: {
     clearCurrentForm(state) {
       state.currentForm = null;
+      state.versionCursor = 0;
+      state.versionCount = 0;
     },
     clearFormsError(state) {
       state.error = null;
     },
     setCurrentForm(state, action: { payload: Form }) {
       state.currentForm = action.payload;
+      const meta = getVersionMeta(action.payload);
+      state.versionCursor = meta.versionCursor;
+      state.versionCount = meta.versionCount;
+    },
+    setAutosaveStatus(state, action: { payload: AutosaveStatus }) {
+      state.autosaveStatus = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -186,6 +239,9 @@ const formsSlice = createSlice({
       .addCase(fetchForm.fulfilled, (state, action) => {
         state.loading = false;
         state.currentForm = action.payload;
+        const meta = getVersionMeta(action.payload);
+        state.versionCursor = meta.versionCursor;
+        state.versionCount = meta.versionCount;
       })
       .addCase(fetchForm.rejected, (state, action) => {
         state.loading = false;
@@ -194,11 +250,25 @@ const formsSlice = createSlice({
       .addCase(createForm.fulfilled, (state, action) => {
         state.forms.unshift(action.payload);
         state.currentForm = action.payload;
+        const meta = getVersionMeta(action.payload);
+        state.versionCursor = meta.versionCursor;
+        state.versionCount = meta.versionCount;
+      })
+      .addCase(updateForm.pending, (state) => {
+        state.autosaveStatus = "saving";
       })
       .addCase(updateForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
         if (idx >= 0) state.forms[idx] = action.payload;
+        state.autosaveStatus = "saved";
+        const meta = getVersionMeta(action.payload);
+        state.versionCursor = meta.versionCursor;
+        state.versionCount = meta.versionCount;
+      })
+      .addCase(updateForm.rejected, (state, action) => {
+        state.autosaveStatus = "error";
+        state.error = action.payload as string;
       })
       .addCase(deleteForm.fulfilled, (state, action) => {
         state.forms = state.forms.filter((f) => f.id !== action.payload);
@@ -210,11 +280,33 @@ const formsSlice = createSlice({
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
         if (idx >= 0) state.forms[idx] = action.payload;
+        const meta = getVersionMeta(action.payload);
+        state.versionCursor = meta.versionCursor;
+        state.versionCount = meta.versionCount;
       })
       .addCase(unpublishForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
         if (idx >= 0) state.forms[idx] = action.payload;
+        const meta = getVersionMeta(action.payload);
+        state.versionCursor = meta.versionCursor;
+        state.versionCount = meta.versionCount;
+      })
+      .addCase(stepFormVersionBack.fulfilled, (state, action) => {
+        state.currentForm = action.payload;
+        const idx = state.forms.findIndex((f) => f.id === action.payload.id);
+        if (idx >= 0) state.forms[idx] = action.payload;
+        const meta = getVersionMeta(action.payload);
+        state.versionCursor = meta.versionCursor;
+        state.versionCount = meta.versionCount;
+      })
+      .addCase(stepFormVersionForward.fulfilled, (state, action) => {
+        state.currentForm = action.payload;
+        const idx = state.forms.findIndex((f) => f.id === action.payload.id);
+        if (idx >= 0) state.forms[idx] = action.payload;
+        const meta = getVersionMeta(action.payload);
+        state.versionCursor = meta.versionCursor;
+        state.versionCount = meta.versionCount;
       })
       .addCase(generateFormSchema.pending, (state) => {
         state.generating = true;
@@ -230,6 +322,6 @@ const formsSlice = createSlice({
   },
 });
 
-export const { clearCurrentForm, clearFormsError, setCurrentForm } =
+export const { clearCurrentForm, clearFormsError, setCurrentForm, setAutosaveStatus } =
   formsSlice.actions;
 export default formsSlice.reducer;

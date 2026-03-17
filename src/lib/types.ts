@@ -60,6 +60,14 @@ export interface FormSettings {
   text_font_size?: number;
 }
 
+export interface FormVersionSnapshot {
+  title: string;
+  description: string | null;
+  schema: FormField[];
+  settings: FormSettings;
+  savedAt: string;
+}
+
 export interface Form {
   id: string;
   title: string;
@@ -68,6 +76,8 @@ export interface Form {
   status: "draft" | "published";
   schema: FormField[];
   settings: FormSettings;
+  versions?: FormVersionSnapshot[];
+  version_cursor?: number;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

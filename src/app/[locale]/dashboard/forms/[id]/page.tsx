@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, type CSSProperties } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
@@ -11,8 +11,13 @@ import {
   publishForm,
   unpublishForm,
   deleteForm,
+  stepFormVersionBack,
+  stepFormVersionForward,
+  setAutosaveStatus,
 } from "@/lib/redux/formsSlice";
 import type { FormField, FieldType, FormSettings, FormFieldOption } from "@/lib/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPaintbrush } from "@fortawesome/free-solid-svg-icons";
 import { DesignPanel } from "@/components/DesignPanel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -66,7 +71,7 @@ export default function FormEditorPage() {
   const params = useParams();
   const formId = params.id as string;
 
-  const { currentForm, loading } = useAppSelector((state) => state.forms);
+  const { currentForm, loading, autosaveStatus, versionCursor, versionCount } = useAppSelector((state) => state.forms);
   const { token, hydrated } = useAppSelector((state) => state.auth);
 
   const [title, setTitle] = useState("");
@@ -75,10 +80,15 @@ export default function FormEditorPage() {
   const [settings, setSettings] = useState<FormSettings>({});
   const [activeTab, setActiveTab] = useState<"fields" | "settings">("fields");
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [designPanelOpen, setDesignPanelOpen] = useState(false);
+  const [autosavePending, setAutosavePending] = useState(false);
+  const initializedRef = useRef(false);
+  const lastSavedSignatureRef = useRef("");
+  const saveRequestCounterRef = useRef(0);
+  const saveResolvedCounterRef = useRef(0);
+  const nextFieldIdRef = useRef(1);
 
   const sortedFields = useMemo(
     () =>
@@ -147,49 +157,123 @@ export default function FormEditorPage() {
 
   useEffect(() => {
     if (currentForm) {
-      setTitle(currentForm.title);
-      setDescription(currentForm.description ?? "");
-      setFields(
-        Array.isArray(currentForm.schema)
-          ? (currentForm.schema as FormField[])
-          : [],
-      );
-      setSettings((currentForm.settings as FormSettings) ?? {});
+      if (!initializedRef.current) {
+        setTitle(currentForm.title);
+        setDescription(currentForm.description ?? "");
+        setFields(
+          Array.isArray(currentForm.schema)
+            ? (currentForm.schema as FormField[])
+            : [],
+        );
+        nextFieldIdRef.current =
+          (Array.isArray(currentForm.schema) ? currentForm.schema.length : 0) + 1;
+        setSettings((currentForm.settings as FormSettings) ?? {});
+        lastSavedSignatureRef.current = JSON.stringify({
+          title: currentForm.title,
+          description: currentForm.description ?? "",
+          schema: Array.isArray(currentForm.schema) ? currentForm.schema : [],
+          settings: (currentForm.settings as FormSettings) ?? {},
+        });
+        initializedRef.current = true;
+      }
     }
   }, [currentForm]);
 
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    setSaveSuccess(false);
-    try {
-      await dispatch(
-        updateForm({
-          id: formId,
-          title,
-          description: description || undefined,
-          schema: fields,
-          settings: settings as Record<string, unknown>,
-        }),
-      ).unwrap();
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-      try {
-        sessionStorage.removeItem(`formPreviewDraft:${formId}`);
-      } catch {
-        // ignore
-      }
-    } finally {
-      setSaving(false);
+  useEffect(() => {
+    initializedRef.current = false;
+    lastSavedSignatureRef.current = "";
+  }, [formId]);
+
+  const getEditorSnapshot = useCallback(
+    () => ({
+      title,
+      description,
+      schema: fields,
+      settings,
+    }),
+    [title, description, fields, settings],
+  );
+
+  const applySnapshotToEditor = useCallback((form: {
+    title: string;
+    description: string | null;
+    schema: unknown;
+    settings: unknown;
+  }) => {
+    setTitle(form.title);
+    setDescription(form.description ?? "");
+    const nextSchema = Array.isArray(form.schema) ? (form.schema as FormField[]) : [];
+    setFields(nextSchema);
+    nextFieldIdRef.current = nextSchema.length + 1;
+    setSettings((form.settings as FormSettings) ?? {});
+    setEditingField(null);
+    const signature = JSON.stringify({
+      title: form.title,
+      description: form.description ?? "",
+      schema: Array.isArray(form.schema) ? form.schema : [],
+      settings: (form.settings as FormSettings) ?? {},
+    });
+    lastSavedSignatureRef.current = signature;
+  }, []);
+
+  const flushSave = useCallback(async () => {
+    const snapshot = getEditorSnapshot();
+    const signature = JSON.stringify(snapshot);
+    if (signature === lastSavedSignatureRef.current) return;
+    const requestId = ++saveRequestCounterRef.current;
+    setAutosavePending(true);
+    dispatch(setAutosaveStatus("saving"));
+    await dispatch(
+      updateForm({
+        id: formId,
+        title: snapshot.title,
+        description: snapshot.description || undefined,
+        schema: snapshot.schema,
+        settings: snapshot.settings as Record<string, unknown>,
+      }),
+    ).unwrap();
+    if (requestId > saveResolvedCounterRef.current) {
+      saveResolvedCounterRef.current = requestId;
+      lastSavedSignatureRef.current = signature;
     }
-  }, [dispatch, formId, title, description, fields, settings]);
+    setAutosavePending(false);
+    try {
+      sessionStorage.removeItem(`formPreviewDraft:${formId}`);
+    } catch {
+      // ignore
+    }
+  }, [dispatch, formId, getEditorSnapshot]);
+
+  useEffect(() => {
+    if (!initializedRef.current || !token) return;
+    const signature = JSON.stringify(getEditorSnapshot());
+    if (signature === lastSavedSignatureRef.current) return;
+    dispatch(setAutosaveStatus("idle"));
+    const timer = setTimeout(() => {
+      void flushSave().catch(() => {
+        setAutosavePending(false);
+      });
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [token, getEditorSnapshot, flushSave, dispatch]);
 
   const handlePublish = async () => {
-    await handleSave();
+    await flushSave();
     dispatch(publishForm(formId));
   };
 
   const handleUnpublish = () => {
     dispatch(unpublishForm(formId));
+  };
+
+  const handleVersionBack = async () => {
+    const form = await dispatch(stepFormVersionBack(formId)).unwrap();
+    applySnapshotToEditor(form);
+  };
+
+  const handleVersionForward = async () => {
+    const form = await dispatch(stepFormVersionForward(formId)).unwrap();
+    applySnapshotToEditor(form);
   };
 
   const handleDeleteClick = () => {
@@ -203,8 +287,10 @@ export default function FormEditorPage() {
   };
 
   const addField = (type: FieldType) => {
+    const nextFieldId = `field_${nextFieldIdRef.current}`;
+    nextFieldIdRef.current += 1;
     const newField: FormField = {
-      id: `field_${Date.now()}`,
+      id: nextFieldId,
       type,
       label: tft(type),
       placeholder: "",
@@ -301,18 +387,59 @@ export default function FormEditorPage() {
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <div className="relative max-w-5xl mx-auto px-6 pt-8 pb-12">
-        {/* Design panel — floats outside the centered content on the right (hidden on Configurações) */}
+        {/* Design panel: hidden by default, toggled by palette icon. Slide-over below 1540px, fixed sidebar at 1540px+. */}
         {token && activeTab !== "settings" && (
-          <aside
-            className="fixed top-24 w-64 z-30 hidden xl:block"
-            style={{ left: "min(calc((100vw + 67rem) / 2 + 1.5rem), calc(100vw - 17rem))" }}
-          >
-            <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-lg">
-              <div className="design-panel-scroll max-h-[80vh] overflow-y-auto overflow-x-hidden">
-                <DesignPanel settings={settings} setSettings={setSettings} token={token} t={t} />
-              </div>
+          <>
+            {/* Below 1540px: slide-over when open (with sheet; click outside to hide) */}
+            <div className="min-[1540px]:hidden">
+              <div
+                className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${
+                  designPanelOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+                aria-hidden
+                onClick={() => setDesignPanelOpen(false)}
+              />
+              <aside
+                className={`fixed top-0 right-0 bottom-0 z-50 w-[min(100vw,22rem)] max-w-[85vw] bg-[var(--card)] border-l border-[var(--border)] shadow-xl flex flex-col transition-transform duration-200 ease-out ${
+                  designPanelOpen ? "translate-x-0" : "translate-x-full"
+                }`}
+                aria-label={t("designSection")}
+                aria-hidden={!designPanelOpen}
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
+                  <span className="text-sm font-semibold">{t("designSection")}</span>
+                  <button
+                    type="button"
+                    onClick={() => setDesignPanelOpen(false)}
+                    className="p-2 rounded-lg text-[var(--muted)] hover:bg-gray-100 dark:hover:bg-gray-800"
+                    aria-label={t("close")}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="design-panel-scroll flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+                  <DesignPanel settings={settings} setSettings={setSettings} token={token} t={t} />
+                </div>
+              </aside>
             </div>
-          </aside>
+            {/* 1540px+: fixed sidebar when open (no sheet; close via palette toggle) */}
+            {designPanelOpen && (
+              <div className="hidden min-[1540px]:block">
+                <aside
+                  className="fixed top-24 w-64 z-40"
+                  style={{ left: "min(calc((100vw + 67rem) / 2 + 1.5rem), calc(100vw - 17rem))" }}
+                >
+                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-lg">
+                    <div className="design-panel-scroll max-h-[80vh] overflow-y-auto overflow-x-hidden">
+                      <DesignPanel settings={settings} setSettings={setSettings} token={token} t={t} />
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            )}
+          </>
         )}
 
         <main>
@@ -374,12 +501,60 @@ export default function FormEditorPage() {
                 {linkCopied ? t("linkCopied") : t("copyRespondentLinkTooltip")}
               </span>
             </div>
+            {activeTab !== "settings" && (
+              <div className="relative group inline-flex">
+                <button
+                  type="button"
+                  onClick={() => setDesignPanelOpen((o) => !o)}
+                  className={`p-2 rounded-lg border inline-flex transition-colors ${
+                    designPanelOpen
+                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
+                      : "border-gray-300 dark:border-gray-600 text-[var(--muted)] hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
+                  title={t("designSection")}
+                  aria-label={t("designSection")}
+                  aria-expanded={designPanelOpen}
+                >
+                  <FontAwesomeIcon icon={faPaintbrush} className="h-5 w-5" />
+                </button>
+                <span
+                  role="tooltip"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none whitespace-nowrap z-50"
+                >
+                  {t("designSection")}
+                </span>
+              </div>
+            )}
+            <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-[var(--muted)] min-w-[108px] text-center">
+              {autosavePending || autosaveStatus === "saving"
+                ? t("autosaveSaving")
+                : autosaveStatus === "error"
+                  ? t("autosaveError")
+                  : autosaveStatus === "saved"
+                    ? t("autosaveSaved")
+                    : t("autosaveIdle")}
+            </div>
             <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              type="button"
+              onClick={() => void handleVersionBack()}
+              disabled={autosavePending || versionCount === 0 || versionCursor <= 0}
+              className="p-2 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[var(--muted)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 dark:disabled:hover:border-gray-600 disabled:hover:text-[var(--muted)]"
+              title={t("versionBack")}
             >
-              {saving ? t("saving") : saveSuccess ? t("saved") : t("save")}
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 14L5 10l4-4M5 10h8a4 4 0 014 4v0" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleVersionForward()}
+              disabled={autosavePending || versionCount === 0 || versionCursor >= versionCount - 1}
+              className="p-2 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[var(--muted)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 dark:disabled:hover:border-gray-600 disabled:hover:text-[var(--muted)]"
+              title={t("versionForward")}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 14l4-4-4-4M19 10h-8a4 4 0 00-4 4v0" />
+              </svg>
             </button>
             {currentForm.status === "published" ? (
               <button

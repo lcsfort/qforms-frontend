@@ -297,6 +297,7 @@
       "deleteForm": "Excluir Formulário",
       "backToForms": "Voltar aos formulários",
       "designSection": "Design",
+      "close": "Fechar",
       "pageBackground": "Fundo da página",
       "formBackground": "Fundo do formulário",
       "defaultColor": "Padrão",
@@ -307,7 +308,13 @@
       "textStyleText": "Texto",
       "fontDefault": "Padrão",
       "fontLoading": "Carregando…",
-      "fontListError": "Usando lista de fontes alternativa."
+      "fontListError": "Usando lista de fontes alternativa.",
+      "autosaveIdle": "Autosave pronto",
+      "autosaveSaving": "Salvando...",
+      "autosaveSaved": "Salvo",
+      "autosaveError": "Falha no autosave",
+      "versionBack": "Ir para versão anterior",
+      "versionForward": "Ir para próxima versão"
     },
     "publicForm": {
       "notFound": "Formulário não encontrado",
