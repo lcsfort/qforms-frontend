@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo, type FormEvent, type ComponentType } from "react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type { FormField, FormSettings } from "@/lib/types";
 import type { FieldProps } from "./form-fields/types";
 import {
@@ -183,6 +185,8 @@ export function FormRenderer({
     return Object.keys(s).length ? s : undefined;
   }, [settings?.text_font_family, settings?.text_font_size]);
 
+  const t = useTranslations("forms");
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -239,6 +243,15 @@ export function FormRenderer({
           submitLabel
         )}
       </button>
+      <p className="mt-6 pt-4 text-center text-xs text-gray-400 dark:text-gray-500">
+        {t("poweredByPrefix")}
+        <Link
+          href="/"
+          className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
+        >
+          Qforms
+        </Link>
+      </p>
     </form>
   );
 }

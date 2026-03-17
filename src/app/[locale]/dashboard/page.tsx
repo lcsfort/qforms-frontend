@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useFormatter, useNow } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile } from "@/lib/redux/authSlice";
@@ -12,6 +12,8 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const tf = useTranslations("forms");
+  const format = useFormatter();
+  const now = useNow();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user, token, hydrated } = useAppSelector((state) => state.auth);
@@ -131,7 +133,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-4 text-xs text-[var(--muted)]">
                     <span>{tf("responses", { count: form._count?.responses ?? 0 })}</span>
-                    <span>{tf("createdAt", { date: new Date(form.createdAt).toLocaleDateString() })}</span>
+                    <span>{tf("edited")} {format.relativeTime(new Date(form.updatedAt), now)}</span>
                   </div>
                 </Link>
                 <div className="flex items-center gap-2">

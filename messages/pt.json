@@ -225,6 +225,7 @@
     "published": "Publicado",
     "responses": "{count, plural, =0 {Sem respostas} one {1 resposta} other {# respostas}}",
     "createdAt": "Criado em {date}",
+    "edited": "Editado",
     "cancel": "Cancelar",
     "deleteTitle": "Excluir formulário?",
     "deleteConfirm": "Tem certeza que deseja excluir este formulário?",
@@ -316,6 +317,7 @@
       "versionBack": "Ir para versão anterior",
       "versionForward": "Ir para próxima versão"
     },
+    "poweredByPrefix": "Desenvolvido por ",
     "publicForm": {
       "notFound": "Formulário não encontrado",
       "notFoundDesc": "Este formulário não existe ou não está mais disponível.",
