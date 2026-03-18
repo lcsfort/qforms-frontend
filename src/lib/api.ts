@@ -52,6 +52,19 @@ async function request<T>(
   return data as T;
 }
 
+type AuthProvider = "local" | "google";
+
+interface AuthProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  isEmailVerified: boolean;
+  createdAt: string;
+  authProvider?: AuthProvider;
+  avatarUrl?: string | null;
+  googleAvatarUrl?: string | null;
+}
+
 export const api = {
   signup: (data: {
     email: string;
@@ -67,12 +80,7 @@ export const api = {
   signin: (data: { email: string; password: string }) =>
     request<{
       accessToken: string;
-      user: {
-        id: string;
-        email: string;
-        name: string | null;
-        isEmailVerified: boolean;
-      };
+      user: AuthProfile;
     }>("/auth/signin", {
       method: "POST",
       body: JSON.stringify(data),
@@ -94,24 +102,19 @@ export const api = {
     }),
 
   getProfile: (token: string) =>
-    request<{
-      id: string;
-      email: string;
-      name: string | null;
-      isEmailVerified: boolean;
-      authProvider?: "local" | "google";
-    }>("/auth/profile", {
+    request<AuthProfile>("/auth/profile", {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   updateName: (token: string, data: { name: string }) =>
-    request<{
-      id: string;
-      email: string;
-      name: string | null;
-      isEmailVerified: boolean;
-      authProvider?: "local" | "google";
-    }>("/auth/profile/name", {
+    request<AuthProfile>("/auth/profile/name", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  updateAvatar: (token: string, data: { avatarUrl: string | null }) =>
+    request<AuthProfile>("/auth/profile/avatar", {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -255,10 +258,14 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  uploadFile: async (token: string, file: File): Promise<{ url: string }> => {
+  uploadFile: async (
+    token: string,
+    file: File,
+    purpose: "avatar" | "header" = "header"
+  ): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(`${API_URL}/uploads`, {
+    const res = await fetch(`${API_URL}/uploads?purpose=${purpose}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,

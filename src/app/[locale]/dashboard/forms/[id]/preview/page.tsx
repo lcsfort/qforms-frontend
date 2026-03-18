@@ -152,8 +152,11 @@ export default function FormPreviewPage() {
   const formBg = form.settings.form_background_color;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="py-4 px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <div
+      className={`min-h-screen w-full flex flex-col ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
+      style={pageBg ? { backgroundColor: pageBg } : undefined}
+    >
+      <div className="shrink-0 py-4 px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link
             href={`/${locale}/dashboard/forms/${formId}`}
@@ -169,11 +172,8 @@ export default function FormPreviewPage() {
           </span>
         </div>
       </div>
-      <div
-        className={`py-12 px-4 ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
-        style={pageBg ? { backgroundColor: pageBg } : undefined}
-      >
-        <div className={`${widthClass} mx-auto`}>
+      <div className="flex-1 flex flex-col justify-center py-12 px-4">
+        <div className={`${widthClass} mx-auto w-full`}>
           <div
             className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-white dark:bg-gray-800" : ""}`}
             style={formBg ? { backgroundColor: formBg } : undefined}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import { useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile, setUser } from "@/lib/redux/authSlice";
@@ -15,6 +16,7 @@ import {
 } from "@/lib/validation";
 import { ValidationError } from "yup";
 import { Link } from "@/i18n/navigation";
+import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
 
 export default function ProfilePage() {
   const t = useTranslations("profile");
@@ -82,7 +84,16 @@ function NameCard({
   user,
   token,
 }: {
-  user: { id: string; email: string; name: string | null; isEmailVerified: boolean; authProvider?: "local" | "google" };
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    isEmailVerified: boolean;
+    createdAt?: string;
+    authProvider?: "local" | "google";
+    avatarUrl?: string | null;
+    googleAvatarUrl?: string | null;
+  };
   token: string;
 }) {
   const t = useTranslations("profile");
@@ -93,6 +104,10 @@ function NameCard({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const validationMessages: UpdateNameValidationMessages = useMemo(
     () => ({ nameRequired: t("validation.nameRequired") }),
@@ -134,9 +149,115 @@ function NameCard({
     }
   };
 
+  const uploadAvatarFile = useCallback(
+    async (file: File) => {
+      setAvatarError(null);
+      setApiError(null);
+      setSuccess(false);
+      if (!file.type.startsWith("image/")) {
+        setAvatarError(t("avatarInvalidType"));
+        return;
+      }
+      setUploadingAvatar(true);
+      try {
+        const { url } = await api.uploadFile(token, file, "avatar");
+        const updated = await api.updateAvatar(token, { avatarUrl: url });
+        dispatch(setUser(updated));
+      } catch {
+        setAvatarError(t("avatarUploadError"));
+      } finally {
+        setUploadingAvatar(false);
+      }
+    },
+    [token, dispatch, t],
+  );
+
+  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadAvatarFile(file);
+    e.target.value = "";
+  };
+
+  const onAvatarDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadAvatarFile(file);
+  };
+
+  const avatarUrl = getUserAvatarUrl(user);
+  const initials = getUserInitials(user);
+  const displayName = user.name?.trim() || user.email.split("@")[0] || user.email;
+
   return (
     <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-      <h2 className="text-lg font-semibold mb-4">{t("personalInfo")}</h2>
+      <div className="mb-6 flex flex-col items-center text-center">
+        <div className="w-[96px] h-[96px] rounded-full overflow-hidden border-2 border-white dark:border-gray-800 shadow bg-[var(--surface)] flex items-center justify-center shrink-0">
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={96}
+              height={96}
+              className="w-full h-full object-cover"
+              unoptimized
+            />
+          ) : (
+            <span className="text-2xl font-semibold text-[var(--muted)]">{initials}</span>
+          )}
+        </div>
+        <p className="mt-3 text-3xl font-semibold tracking-tight text-[var(--foreground)]">{displayName}</p>
+        <p className="mt-1 text-base text-[var(--muted)]">{user.email}</p>
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">
+          {t("profilePicture")}
+        </label>
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onAvatarDrop}
+          onClick={() => avatarInputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              avatarInputRef.current?.click();
+            }
+          }}
+          className={`flex flex-col items-center justify-center gap-1.5 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+            dragOver
+              ? "border-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 dark:border-indigo-500"
+              : "border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+          }`}
+        >
+          {uploadingAvatar ? (
+            <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          ) : (
+            <>
+              <svg className="w-8 h-8 text-gray-300 dark:text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+              </svg>
+              <span className="text-sm text-[var(--muted)]">{t("clickOrDragToUpload")}</span>
+            </>
+          )}
+        </div>
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+        {avatarError && (
+          <p className="text-red-500 text-sm mt-2">{avatarError}</p>
+        )}
+      </div>
 
       <div className="mb-4">
         <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">

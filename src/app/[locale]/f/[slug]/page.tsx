@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import type { FormField, FormSettings, FormMaxWidth } from "@/lib/types";
@@ -124,9 +125,17 @@ export default function PublicFormPage() {
 
   if (submitted) {
     const message = form.settings.submit_message || t("defaultThankYou");
+    const pageBg = form.settings.page_background_color;
+    const formBg = form.settings.form_background_color;
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-10 max-w-md w-full mx-4 text-center">
+      <div
+        className={`min-h-screen w-full flex flex-col justify-center py-12 px-4 ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
+        style={pageBg ? { backgroundColor: pageBg } : undefined}
+      >
+        <div
+          className={`rounded-2xl shadow-lg p-10 max-w-md w-full mx-auto text-center ${!formBg ? "bg-white dark:bg-gray-800" : ""}`}
+          style={formBg ? { backgroundColor: formBg } : undefined}
+        >
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -142,6 +151,15 @@ export default function PublicFormPage() {
               {t("submitAnother")}
             </button>
           )}
+          <p className="mt-6 pt-4 text-center text-xs text-gray-400 dark:text-gray-500">
+            {t("poweredByPrefix")}
+            <Link
+              href="/"
+              className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
+            >
+              QForms
+            </Link>
+          </p>
         </div>
       </div>
     );
@@ -155,10 +173,10 @@ export default function PublicFormPage() {
 
   return (
     <div
-      className={`min-h-screen py-12 px-4 ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
+      className={`min-h-screen w-full flex flex-col justify-center py-12 px-4 ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
       style={pageBg ? { backgroundColor: pageBg } : undefined}
     >
-      <div className={`${widthClass} mx-auto`}>
+      <div className={`${widthClass} mx-auto w-full`}>
         <div
           className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-white dark:bg-gray-800" : ""}`}
           style={formBg ? { backgroundColor: formBg } : undefined}

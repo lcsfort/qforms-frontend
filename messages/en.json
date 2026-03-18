@@ -153,6 +153,14 @@
   "profile": {
     "title": "Profile",
     "personalInfo": "Personal information",
+    "memberSince": "Member since {date}",
+    "profilePicture": "Profile picture",
+    "changePicture": "Change picture",
+    "uploadingPicture": "Uploading...",
+    "profilePictureHint": "PNG, JPG, GIF, WebP or SVG up to 5MB.",
+    "clickOrDragToUpload": "Click or drag to upload",
+    "avatarInvalidType": "Please select a valid image file.",
+    "avatarUploadError": "Failed to upload profile picture.",
     "emailLabel": "Email",
     "nameLabel": "Name",
     "namePlaceholder": "Your name",
@@ -324,7 +332,8 @@
       "submitted": "Response submitted!",
       "defaultThankYou": "Thank you for your submission!",
       "submitAnother": "Submit another response",
-      "submit": "Submit"
+      "submit": "Submit",
+      "poweredByPrefix": "Powered by "
     },
     "responsesPage": {
       "title": "Responses",

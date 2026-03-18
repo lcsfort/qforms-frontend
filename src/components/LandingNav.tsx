@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile, logout } from "@/lib/redux/authSlice";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
 
 export function LandingNav() {
   const t = useTranslations("nav");
@@ -26,6 +27,9 @@ export function LandingNav() {
   };
 
   const isLoggedIn = hydrated && !!token;
+  const avatarUrl = user ? getUserAvatarUrl(user) : null;
+  const initials = user ? getUserInitials(user) : "";
+  const avatarAlt = user?.name?.trim() || user?.email || "User";
 
   return (
     <nav className="w-full border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md sticky top-0 z-50">
@@ -38,9 +42,17 @@ export function LandingNav() {
           <LanguageSwitcher />
           {isLoggedIn ? (
             <>
-              {user?.email && (
-                <span className="text-sm text-[var(--muted)] max-w-[120px] truncate hidden sm:inline">
-                  {user.email}
+              {user && (
+                <span
+                  className="w-9 h-9 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--card)] shrink-0 flex items-center justify-center"
+                  title={user.email}
+                  aria-label={avatarAlt}
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={avatarAlt} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-semibold text-[var(--foreground)]">{initials}</span>
+                  )}
                 </span>
               )}
               <Link

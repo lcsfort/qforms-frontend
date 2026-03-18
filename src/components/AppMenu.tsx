@@ -6,8 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/authSlice";
+import Image from "next/image";
 import { useRouter as useIntlRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
 
 const flags: Record<string, string> = { en: "🇺🇸", pt: "🇧🇷" };
 const langLabels: Record<string, string> = { en: "English", pt: "Português" };
@@ -204,6 +206,10 @@ export function AppMenu() {
     intlRouter.push("/");
   };
 
+  const avatarUrl = user ? getUserAvatarUrl(user) : null;
+  const initials = user ? getUserInitials(user) : "";
+  const primaryLabel = user?.name?.trim() || user?.email;
+
   return (
     <div ref={menuRef} className="relative">
       <button
@@ -227,13 +233,24 @@ export function AppMenu() {
         <div className="absolute left-0 top-full mt-2 w-64 rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-xl shadow-black/8 dark:shadow-black/25 z-50 py-2 animate-in fade-in slide-in-from-top-1 duration-150">
           {user && (
             <>
-              <div className="px-4 py-2.5">
-                <p className="text-sm font-medium text-[var(--foreground)] truncate">
-                  {user.name}
-                </p>
-                <p className="text-xs text-[var(--muted)] truncate">
-                  {user.email}
-                </p>
+              <div className="px-4 py-2.5 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface)] shrink-0 flex items-center justify-center relative">
+                  {avatarUrl ? (
+                    <Image src={avatarUrl} alt={primaryLabel ?? "User"} fill className="object-cover" unoptimized />
+                  ) : (
+                    <span className="text-xs font-semibold text-[var(--foreground)]">{initials}</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[var(--foreground)] truncate">
+                    {primaryLabel}
+                  </p>
+                  {user.name && (
+                    <p className="text-xs text-[var(--muted)] truncate">
+                      {user.email}
+                    </p>
+                  )}
+                </div>
               </div>
               <Divider />
             </>

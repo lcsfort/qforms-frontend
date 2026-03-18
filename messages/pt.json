@@ -153,6 +153,14 @@
   "profile": {
     "title": "Perfil",
     "personalInfo": "Informações pessoais",
+    "memberSince": "Membro desde {date}",
+    "profilePicture": "Foto de perfil",
+    "changePicture": "Alterar foto",
+    "uploadingPicture": "Enviando...",
+    "profilePictureHint": "PNG, JPG, GIF, WebP ou SVG de até 5MB.",
+    "clickOrDragToUpload": "Clique ou arraste para enviar",
+    "avatarInvalidType": "Selecione um arquivo de imagem válido.",
+    "avatarUploadError": "Falha ao enviar foto de perfil.",
     "emailLabel": "Email",
     "nameLabel": "Nome",
     "namePlaceholder": "Seu nome",
@@ -317,14 +325,15 @@
       "versionBack": "Ir para versão anterior",
       "versionForward": "Ir para próxima versão"
     },
-    "poweredByPrefix": "Desenvolvido por ",
+    "poweredByPrefix": "Criado com ",
     "publicForm": {
       "notFound": "Formulário não encontrado",
       "notFoundDesc": "Este formulário não existe ou não está mais disponível.",
       "submitted": "Resposta enviada!",
       "defaultThankYou": "Obrigado pelo seu envio!",
       "submitAnother": "Enviar outra resposta",
-      "submit": "Enviar"
+      "submit": "Enviar",
+      "poweredByPrefix": "Criado com "
     },
     "responsesPage": {
       "title": "Respostas",

@@ -6,7 +6,10 @@ export interface User {
   email: string;
   name: string | null;
   isEmailVerified: boolean;
+  createdAt?: string;
   authProvider?: "local" | "google";
+  avatarUrl?: string | null;
+  googleAvatarUrl?: string | null;
 }
 
 interface AuthState {
