@@ -117,6 +117,9 @@ export default function FormEditorPage() {
     return Object.keys(s).length ? s : undefined;
   }, [settings.question_font_family, settings.question_font_size]);
 
+  const pageBg = settings.page_background_color;
+  const formBg = settings.form_background_color;
+
   const fontFamiliesToLoad = useMemo(() => {
     const set = new Set<string>();
     [settings.header_font_family, settings.question_font_family, settings.text_font_family].forEach((f) => {
@@ -385,10 +388,9 @@ export default function FormEditorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="relative max-w-5xl mx-auto px-6 pt-8 pb-12">
-        {/* Design panel: hidden by default, toggled by palette icon. Slide-over below 1540px, fixed sidebar at 1540px+. */}
-        {token && activeTab !== "settings" && (
+    <div className="min-h-screen w-full flex flex-col bg-[var(--background)]">
+      {/* Design panel: hidden by default, toggled by palette icon. Slide-over below 1540px, fixed sidebar at 1540px+. */}
+      {token && activeTab !== "settings" && (
           <>
             {/* Below 1540px: slide-over when open (with sheet; click outside to hide) */}
             <div className="min-[1540px]:hidden">
@@ -442,8 +444,8 @@ export default function FormEditorPage() {
           </>
         )}
 
-        <main>
-        {/* Header */}
+      {/* Editor chrome: always theme background (not form page color) */}
+      <div className="relative max-w-5xl mx-auto w-full px-6 pt-8 pb-4 shrink-0 border-b border-[var(--border)]">
         <div className="flex items-center justify-between mb-6">
           <Link
             href="/dashboard"
@@ -573,7 +575,16 @@ export default function FormEditorPage() {
             )}
           </div>
         </div>
+      </div>
 
+      {/* Form builder canvas: mirrors respondent page background */}
+      <div
+        className={`flex-1 w-full min-h-0 ${!pageBg ? "bg-[var(--background)]" : ""}`}
+        style={pageBg ? { backgroundColor: pageBg } : undefined}
+      >
+        <div className="relative max-w-5xl mx-auto px-6 py-8">
+          <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white/30 dark:bg-black/10 backdrop-blur-[1px] p-4 md:p-5">
+        <main>
         {/* Tabs — above title card */}
         <div className="flex gap-1 mb-6 bg-[var(--card)] border border-[var(--border)] rounded-xl p-1">
           {(["fields", "settings"] as const).map((tab) => (
@@ -592,7 +603,10 @@ export default function FormEditorPage() {
         </div>
 
         {/* Title + Description */}
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 mb-6">
+        <div
+          className={`border border-[var(--border)] rounded-2xl p-6 mb-6 ${!formBg ? "bg-[var(--card)]" : ""}`}
+          style={formBg ? { backgroundColor: formBg } : undefined}
+        >
           <input
             type="text"
             value={title}
@@ -615,7 +629,10 @@ export default function FormEditorPage() {
             {activeTab === "fields" && (
               <div>
                 {fields.length === 0 ? (
-                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-8 text-center">
+                  <div
+                    className={`border border-[var(--border)] rounded-2xl p-8 text-center ${!formBg ? "bg-[var(--card)]" : ""}`}
+                    style={formBg ? { backgroundColor: formBg } : undefined}
+                  >
                     <p className="text-[var(--muted)] text-sm">{t("noFields")}</p>
                   </div>
                 ) : (
@@ -623,7 +640,8 @@ export default function FormEditorPage() {
                     {sortedFields.map((field, idx) => (
                       <div
                         key={field.id}
-                        className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden"
+                        className={`border border-[var(--border)] rounded-xl overflow-hidden ${!formBg ? "bg-[var(--card)]" : ""}`}
+                        style={formBg ? { backgroundColor: formBg } : undefined}
                       >
                         <div
                           className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
@@ -808,6 +826,8 @@ export default function FormEditorPage() {
           </button>
         </div>
       </main>
+          </div>
+        </div>
       </div>
 
       <ConfirmDialog
