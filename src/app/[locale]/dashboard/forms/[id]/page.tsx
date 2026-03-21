@@ -89,6 +89,8 @@ export default function FormEditorPage() {
   const saveRequestCounterRef = useRef(0);
   const saveResolvedCounterRef = useRef(0);
   const nextFieldIdRef = useRef(1);
+  const designBtnRef = useRef<HTMLButtonElement>(null);
+  const [designBtnY, setDesignBtnY] = useState<number | null>(null);
 
   const sortedFields = useMemo(
     () =>
@@ -260,6 +262,13 @@ export default function FormEditorPage() {
     return () => clearTimeout(timer);
   }, [token, getEditorSnapshot, flushSave, dispatch]);
 
+  useEffect(() => {
+    if (designPanelOpen && designBtnRef.current) {
+      const rect = designBtnRef.current.getBoundingClientRect();
+      setDesignBtnY(rect.top + rect.height / 2);
+    }
+  }, [designPanelOpen]);
+
   const handlePublish = async () => {
     await flushSave();
     dispatch(publishForm(formId));
@@ -430,8 +439,11 @@ export default function FormEditorPage() {
             {designPanelOpen && (
               <div className="hidden min-[1540px]:block">
                 <aside
-                  className="fixed top-24 w-64 z-40"
-                  style={{ left: "min(calc((100vw + 67rem) / 2 + 1.5rem), calc(100vw - 17rem))" }}
+                  className="fixed w-64 z-40 -translate-y-1/2"
+                  style={{
+                    top: designBtnY != null ? `${designBtnY}px` : "50%",
+                    left: "min(calc((100vw + 67rem) / 2 + 1.5rem), calc(100vw - 17rem))",
+                  }}
                 >
                   <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-lg">
                     <div className="design-panel-scroll max-h-[80vh] overflow-y-auto overflow-x-hidden">
@@ -446,7 +458,7 @@ export default function FormEditorPage() {
 
       {/* Editor chrome: always theme background (not form page color) */}
       <div className="relative max-w-5xl mx-auto w-full px-6 pt-8 pb-4 shrink-0 border-b border-[var(--border)]">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-2">
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
@@ -457,76 +469,6 @@ export default function FormEditorPage() {
             {t("backToForms")}
           </Link>
           <div className="flex items-center gap-2">
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={openPreview}
-                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-[var(--muted)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors inline-flex"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-              <span
-                role="tooltip"
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none whitespace-nowrap z-50"
-              >
-                {t("previewTooltip")}
-              </span>
-            </div>
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={copyRespondentLink}
-                disabled={!respondentLink}
-                className={`p-2 rounded-lg border inline-flex transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                  linkCopied
-                    ? "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400"
-                    : "border-gray-300 dark:border-gray-600 text-[var(--muted)] hover:bg-gray-50 dark:hover:bg-gray-800"
-                }`}
-              >
-                {linkCopied ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                  </svg>
-                )}
-              </button>
-              <span
-                role="tooltip"
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none whitespace-nowrap z-50"
-              >
-                {linkCopied ? t("linkCopied") : t("copyRespondentLinkTooltip")}
-              </span>
-            </div>
-            {activeTab !== "settings" && (
-              <div className="relative group inline-flex">
-                <button
-                  type="button"
-                  onClick={() => setDesignPanelOpen((o) => !o)}
-                  className={`p-2 rounded-lg border inline-flex transition-colors ${
-                    designPanelOpen
-                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
-                      : "border-gray-300 dark:border-gray-600 text-[var(--muted)] hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`}
-                  title={t("designSection")}
-                  aria-label={t("designSection")}
-                  aria-expanded={designPanelOpen}
-                >
-                  <FontAwesomeIcon icon={faPaintbrush} className="h-5 w-5" />
-                </button>
-                <span
-                  role="tooltip"
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 pointer-events-none whitespace-nowrap z-50"
-                >
-                  {t("designSection")}
-                </span>
-              </div>
-            )}
             <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-[var(--muted)] min-w-[108px] text-center">
               {autosavePending || autosaveStatus === "saving"
                 ? t("autosaveSaving")
@@ -536,28 +478,6 @@ export default function FormEditorPage() {
                     ? t("autosaveSaved")
                     : t("autosaveIdle")}
             </div>
-            <button
-              type="button"
-              onClick={() => void handleVersionBack()}
-              disabled={autosavePending || versionCount === 0 || versionCursor <= 0}
-              className="p-2 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[var(--muted)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 dark:disabled:hover:border-gray-600 disabled:hover:text-[var(--muted)]"
-              title={t("versionBack")}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 14L5 10l4-4M5 10h8a4 4 0 014 4v0" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleVersionForward()}
-              disabled={autosavePending || versionCount === 0 || versionCursor >= versionCount - 1}
-              className="p-2 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[var(--muted)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 dark:disabled:hover:border-gray-600 disabled:hover:text-[var(--muted)]"
-              title={t("versionForward")}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 14l4-4-4-4M19 10h-8a4 4 0 00-4 4v0" />
-              </svg>
-            </button>
             {currentForm.status === "published" ? (
               <button
                 onClick={handleUnpublish}
@@ -576,6 +496,115 @@ export default function FormEditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating side toolbar */}
+      <aside className="fixed right-3 top-1/2 -translate-y-1/2 z-[55] sm:right-5">
+        <div className="w-11 rounded-[1.25rem] bg-[var(--card)] border border-black/[0.06] dark:border-white/[0.08] shadow-lg py-3 px-1.5">
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={openPreview}
+                className="w-8 h-8 rounded-full text-[var(--muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors inline-flex items-center justify-center"
+                aria-label={t("previewTooltip")}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <span className="absolute right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 px-2 py-0.5 text-[11px] rounded bg-gray-900 dark:bg-gray-700 text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition pointer-events-none whitespace-nowrap">
+                {t("previewTooltip")}
+              </span>
+            </div>
+
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={copyRespondentLink}
+                disabled={!respondentLink}
+                className={`w-8 h-8 rounded-lg inline-flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  linkCopied
+                    ? "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400"
+                    : "text-[var(--muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                }`}
+                aria-label={linkCopied ? t("linkCopied") : t("copyRespondentLinkTooltip")}
+              >
+                {linkCopied ? (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                  </svg>
+                )}
+              </button>
+              <span className="absolute right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 px-2 py-0.5 text-[11px] rounded bg-gray-900 dark:bg-gray-700 text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition pointer-events-none whitespace-nowrap">
+                {linkCopied ? t("linkCopied") : t("copyRespondentLinkTooltip")}
+              </span>
+            </div>
+
+            {activeTab !== "settings" && (
+              <div className="relative group">
+                <button
+                  ref={designBtnRef}
+                  type="button"
+                  onClick={() => setDesignPanelOpen((o) => !o)}
+                  className={`w-8 h-8 rounded-lg inline-flex items-center justify-center transition-colors ${
+                    designPanelOpen
+                      ? "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
+                      : "text-[var(--muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  }`}
+                  aria-label={t("designSection")}
+                  aria-expanded={designPanelOpen}
+                >
+                  <FontAwesomeIcon icon={faPaintbrush} className="h-4 w-4" />
+                </button>
+                <span className="absolute right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 px-2 py-0.5 text-[11px] rounded bg-gray-900 dark:bg-gray-700 text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition pointer-events-none whitespace-nowrap">
+                  {t("designSection")}
+                </span>
+              </div>
+            )}
+
+            <div className="w-5 h-px bg-black/[0.06] dark:bg-white/[0.08]" />
+
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => void handleVersionBack()}
+                disabled={autosavePending || versionCount === 0 || versionCursor <= 0}
+                className="w-8 h-8 rounded-lg text-[var(--muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-[var(--muted)] disabled:hover:bg-transparent"
+                aria-label={t("versionBack")}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 14L5 10l4-4M5 10h8a4 4 0 014 4v0" />
+                </svg>
+              </button>
+              <span className="absolute right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 px-2 py-0.5 text-[11px] rounded bg-gray-900 dark:bg-gray-700 text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition pointer-events-none whitespace-nowrap">
+                {t("versionBack")}
+              </span>
+            </div>
+
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => void handleVersionForward()}
+                disabled={autosavePending || versionCount === 0 || versionCursor >= versionCount - 1}
+                className="w-8 h-8 rounded-lg text-[var(--muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-[var(--muted)] disabled:hover:bg-transparent"
+                aria-label={t("versionForward")}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 14l4-4-4-4M19 10h-8a4 4 0 00-4 4v0" />
+                </svg>
+              </button>
+              <span className="absolute right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 px-2 py-0.5 text-[11px] rounded bg-gray-900 dark:bg-gray-700 text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition pointer-events-none whitespace-nowrap">
+                {t("versionForward")}
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
 
       {/* Form builder canvas: mirrors respondent page background */}
       <div
