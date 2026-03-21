@@ -122,7 +122,7 @@ export default function FormPreviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
       </div>
     );
@@ -130,13 +130,13 @@ export default function FormPreviewPage() {
 
   if (notFound || !form) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">{t("notFound")}</h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">{t("notFoundDesc")}</p>
+          <p className="text-gray-500 mb-4">{t("notFoundDesc")}</p>
           <Link
             href={`/${locale}/dashboard/forms/${formId}`}
-            className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+            className="text-indigo-600 font-medium hover:underline"
           >
             {tEditor("backToForms")}
           </Link>
@@ -152,30 +152,30 @@ export default function FormPreviewPage() {
   const formBg = form.settings.form_background_color;
 
   return (
-    <div
-      className={`min-h-screen w-full flex flex-col ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
-      style={pageBg ? { backgroundColor: pageBg } : undefined}
-    >
-      <div className="shrink-0 py-4 px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <div className="min-h-screen w-full flex flex-col bg-[var(--background)]">
+      <div className="shrink-0 py-4 px-4 border-b border-[var(--border)] bg-[var(--card)]">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link
             href={`/${locale}/dashboard/forms/${formId}`}
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
             {tEditor("backToForms")}
           </Link>
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <span className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
             {tEditor("preview")}
           </span>
         </div>
       </div>
-      <div className="flex-1 flex flex-col justify-center py-12 px-4">
+      <div
+        className={`force-light-theme flex-1 flex flex-col justify-center py-12 px-4 ${!pageBg ? "bg-gray-50" : ""}`}
+        style={pageBg ? { backgroundColor: pageBg } : undefined}
+      >
         <div className={`${widthClass} mx-auto w-full`}>
           <div
-            className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-white dark:bg-gray-800" : ""}`}
+            className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-white" : ""}`}
             style={formBg ? { backgroundColor: formBg } : undefined}
           >
             {headerUrl && (
@@ -190,7 +190,7 @@ export default function FormPreviewPage() {
             <div className="p-8">
               <h1 className="text-2xl font-bold mb-1" style={headerStyle}>{form.title}</h1>
               {form.description && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6" style={textStyle}>{form.description}</p>
+                <p className="text-sm text-gray-500 mb-6" style={textStyle}>{form.description}</p>
               )}
               <FormRenderer
                 fields={form.schema}

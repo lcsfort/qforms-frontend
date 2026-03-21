@@ -45,7 +45,7 @@ function SettingsPanel({
             value={(settings.submit_message as string) ?? ""}
             onChange={(e) => setSettings({ ...settings, submit_message: e.target.value })}
             placeholder={t("submitMessageDefault")}
-            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
         <label className="flex items-center gap-2.5 text-sm cursor-pointer">
@@ -608,11 +608,11 @@ export default function FormEditorPage() {
 
       {/* Form builder canvas: mirrors respondent page background */}
       <div
-        className={`flex-1 w-full min-h-0 ${!pageBg ? "bg-[var(--background)]" : ""}`}
+        className={`force-light-theme flex-1 w-full min-h-0 ${!pageBg ? "bg-[var(--background)]" : ""}`}
         style={pageBg ? { backgroundColor: pageBg } : undefined}
       >
         <div className="relative max-w-5xl mx-auto px-6 py-8">
-          <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white/30 dark:bg-black/10 backdrop-blur-[1px] p-4 md:p-5">
+          <div className="rounded-3xl border border-black/5 bg-white/30 backdrop-blur-[1px] p-4 md:p-5">
         <main>
         {/* Tabs — above title card */}
         <div className="flex gap-1 mb-6 bg-[var(--card)] border border-[var(--border)] rounded-xl p-1">
@@ -623,7 +623,7 @@ export default function FormEditorPage() {
               className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? "bg-indigo-600 text-white"
-                  : "text-[var(--muted)] hover:bg-gray-100 dark:hover:bg-gray-800"
+                  : "text-[var(--muted)] hover:bg-gray-100"
               }`}
             >
               {tab === "fields" ? t("fields") : t("settings")}
@@ -642,7 +642,7 @@ export default function FormEditorPage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t("formTitle")}
             style={headerStyle}
-            className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500 mb-2"
+            className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder:text-gray-400 mb-2"
           />
           <input
             type="text"
@@ -650,7 +650,7 @@ export default function FormEditorPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t("formDescription")}
             style={textStyle}
-            className="w-full text-sm text-[var(--muted)] bg-transparent border-none outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            className="w-full text-sm text-[var(--muted)] bg-transparent border-none outline-none placeholder:text-gray-400"
           />
         </div>
 
@@ -673,13 +673,13 @@ export default function FormEditorPage() {
                         style={formBg ? { backgroundColor: formBg } : undefined}
                       >
                         <div
-                          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
                           onClick={() => setEditingField(editingField === field.id ? null : field.id)}
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-mono text-[var(--muted)] w-6">{idx + 1}</span>
                             <span className="font-medium text-sm" style={labelStyle}>{field.label}</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[var(--muted)]" style={labelStyle}>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-[var(--muted)]" style={labelStyle}>
                               {tft(field.type)}
                             </span>
                             {field.required && (
@@ -690,7 +690,7 @@ export default function FormEditorPage() {
                             <button
                               onClick={(e) => { e.stopPropagation(); moveField(field.id, "up"); }}
                               disabled={idx === 0}
-                              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition-colors"
                               title={t("moveUp")}
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -700,7 +700,7 @@ export default function FormEditorPage() {
                             <button
                               onClick={(e) => { e.stopPropagation(); moveField(field.id, "down"); }}
                               disabled={idx === fields.length - 1}
-                              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition-colors"
                               title={t("moveDown")}
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -709,7 +709,7 @@ export default function FormEditorPage() {
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
-                              className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors"
+                              className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors"
                               title={t("removeField")}
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -729,7 +729,7 @@ export default function FormEditorPage() {
                                   value={field.label}
                                   onChange={(e) => updateField(field.id, { label: e.target.value })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                               <div>
@@ -738,7 +738,7 @@ export default function FormEditorPage() {
                                   value={field.type}
                                   onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                                   {FIELD_TYPES.map((ft) => (
                                     <option key={ft} value={ft}>{tft(ft)}</option>
@@ -754,7 +754,7 @@ export default function FormEditorPage() {
                                   value={field.placeholder ?? ""}
                                   onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                               <div>
@@ -764,7 +764,7 @@ export default function FormEditorPage() {
                                   value={field.help_text ?? ""}
                                   onChange={(e) => updateField(field.id, { help_text: e.target.value })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                             </div>
@@ -790,7 +790,7 @@ export default function FormEditorPage() {
                                         onChange={(e) => updateOption(field.id, optIdx, { label: e.target.value })}
                                         placeholder={t("optionLabel")}
                                         style={textStyle}
-                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                       />
                                       <input
                                         type="text"
@@ -798,11 +798,11 @@ export default function FormEditorPage() {
                                         onChange={(e) => updateOption(field.id, optIdx, { value: e.target.value })}
                                         placeholder={t("optionValue")}
                                         style={textStyle}
-                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                       />
                                       <button
                                         onClick={() => removeOption(field.id, optIdx)}
-                                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-xs transition-colors"
+                                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 text-xs transition-colors"
                                       >
                                         {t("removeOption")}
                                       </button>
@@ -830,7 +830,7 @@ export default function FormEditorPage() {
                       <button
                         key={type}
                         onClick={() => addField(type)}
-                        className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium hover:bg-gray-50 transition-colors"
                       >
                         + {tft(type)}
                       </button>

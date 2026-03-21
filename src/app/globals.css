@@ -85,6 +85,20 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* Force light theme variables inside the form builder canvas */
+.force-light-theme {
+  --background: #FAFAFC;
+  --foreground: #111827;
+  --card: #FFFFFF;
+  --border: #E5E7EB;
+  --muted: #6B7280;
+  --primary: #7C3AED;
+  --primary-dark: #2E1065;
+  --surface: #F5F3FF;
+  --accent: #06B6D4;
+  color: #111827;
+}
+
 /* Design panel scroll: only show when needed, very thin and almost transparent */
 .design-panel-scroll {
   overflow-y: auto;

@@ -43,15 +43,15 @@ export function CheckboxField({
                 key={opt.value}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg border cursor-pointer transition-all text-sm ${
                   isChecked
-                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-gray-900 dark:text-gray-100"
-                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                    ? "border-indigo-500 bg-indigo-50 text-gray-900"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                 } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <span
                   className={`w-[18px] h-[18px] rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors ${
                     isChecked
                       ? "border-indigo-600 bg-indigo-600"
-                      : "border-gray-300 dark:border-gray-500"
+                      : "border-gray-300"
                   }`}
                 >
                   {isChecked && (

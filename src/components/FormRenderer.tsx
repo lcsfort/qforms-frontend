@@ -243,11 +243,11 @@ export function FormRenderer({
           submitLabel
         )}
       </button>
-      <p className="mt-6 pt-4 text-center text-xs text-gray-400 dark:text-gray-500">
+      <p className="mt-6 pt-4 text-center text-xs text-gray-400">
         {t("poweredByPrefix")}
         <Link
           href="/"
-          className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
+          className="text-gray-500 hover:text-indigo-600 hover:underline transition-colors"
         >
           Qforms
         </Link>

@@ -37,7 +37,7 @@ export function FileField({
             inputRef.current?.click();
           }
         }}
-        className="mt-1 flex flex-col items-center justify-center w-full px-4 py-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors cursor-pointer"
+        className="mt-1 flex flex-col items-center justify-center w-full px-4 py-6 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:border-indigo-400 transition-colors cursor-pointer"
       >
         <svg
           className="w-8 h-8 text-gray-400 mb-2"
@@ -52,7 +52,7 @@ export function FileField({
             d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
           />
         </svg>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="text-sm text-gray-500">
           {fileName || (field.placeholder ?? "Click to upload a file")}
         </span>
       </div>
