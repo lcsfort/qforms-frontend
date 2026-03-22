@@ -89,6 +89,7 @@ export default function FormEditorPage() {
   const saveRequestCounterRef = useRef(0);
   const saveResolvedCounterRef = useRef(0);
   const nextFieldIdRef = useRef(1);
+  const prevSettingsRef = useRef(settings);
   const designBtnRef = useRef<HTMLButtonElement>(null);
   const [designBtnY, setDesignBtnY] = useState<number | null>(null);
 
@@ -253,14 +254,17 @@ export default function FormEditorPage() {
     if (!initializedRef.current || !token) return;
     const signature = JSON.stringify(getEditorSnapshot());
     if (signature === lastSavedSignatureRef.current) return;
+    const settingsChanged = settings !== prevSettingsRef.current;
+    prevSettingsRef.current = settings;
     dispatch(setAutosaveStatus("idle"));
+    const delay = settingsChanged ? 300 : 5000;
     const timer = setTimeout(() => {
       void flushSave().catch(() => {
         setAutosavePending(false);
       });
-    }, 5000);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [token, getEditorSnapshot, flushSave, dispatch]);
+  }, [token, getEditorSnapshot, flushSave, dispatch, settings]);
 
   useEffect(() => {
     if (designPanelOpen && designBtnRef.current) {

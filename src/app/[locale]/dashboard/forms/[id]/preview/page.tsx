@@ -10,16 +10,13 @@ import type { FormField, FormSettings, FormMaxWidth } from "@/lib/types";
 import { FormRenderer } from "@/components/FormRenderer";
 
 const WIDTH_CLASSES: Record<FormMaxWidth, string> = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  "2xl": "max-w-2xl",
-  full: "max-w-full",
+  mobile: "max-w-sm",
+  tablet: "max-w-xl",
+  desktop: "max-w-2xl",
 };
 
 function getWidthClass(w?: FormMaxWidth): string {
-  return WIDTH_CLASSES[w ?? "lg"] ?? "max-w-lg";
+  return WIDTH_CLASSES[w ?? "desktop"] ?? "max-w-2xl";
 }
 
 export default function FormPreviewPage() {

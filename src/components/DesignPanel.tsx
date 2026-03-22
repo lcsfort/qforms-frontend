@@ -89,13 +89,10 @@ function FontFamilyDropdown({
   );
 }
 
-const WIDTH_OPTIONS: { value: FormMaxWidth; label: string; icon: string }[] = [
-  { value: "sm", label: "widthNarrow", icon: "S" },
-  { value: "md", label: "widthMedium", icon: "M" },
-  { value: "lg", label: "widthLarge", icon: "L" },
-  { value: "xl", label: "widthWide", icon: "XL" },
-  { value: "2xl", label: "widthExtraWide", icon: "2X" },
-  { value: "full", label: "widthFull", icon: "W" },
+const WIDTH_OPTIONS: { value: FormMaxWidth; label: string }[] = [
+  { value: "mobile", label: "widthMobile" },
+  { value: "tablet", label: "widthTablet" },
+  { value: "desktop", label: "widthDesktop" },
 ];
 
 const COLUMN_OPTIONS: { value: 1 | 2 | 3; label: string }[] = [
@@ -332,20 +329,19 @@ export function DesignPanel({
         <span className="block text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wide mb-2">{t("formWidth")}</span>
         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
           {WIDTH_OPTIONS.map((opt) => {
-            const active = (settings.max_width ?? "lg") === opt.value;
+            const active = (settings.max_width ?? "desktop") === opt.value;
             return (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => setSettings({ ...settings, max_width: opt.value })}
-                title={t(opt.label)}
-                className={`px-2.5 py-1.5 text-xs font-semibold transition-colors border-r border-gray-200 dark:border-gray-600 last:border-r-0 ${
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors border-r border-gray-200 dark:border-gray-600 last:border-r-0 ${
                   active
                     ? "bg-indigo-600 text-white"
                     : "bg-transparent text-[var(--muted)] hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
               >
-                {opt.icon}
+                {t(opt.label)}
               </button>
             );
           })}

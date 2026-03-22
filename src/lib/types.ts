@@ -35,7 +35,7 @@ export interface FormField {
   options?: FormFieldOption[];
 }
 
-export type FormMaxWidth = "sm" | "md" | "lg" | "xl" | "2xl" | "full";
+export type FormMaxWidth = "mobile" | "tablet" | "desktop";
 
 export interface FormSettings {
   submit_message?: string;
