@@ -122,6 +122,13 @@ export default function FormEditorPage() {
 
   const pageBg = settings.page_background_color;
   const formBg = settings.form_background_color;
+  const builderColumns = settings.columns ?? 1;
+  const builderGridClass =
+    builderColumns === 3
+      ? "grid grid-cols-1 md:grid-cols-3 gap-3"
+      : builderColumns === 2
+        ? "grid grid-cols-1 md:grid-cols-2 gap-3"
+        : "space-y-3";
 
   const fontFamiliesToLoad = useMemo(() => {
     const set = new Set<string>();
@@ -669,11 +676,13 @@ export default function FormEditorPage() {
                     <p className="text-[var(--muted)] text-sm">{t("noFields")}</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className={builderGridClass}>
                     {sortedFields.map((field, idx) => (
                       <div
                         key={field.id}
-                        className={`border border-[var(--border)] rounded-xl overflow-hidden ${!formBg ? "bg-[var(--card)]" : ""}`}
+                        className={`border border-[var(--border)] rounded-xl overflow-hidden ${!formBg ? "bg-[var(--card)]" : ""} ${
+                          builderColumns > 1 && editingField === field.id ? "md:col-span-full" : ""
+                        }`}
                         style={formBg ? { backgroundColor: formBg } : undefined}
                       >
                         <div
