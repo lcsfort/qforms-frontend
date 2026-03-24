@@ -22,7 +22,7 @@ import { DesignPanel } from "@/components/DesignPanel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const FIELD_TYPES: FieldType[] = [
-  "text", "textarea", "email", "number", "select", "radio", "checkbox", "date", "file", "rating",
+  "text", "textarea", "email", "number", "select", "radio", "checkbox", "date", "file", "rating", "scale",
 ];
 
 function SettingsPanel({

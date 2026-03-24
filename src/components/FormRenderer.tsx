@@ -14,6 +14,7 @@ import {
   DateField,
   FileField,
   RatingField,
+  ScaleField,
 } from "./form-fields";
 
 const fieldRegistry: Record<string, ComponentType<FieldProps>> = {
@@ -27,6 +28,7 @@ const fieldRegistry: Record<string, ComponentType<FieldProps>> = {
   date: DateField,
   file: FileField,
   rating: RatingField,
+  scale: ScaleField,
 };
 
 interface FieldClassNames {
@@ -45,6 +47,21 @@ interface FormRendererProps {
   className?: string;
 }
 
+function scaleBounds(field: FormField): { min: number; max: number } {
+  const rawMax = field.validation?.max;
+  const rawMin = field.validation?.min;
+  const maxVal = Math.min(
+    10,
+    Math.max(1, typeof rawMax === "number" ? rawMax : Number(rawMax) || 5),
+  );
+  let minVal = Math.max(
+    1,
+    Math.min(10, typeof rawMin === "number" ? rawMin : Number(rawMin) || 1),
+  );
+  if (minVal > maxVal) minVal = maxVal;
+  return { min: minVal, max: maxVal };
+}
+
 function validateField(
   field: FormField,
   value: unknown,
@@ -52,9 +69,24 @@ function validateField(
   if (field.required) {
     if (value === undefined || value === null || value === "") return "required";
     if (Array.isArray(value) && value.length === 0) return "required";
+    if (
+      (field.type === "rating" || field.type === "scale") &&
+      value === 0
+    ) {
+      return "required";
+    }
   }
 
   if (value === undefined || value === null || value === "") return undefined;
+
+  if (
+    (field.type === "rating" || field.type === "scale") &&
+    typeof value === "number" &&
+    value !== 0
+  ) {
+    const { min: lo, max: hi } = scaleBounds(field);
+    if (value < lo || value > hi) return "max";
+  }
 
   const v = field.validation;
   if (!v) return undefined;
@@ -118,7 +150,7 @@ export function FormRenderer({
     const init: Record<string, unknown> = {};
     for (const f of sorted) {
       if (f.type === "checkbox") init[f.id] = [];
-      else if (f.type === "rating") init[f.id] = 0;
+      else if (f.type === "rating" || f.type === "scale") init[f.id] = 0;
       else init[f.id] = "";
     }
     return init;

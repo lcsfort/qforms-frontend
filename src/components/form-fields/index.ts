@@ -6,6 +6,7 @@ export { CheckboxField } from "./CheckboxField";
 export { DateField } from "./DateField";
 export { FileField } from "./FileField";
 export { RatingField } from "./RatingField";
+export { ScaleField } from "./ScaleField";
 export type { FieldProps } from "./types";
 export {
   DEFAULT_LABEL_CLASS,

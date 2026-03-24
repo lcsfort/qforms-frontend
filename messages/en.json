@@ -358,7 +358,8 @@
       "checkbox": "Multiple Choice",
       "date": "Date",
       "file": "File Upload",
-      "rating": "Rating"
+      "rating": "Rating",
+      "scale": "Scale"
     }
   }
 }

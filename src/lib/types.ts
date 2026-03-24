@@ -21,7 +21,8 @@ export type FieldType =
   | "checkbox"
   | "date"
   | "file"
-  | "rating";
+  | "rating"
+  | "scale";
 
 export interface FormField {
   id: string;
