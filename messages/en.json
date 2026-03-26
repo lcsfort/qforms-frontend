@@ -248,7 +248,18 @@
       "placeholder": "e.g. A customer satisfaction survey with ratings, open feedback, and contact info...",
       "submit": "Generate Form",
       "generating": "Generating...",
-      "error": "Failed to generate form. Please try again."
+      "error": "Failed to generate form. Please try again.",
+      "planning": {
+        "mode": "Planning Mode",
+        "straightMode": "Straight Build",
+        "startButton": "Start Planning",
+        "awaitingAnswers": "Waiting for your answers...",
+        "answerPrompt": "Answer the following questions to continue:",
+        "otherLabel": "Other (write your own answer)",
+        "answerPlaceholder": "Type your answer",
+        "autoContinue": "All questions answered. Continuing automatically...",
+        "readyMessage": "Great, I have everything I need. Generating your form now."
+      }
     },
     "editor": {
       "title": "Edit Form",

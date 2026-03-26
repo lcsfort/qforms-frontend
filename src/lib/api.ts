@@ -1,4 +1,9 @@
-import type { Form, FormResponse, GeneratedFormSchema } from "./types";
+import type {
+  Form,
+  FormPlanResponse,
+  FormResponse,
+  GeneratedFormSchema,
+} from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
@@ -208,6 +213,24 @@ export const api = {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ prompt }),
+    }),
+
+  startFormPlan: (token: string, prompt: string) =>
+    request<FormPlanResponse>("/forms/generate/plan", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ prompt }),
+    }),
+
+  submitFormPlanAnswers: (
+    token: string,
+    sessionId: string,
+    answers: Record<string, string>,
+  ) =>
+    request<FormPlanResponse>(`/forms/generate/plan/${sessionId}/answers`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ answers }),
     }),
 
   getPublicForm: (slug: string) =>

@@ -99,3 +99,27 @@ export interface GeneratedFormSchema {
   fields: FormField[];
   settings: FormSettings;
 }
+
+export type FormBuildMode = "planning" | "straight";
+
+export interface FormPlanQuestion {
+  id: string;
+  question: string;
+  placeholder?: string;
+  options?: string[];
+}
+
+export interface FormPlanQuestionsResponse {
+  status: "questions_needed";
+  sessionId: string;
+  summary: string;
+  questions: FormPlanQuestion[];
+}
+
+export interface FormPlanReadyResponse {
+  status: "ready";
+  sessionId: string;
+  schema: GeneratedFormSchema;
+}
+
+export type FormPlanResponse = FormPlanQuestionsResponse | FormPlanReadyResponse;

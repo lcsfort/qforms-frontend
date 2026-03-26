@@ -1,6 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "../api";
-import type { Form, GeneratedFormSchema } from "../types";
+import type {
+  Form,
+  FormBuildMode,
+  FormPlanResponse,
+} from "../types";
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -9,6 +13,9 @@ interface FormsState {
   currentForm: Form | null;
   loading: boolean;
   generating: boolean;
+  selectedBuildMode: FormBuildMode;
+  planningSessionId: string | null;
+  planStatus: "idle" | "needs_questions" | "ready";
   autosaveStatus: AutosaveStatus;
   versionCursor: number;
   versionCount: number;
@@ -20,6 +27,9 @@ const initialState: FormsState = {
   currentForm: null,
   loading: false,
   generating: false,
+  selectedBuildMode: "planning",
+  planningSessionId: null,
+  planStatus: "idle",
   autosaveStatus: "idle",
   versionCursor: 0,
   versionCount: 0,
@@ -196,6 +206,40 @@ export const generateFormSchema = createAsyncThunk(
   },
 );
 
+export const startFormPlan = createAsyncThunk(
+  "forms/startFormPlan",
+  async (prompt: string, { getState, rejectWithValue }) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth
+        .token!;
+      return await api.startFormPlan(token, prompt);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to start planning");
+    }
+  },
+);
+
+export const submitFormPlanAnswers = createAsyncThunk(
+  "forms/submitFormPlanAnswers",
+  async (
+    {
+      sessionId,
+      answers,
+    }: { sessionId: string; answers: Record<string, string> },
+    { getState, rejectWithValue },
+  ) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth
+        .token!;
+      return await api.submitFormPlanAnswers(token, sessionId, answers);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to continue planning");
+    }
+  },
+);
+
 const formsSlice = createSlice({
   name: "forms",
   initialState,
@@ -216,6 +260,13 @@ const formsSlice = createSlice({
     },
     setAutosaveStatus(state, action: { payload: AutosaveStatus }) {
       state.autosaveStatus = action.payload;
+    },
+    setSelectedBuildMode(state, action: { payload: FormBuildMode }) {
+      state.selectedBuildMode = action.payload;
+    },
+    resetPlanningState(state) {
+      state.planStatus = "idle";
+      state.planningSessionId = null;
     },
   },
   extraReducers: (builder) => {
@@ -318,10 +369,47 @@ const formsSlice = createSlice({
       .addCase(generateFormSchema.rejected, (state, action) => {
         state.generating = false;
         state.error = action.payload as string;
+      })
+      .addCase(startFormPlan.pending, (state) => {
+        state.generating = true;
+        state.error = null;
+      })
+      .addCase(startFormPlan.fulfilled, (state, action: { payload: FormPlanResponse }) => {
+        state.generating = false;
+        state.planningSessionId = action.payload.sessionId;
+        state.planStatus =
+          action.payload.status === "questions_needed" ? "needs_questions" : "ready";
+      })
+      .addCase(startFormPlan.rejected, (state, action) => {
+        state.generating = false;
+        state.error = action.payload as string;
+      })
+      .addCase(submitFormPlanAnswers.pending, (state) => {
+        state.generating = true;
+        state.error = null;
+      })
+      .addCase(
+        submitFormPlanAnswers.fulfilled,
+        (state, action: { payload: FormPlanResponse }) => {
+          state.generating = false;
+          state.planningSessionId = action.payload.sessionId;
+          state.planStatus =
+            action.payload.status === "questions_needed" ? "needs_questions" : "ready";
+        },
+      )
+      .addCase(submitFormPlanAnswers.rejected, (state, action) => {
+        state.generating = false;
+        state.error = action.payload as string;
       });
   },
 });
 
-export const { clearCurrentForm, clearFormsError, setCurrentForm, setAutosaveStatus } =
-  formsSlice.actions;
+export const {
+  clearCurrentForm,
+  clearFormsError,
+  setCurrentForm,
+  setAutosaveStatus,
+  setSelectedBuildMode,
+  resetPlanningState,
+} = formsSlice.actions;
 export default formsSlice.reducer;

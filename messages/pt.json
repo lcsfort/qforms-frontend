@@ -248,7 +248,18 @@
       "placeholder": "ex: Uma pesquisa de satisfação do cliente com avaliações, feedback aberto e informações de contato...",
       "submit": "Gerar Formulário",
       "generating": "Gerando...",
-      "error": "Falha ao gerar formulário. Tente novamente."
+      "error": "Falha ao gerar formulário. Tente novamente.",
+      "planning": {
+        "mode": "Modo Planejamento",
+        "straightMode": "Geração Direta",
+        "startButton": "Iniciar Planejamento",
+        "awaitingAnswers": "Aguardando suas respostas...",
+        "answerPrompt": "Responda às perguntas abaixo para continuar:",
+        "otherLabel": "Outro (escreva sua própria resposta)",
+        "answerPlaceholder": "Digite sua resposta",
+        "autoContinue": "Todas as perguntas respondidas. Continuando automaticamente...",
+        "readyMessage": "Perfeito, já tenho tudo que preciso. Vou gerar seu formulário agora."
+      }
     },
     "editor": {
       "title": "Editar Formulário",
