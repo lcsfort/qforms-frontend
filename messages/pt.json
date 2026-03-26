@@ -177,6 +177,9 @@
     "changePasswordBtn": "Alterar senha",
     "changingPassword": "Alterando...",
     "passwordChanged": "Senha alterada com sucesso.",
+    "sectionSecurity": "Segurança",
+    "sectionAi": "IA e geração de formulários",
+    "sectionAiDescription": "Use seu próprio provedor e chave de API ao gerar formulários com IA.",
     "backToDashboard": "Voltar ao painel",
     "validation": {
       "nameRequired": "Nome é obrigatório",
@@ -189,6 +192,7 @@
     },
     "aiSettings": {
       "title": "Configuração de IA",
+      "connectionDetails": "Modelo e chave de API",
       "description": "Conecte seu próprio provedor de IA e chave de API para geração de formulários. Se não configurado, o padrão da plataforma será utilizado.",
       "providerLabel": "Provedor de IA",
       "providerNone": "Padrão da plataforma",

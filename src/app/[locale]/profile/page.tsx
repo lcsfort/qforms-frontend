@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+  type ReactNode,
+} from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useRouter } from "@/i18n/navigation";
@@ -17,6 +26,30 @@ import {
 import { ValidationError } from "yup";
 import { Link } from "@/i18n/navigation";
 import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
+
+function ProfileSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <header>
+        <h2 className="text-lg font-semibold text-[var(--foreground)] tracking-tight">
+          {title}
+        </h2>
+        {description ? (
+          <p className="text-sm text-[var(--muted)] mt-1 max-w-xl">{description}</p>
+        ) : null}
+      </header>
+      {children}
+    </section>
+  );
+}
 
 export default function ProfilePage() {
   const t = useTranslations("profile");
@@ -64,16 +97,23 @@ export default function ProfilePage() {
 
         <h1 className="text-3xl font-bold mb-8">{t("title")}</h1>
 
-        <NameCard user={user} token={token!} />
+        <div className="space-y-10">
+          <ProfileSection title={t("personalInfo")}>
+            <NameCard user={user} token={token!} />
+          </ProfileSection>
 
-        {user.authProvider !== "google" && (
-          <div className="mt-6">
-            <PasswordCard token={token!} />
-          </div>
-        )}
+          {user.authProvider !== "google" && (
+            <ProfileSection title={t("sectionSecurity")}>
+              <PasswordCard token={token!} />
+            </ProfileSection>
+          )}
 
-        <div className="mt-6">
-          <AiSettingsCard token={token!} />
+          <ProfileSection
+            title={t("sectionAi")}
+            description={t("sectionAiDescription")}
+          >
+            <AiSettingsCard token={token!} />
+          </ProfileSection>
         </div>
       </main>
     </div>
@@ -259,6 +299,7 @@ function NameCard({
         )}
       </div>
 
+      <div className="border-t border-[var(--border)] pt-6 mt-6">
       <div className="mb-4">
         <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">
           {t("emailLabel")}
@@ -303,6 +344,7 @@ function NameCard({
           {saving ? t("saving") : t("saveBtn")}
         </button>
       </form>
+      </div>
     </div>
   );
 }
@@ -375,9 +417,7 @@ function PasswordCard({ token }: { token: string }) {
 
   return (
     <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-      <h2 className="text-lg font-semibold mb-4">{t("changePassword")}</h2>
-
-      <form onSubmit={handleChangePassword} noValidate>
+      <form onSubmit={handleChangePassword} noValidate aria-label={t("changePassword")}>
         <div className="mb-4">
           <label htmlFor="current-password" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
             {t("currentPasswordLabel")}
@@ -588,8 +628,9 @@ function AiSettingsCard({ token }: { token: string }) {
   if (loading) {
     return (
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-        <div className="animate-pulse h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4" />
-        <div className="animate-pulse h-4 w-full bg-gray-200 dark:bg-gray-700 rounded" />
+        <div className="animate-pulse h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-4" />
+        <div className="animate-pulse h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
+        <div className="animate-pulse h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg" />
       </div>
     );
   }
@@ -598,7 +639,6 @@ function AiSettingsCard({ token }: { token: string }) {
 
   return (
     <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-      <h2 className="text-lg font-semibold mb-1">{t("title")}</h2>
       <p className="text-sm text-[var(--muted)] mb-5">{t("description")}</p>
 
       <form onSubmit={handleSave} noValidate>
@@ -620,8 +660,11 @@ function AiSettingsCard({ token }: { token: string }) {
         </div>
 
         {provider && (
-          <>
-            <div className="mb-4">
+          <div className="border-t border-[var(--border)] pt-5 mt-6 space-y-4">
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">
+              {t("connectionDetails")}
+            </h3>
+            <div>
               <label htmlFor="ai-model" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
                 {t("modelLabel")}
               </label>
@@ -654,7 +697,7 @@ function AiSettingsCard({ token }: { token: string }) {
               )}
             </div>
 
-            <div className="mb-4">
+            <div>
               <label htmlFor="ai-api-key" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
                 {t("apiKeyLabel")}
                 {hasApiKey && !apiKey && (
@@ -673,7 +716,7 @@ function AiSettingsCard({ token }: { token: string }) {
               />
               <p className="text-xs text-[var(--muted)] mt-1">{t("apiKeyHint")}</p>
             </div>
-          </>
+          </div>
         )}
 
         {apiError && (

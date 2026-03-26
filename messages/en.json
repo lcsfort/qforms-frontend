@@ -177,6 +177,9 @@
     "changePasswordBtn": "Change password",
     "changingPassword": "Changing...",
     "passwordChanged": "Password changed successfully.",
+    "sectionSecurity": "Security",
+    "sectionAi": "AI & form generation",
+    "sectionAiDescription": "Use your own provider and API key when generating forms with AI.",
     "backToDashboard": "Back to dashboard",
     "validation": {
       "nameRequired": "Name is required",
@@ -189,6 +192,7 @@
     },
     "aiSettings": {
       "title": "AI Configuration",
+      "connectionDetails": "Model and API key",
       "description": "Connect your own AI provider and API key for form generation. If not configured, the platform default will be used.",
       "providerLabel": "AI Provider",
       "providerNone": "Platform default",
