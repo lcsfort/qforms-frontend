@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -22,6 +22,7 @@ export default function PublicFormPage() {
   const t = useTranslations("forms.publicForm");
   const params = useParams();
   const slug = params.slug as string;
+  const locale = typeof params.locale === "string" ? params.locale : "en";
 
   const [form, setForm] = useState<{
     title: string;
@@ -33,6 +34,64 @@ export default function PublicFormPage() {
   const [notFound, setNotFound] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState("");
+
+  const pageOpenAt = useMemo(() => Date.now(), []);
+  const lastFieldIdRef = useRef("");
+  const hasStartedRef = useRef(false);
+
+  useEffect(() => {
+    const storageKey = `qforms_behavior_session_${slug}`;
+    const existing =
+      typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
+    const id = existing || crypto.randomUUID();
+    if (!existing && typeof window !== "undefined") {
+      window.localStorage.setItem(storageKey, id);
+    }
+    setSessionId(id);
+  }, [slug]);
+
+  const sendBehaviorEvent = async (data: {
+    eventType:
+      | "form_open"
+      | "form_start"
+      | "field_focus"
+      | "field_blur"
+      | "field_change"
+      | "submit_attempt"
+      | "submit_success"
+      | "submit_error"
+      | "form_abandon";
+    fieldId?: string;
+    payload?: Record<string, unknown>;
+  }) => {
+    if (!sessionId) return;
+    const viewport =
+      typeof window !== "undefined"
+        ? `${window.innerWidth}x${window.innerHeight}`
+        : undefined;
+    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const deviceType =
+      /Mobi|Android/i.test(userAgent)
+        ? "mobile"
+        : /iPad|Tablet/i.test(userAgent)
+          ? "tablet"
+          : "desktop";
+    try {
+      await api.trackPublicFormBehavior(slug, {
+        sessionId,
+        eventType: data.eventType,
+        fieldId: data.fieldId,
+        payload: data.payload,
+        locale,
+        referer: typeof document !== "undefined" ? document.referrer : "",
+        viewport,
+        deviceType,
+      });
+    } catch {
+      // ignore telemetry failures
+    }
+  };
 
   useEffect(() => {
     api
@@ -48,6 +107,31 @@ export default function PublicFormPage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    void sendBehaviorEvent({ eventType: "form_open" });
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "hidden" || submitted) return;
+      void sendBehaviorEvent({
+        eventType: "form_abandon",
+        payload: { lastFieldId: lastFieldIdRef.current },
+      });
+    };
+    const onBeforeUnload = () => {
+      if (submitted) return;
+      void sendBehaviorEvent({
+        eventType: "form_abandon",
+        payload: { lastFieldId: lastFieldIdRef.current },
+      });
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [sessionId, submitted]);
 
   const settings = form?.settings;
 
@@ -94,10 +178,19 @@ export default function PublicFormPage() {
     setSubmitError(null);
     try {
       await api.submitFormResponse(slug, data);
+      await sendBehaviorEvent({
+        eventType: "submit_success",
+        payload: { completionMs: Math.max(0, Date.now() - pageOpenAt) },
+      });
       setSubmitted(true);
     } catch (err: unknown) {
       const e = err as { message?: string };
       setSubmitError(e.message ?? "Something went wrong");
+      await sendBehaviorEvent({
+        eventType: "submit_error",
+        payload: { message: e.message ?? "Something went wrong" },
+      });
+      throw err;
     }
   };
 
@@ -197,6 +290,23 @@ export default function PublicFormPage() {
               settings={form.settings}
               onSubmit={handleSubmit}
               submitLabel={t("submit")}
+              onAnalyticsEvent={(event) => {
+                if (event.type === "form_start") {
+                  if (hasStartedRef.current) return;
+                  hasStartedRef.current = true;
+                }
+                if (event.fieldId) {
+                  lastFieldIdRef.current = event.fieldId;
+                }
+                void sendBehaviorEvent({
+                  eventType: event.type,
+                  fieldId: event.fieldId,
+                  payload: {
+                    ...(event.payload ?? {}),
+                    durationMs: event.durationMs,
+                  },
+                });
+              }}
             />
             {submitError && (
               <div className="mt-4 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm">

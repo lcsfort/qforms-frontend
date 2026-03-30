@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, type FormEvent, type ComponentType } from "react";
+import { useState, useCallback, useMemo, useRef, type FormEvent, type ComponentType } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { FormField, FormSettings } from "@/lib/types";
@@ -45,6 +45,19 @@ interface FormRendererProps {
   fieldClassNames?: FieldClassNames;
   disabled?: boolean;
   className?: string;
+  onAnalyticsEvent?: (event: {
+    type:
+      | "form_start"
+      | "field_focus"
+      | "field_blur"
+      | "field_change"
+      | "submit_attempt"
+      | "submit_success"
+      | "submit_error";
+    fieldId?: string;
+    durationMs?: number;
+    payload?: Record<string, unknown>;
+  }) => void;
 }
 
 function scaleBounds(field: FormField): { min: number; max: number } {
@@ -136,6 +149,7 @@ export function FormRenderer({
   fieldClassNames,
   disabled = false,
   className,
+  onAnalyticsEvent,
 }: FormRendererProps) {
   const sorted = Array.isArray(fields)
     ? fields
@@ -157,14 +171,48 @@ export function FormRenderer({
   });
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [submitting, setSubmitting] = useState(false);
+  const startedRef = useRef(false);
+  const focusedAtRef = useRef<Record<string, number>>({});
+
+  const markStarted = useCallback(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    onAnalyticsEvent?.({ type: "form_start" });
+  }, [onAnalyticsEvent]);
 
   const handleChange = useCallback((fieldId: string, value: unknown) => {
+    markStarted();
     setValues((prev) => ({ ...prev, [fieldId]: value }));
     setErrors((prev) => ({ ...prev, [fieldId]: undefined }));
-  }, []);
+    onAnalyticsEvent?.({
+      type: "field_change",
+      fieldId,
+      payload: { valueType: Array.isArray(value) ? "array" : typeof value },
+    });
+  }, [markStarted, onAnalyticsEvent]);
+
+  const handleFieldFocus = useCallback(
+    (fieldId: string) => {
+      markStarted();
+      focusedAtRef.current[fieldId] = Date.now();
+      onAnalyticsEvent?.({ type: "field_focus", fieldId });
+    },
+    [markStarted, onAnalyticsEvent],
+  );
+
+  const handleFieldBlur = useCallback(
+    (fieldId: string) => {
+      const startedAt = focusedAtRef.current[fieldId];
+      const durationMs = startedAt ? Math.max(0, Date.now() - startedAt) : 0;
+      delete focusedAtRef.current[fieldId];
+      onAnalyticsEvent?.({ type: "field_blur", fieldId, durationMs });
+    },
+    [onAnalyticsEvent],
+  );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    onAnalyticsEvent?.({ type: "submit_attempt" });
 
     const newErrors: Record<string, string | undefined> = {};
     let hasErrors = false;
@@ -184,6 +232,12 @@ export function FormRenderer({
     setSubmitting(true);
     try {
       await onSubmit(values);
+      onAnalyticsEvent?.({ type: "submit_success" });
+    } catch (err) {
+      onAnalyticsEvent?.({
+        type: "submit_error",
+        payload: { message: err instanceof Error ? err.message : String(err) },
+      });
     } finally {
       setSubmitting(false);
     }
@@ -236,6 +290,8 @@ export function FormRenderer({
             <div
               key={field.id}
               className={spanFull ? "col-span-full" : undefined}
+              onFocusCapture={() => handleFieldFocus(field.id)}
+              onBlurCapture={() => handleFieldBlur(field.id)}
             >
               <Component
                 field={field}

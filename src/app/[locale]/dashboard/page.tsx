@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations, useFormatter, useNow } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -8,6 +8,8 @@ import { fetchProfile } from "@/lib/redux/authSlice";
 import { fetchForms, deleteForm } from "@/lib/redux/formsSlice";
 import { AppMenu } from "@/components/AppMenu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import Image from "next/image";
+import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -19,6 +21,9 @@ export default function DashboardPage() {
   const { user, token, hydrated } = useAppSelector((state) => state.auth);
   const { forms, loading: formsLoading } = useAppSelector((state) => state.forms);
   const [deleteFormId, setDeleteFormId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -52,6 +57,36 @@ export default function DashboardPage() {
     }
   };
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredForms = useMemo(() => {
+    if (!normalizedQuery) return forms;
+    return forms.filter((form) => {
+      const searchable = [
+        form.title,
+        form.description ?? "",
+        form.slug ?? "",
+        form.status,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return searchable.includes(normalizedQuery);
+    });
+  }, [forms, normalizedQuery]);
+
+  const avatarUrl = user ? getUserAvatarUrl(user) : null;
+  const initials = user ? getUserInitials(user) : "";
+
   if (!hydrated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -62,27 +97,89 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <div className="fixed top-4 left-4 z-50">
-        <AppMenu />
-      </div>
+      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur">
+        <div className="flex h-14 w-full items-center gap-3 px-3 sm:px-4">
+          <AppMenu />
 
-      <main className="max-w-4xl mx-auto px-6 pt-20 pb-12">
-        <div className="flex items-center justify-between mb-8">
+          <Link href="/dashboard" className="flex items-center min-w-0 shrink-0">
+            <span className="font-semibold truncate text-xl">
+              <span className="text-indigo-600">Q</span>Forms
+            </span>
+          </Link>
+
+          <div className="flex-1 flex justify-center px-2">
+            <div className="relative w-full max-w-2xl">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
+              </svg>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                placeholder={t("searchPlaceholder")}
+                className={`w-full h-10 rounded-full border border-[var(--border)] bg-[var(--card)] pl-10 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  searchQuery || isSearchFocused ? "pr-12" : "pr-24"
+                }`}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--foreground)]"
+                  aria-label={t("clearSearch")}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              {!searchQuery && !isSearchFocused && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[var(--muted)] border border-[var(--border)] rounded px-1.5 py-0.5 hidden sm:inline pointer-events-none">
+                  {t("searchShortcut")}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/profile"
+              className="relative w-9 h-9 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--card)] flex items-center justify-center"
+              title={user.name || user.email}
+            >
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt={user.name || user.email} fill className="object-cover" unoptimized />
+              ) : (
+                <span className="text-xs font-semibold">{initials}</span>
+              )}
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 pt-8 pb-12">
+        <div className="flex items-end justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1">
-              {t("welcome", { name: user.name || "empty" })}
-            </h1>
+            <h1 className="text-3xl font-bold mb-1">{t("welcome", { name: user.name || "empty" })}</h1>
             <p className="text-[var(--muted)]">{t("subtitle")}</p>
           </div>
-          <Link
-            href="/dashboard/forms/new"
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            {tf("newForm")}
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-[var(--muted)]">
+              {t("resultsCount", { count: filteredForms.length })}
+            </span>
+            <Link
+              href="/dashboard/forms/new"
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              {tf("newForm")}
+            </Link>
+          </div>
         </div>
 
         {!user.isEmailVerified && (
@@ -111,9 +208,21 @@ export default function DashboardPage() {
               {t("generateBtn")}
             </Link>
           </div>
+        ) : filteredForms.length === 0 ? (
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-10 text-center">
+            <h2 className="text-lg font-semibold mb-2">{t("noSearchResults")}</h2>
+            <p className="text-[var(--muted)] text-sm mb-4">{t("noSearchResultsDesc")}</p>
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="inline-flex items-center px-4 py-2 rounded-lg border border-[var(--border)] hover:bg-[var(--surface)] text-sm"
+            >
+              {t("clearSearch")}
+            </button>
+          </div>
         ) : (
           <div className="grid gap-4">
-            {forms.map((form) => (
+            {filteredForms.map((form) => (
               <div
                 key={form.id}
                 className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"

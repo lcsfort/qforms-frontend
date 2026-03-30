@@ -237,6 +237,9 @@ export default function NewFormPage() {
     if (pendingQuestions.length === 0) return false;
     return pendingQuestions.every((question) => getResolvedAnswer(question).length > 0);
   }, [pendingQuestions, selectedAnswers, otherAnswers]);
+  const hasPendingQuestions = pendingQuestions.length > 0;
+  const primaryButtonDisabled =
+    generating || !prompt.trim() || (mode === "planning" && hasPendingQuestions);
 
   useEffect(() => {
     if (mode !== "planning") return;
@@ -258,8 +261,13 @@ export default function NewFormPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <main className="max-w-2xl mx-auto px-6 pt-16 pb-12">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.18),transparent_56%),var(--background)] relative overflow-x-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-28 -right-24 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
+        <div className="absolute top-56 -left-24 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
+      </div>
+
+      <main className="relative max-w-4xl mx-auto px-6 pt-14 pb-14">
         <Link
           href="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors mb-8"
@@ -270,65 +278,90 @@ export default function NewFormPage() {
           {te("backToForms")}
         </Link>
 
-        <h1 className="text-3xl font-bold mb-2">{t("title")}</h1>
-        <p className="text-[var(--muted)] mb-8">{t("subtitle")}</p>
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-200/70 dark:border-indigo-900/70 bg-white/80 dark:bg-black/20 text-xs text-indigo-700 dark:text-indigo-300 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+            {t("premiumBadge")}
+          </div>
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-2">{t("title")}</h1>
+          <p className="text-[var(--muted)] max-w-2xl">{t("subtitle")}</p>
+        </div>
 
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-          <div className="inline-flex p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] mb-4">
-            <button
-              type="button"
-              onClick={() => setMode("planning")}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                mode === "planning"
-                  ? "bg-indigo-600 text-white"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              {t("planning.mode")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("straight")}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                mode === "straight"
-                  ? "bg-indigo-600 text-white"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              {t("planning.straightMode")}
-            </button>
+        <section className="rounded-3xl border border-[var(--border)]/80 bg-[var(--card)]/95 backdrop-blur-xl shadow-[0_24px_60px_-36px_rgba(79,70,229,0.55)] p-5 md:p-7 space-y-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="inline-flex p-1 rounded-2xl bg-[var(--background)] border border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => setMode("planning")}
+                className={`px-4 py-2 text-sm rounded-xl transition-colors ${
+                  mode === "planning"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                {t("planning.mode")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("straight")}
+                className={`px-4 py-2 text-sm rounded-xl transition-colors ${
+                  mode === "straight"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                {t("planning.straightMode")}
+              </button>
+            </div>
+            <p className="text-xs md:text-sm text-[var(--muted)]">
+              {mode === "planning" ? t("planning.modeHint") : t("straightModeHint")}
+            </p>
           </div>
 
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder={t("placeholder")}
-            rows={5}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-y"
-          />
+          <div className="rounded-2xl border border-indigo-100/80 dark:border-indigo-900/50 bg-white/70 dark:bg-gray-900/60 p-4">
+            <label className="text-sm font-medium block mb-2">{t("promptLabel")}</label>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={t("placeholder")}
+              rows={5}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-y"
+            />
+            <p className="mt-2 text-xs text-[var(--muted)]">{t("promptHint")}</p>
+          </div>
 
           {mode === "planning" && chatMessages.length > 0 && (
-            <div className="mt-4 rounded-xl border border-[var(--border)] p-4 space-y-3 bg-[var(--background)]">
-              {chatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`text-sm px-3 py-2 rounded-lg whitespace-pre-wrap ${
-                    message.role === "user"
-                      ? "bg-indigo-600 text-white ml-8"
-                      : "bg-[var(--card)] border border-[var(--border)] mr-8"
-                  }`}
-                >
-                  {message.content}
-                </div>
-              ))}
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)]/70 p-4">
+              <p className="text-xs uppercase tracking-wide text-[var(--muted)] mb-3">{t("planning.conversationTitle")}</p>
+              <div className="space-y-3">
+                {chatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`text-sm px-3.5 py-2.5 rounded-xl whitespace-pre-wrap ${
+                      message.role === "user"
+                        ? "bg-indigo-600 text-white ml-8"
+                        : "bg-[var(--card)] border border-[var(--border)] mr-8"
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {mode === "planning" && pendingQuestions.length > 0 && (
-            <div className="mt-4 space-y-3">
-              <p className="text-sm text-[var(--muted)]">{t("planning.answerPrompt")}</p>
+          {mode === "planning" && hasPendingQuestions && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)]/70 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">{t("planning.answerPrompt")}</p>
+                {allQuestionsAnswered && (
+                  <span className="px-2.5 py-1 rounded-full text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    {t("planning.autoContinueLabel")}
+                  </span>
+                )}
+              </div>
               {pendingQuestions.map((question) => (
-                <div key={question.id} className="space-y-2">
+                <div key={question.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 space-y-2.5">
                   <label className="text-sm font-medium">{question.question}</label>
                   {getQuestionOptions(question).length > 0 && (
                     <div className="flex flex-wrap gap-2">
@@ -353,7 +386,7 @@ export default function NewFormPage() {
                       })}
                     </div>
                   )}
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <p className="text-xs text-[var(--muted)]">{t("planning.otherLabel")}</p>
                     <input
                       type="text"
@@ -374,19 +407,15 @@ export default function NewFormPage() {
           )}
 
           {error && (
-            <div className="mt-3 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm">
+            <div className="px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm">
               {error}
             </div>
           )}
 
           <button
             onClick={handleGenerate}
-            disabled={
-              generating ||
-              !prompt.trim() ||
-              (mode === "planning" && pendingQuestions.length > 0)
-            }
-            className="mt-4 w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+            disabled={primaryButtonDisabled}
+            className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
           >
             {generating ? (
               <>
@@ -401,7 +430,7 @@ export default function NewFormPage() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
                 </svg>
-                {mode === "planning" && pendingQuestions.length > 0
+                {mode === "planning" && hasPendingQuestions
                   ? t("planning.awaitingAnswers")
                   : mode === "planning"
                     ? t("planning.startButton")
@@ -409,7 +438,7 @@ export default function NewFormPage() {
               </>
             )}
           </button>
-        </div>
+        </section>
       </main>
     </div>
   );

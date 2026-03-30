@@ -489,6 +489,12 @@ export default function FormEditorPage() {
                     ? t("autosaveSaved")
                     : t("autosaveIdle")}
             </div>
+            <Link
+              href={`/dashboard/forms/${formId}/responses`}
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              {t("viewResponses")}
+            </Link>
             {currentForm.status === "published" ? (
               <button
                 onClick={handleUnpublish}

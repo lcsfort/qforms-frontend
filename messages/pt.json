@@ -136,7 +136,13 @@
     "subtitle": "Seu painel está pronto. Descreva um formulário e deixe a IA fazer o resto.",
     "emptyTitle": "Gere seu primeiro formulário",
     "emptyDesc": "Diga à IA que tipo de formulário você precisa e ela gerará os campos, a lógica e o design para você.",
-    "generateBtn": "Gerar com IA"
+    "generateBtn": "Gerar com IA",
+    "searchPlaceholder": "Pesquisar formulários",
+    "searchShortcut": "Ctrl/⌘ K",
+    "resultsCount": "{count, plural, =0 {Nenhum formulário} one {# formulário} other {# formulários}}",
+    "noSearchResults": "Nenhum formulário encontrado",
+    "noSearchResultsDesc": "Tente outro termo de pesquisa ou limpe a busca.",
+    "clearSearch": "Limpar busca"
   },
   "language": {
     "label": "Idioma",
@@ -245,6 +251,10 @@
     "generate": {
       "title": "Criar um novo formulário",
       "subtitle": "Descreva o formulário que você precisa e a IA vai gerá-lo para você.",
+      "premiumBadge": "Construtor com IA",
+      "promptLabel": "O que este formulário deve fazer?",
+      "promptHint": "Seja específico sobre público, objetivo e quais informações você precisa coletar.",
+      "straightModeHint": "Gere o formulário imediatamente a partir do seu prompt.",
       "placeholder": "ex: Uma pesquisa de satisfação do cliente com avaliações, feedback aberto e informações de contato...",
       "submit": "Gerar Formulário",
       "generating": "Gerando...",
@@ -252,6 +262,9 @@
       "planning": {
         "mode": "Modo Planejamento",
         "straightMode": "Geração Direta",
+        "modeHint": "Fazemos perguntas de acompanhamento e refinamos antes de gerar.",
+        "conversationTitle": "Conversa de planejamento",
+        "autoContinueLabel": "Continuação automática",
         "startButton": "Iniciar Planejamento",
         "awaitingAnswers": "Aguardando suas respostas...",
         "answerPrompt": "Responda às perguntas abaixo para continuar:",
@@ -317,6 +330,7 @@
       "copyRespondentLinkTooltip": "Copiar link do formulário",
       "deleteForm": "Excluir Formulário",
       "backToForms": "Voltar aos formulários",
+      "viewResponses": "Ver respostas",
       "designSection": "Design",
       "close": "Fechar",
       "pageBackground": "Fundo da página",
@@ -353,7 +367,81 @@
       "noResponsesDesc": "Compartilhe seu formulário para começar a coletar respostas.",
       "submittedAt": "Enviado em",
       "totalResponses": "{count, plural, =0 {Sem respostas} one {1 resposta} other {# respostas}}",
-      "backToForm": "Voltar ao formulário"
+      "backToForm": "Voltar ao formulário",
+      "emptyChart": "Ainda não há dados suficientes para este gráfico.",
+      "fieldBreakdowns": "Detalhamento por campo",
+      "showRawData": "Mostrar dados brutos",
+      "hideRawData": "Ocultar dados brutos",
+      "fieldStats": "{answered} respondidos · {missing}% ausentes",
+      "numericStats": "Mín {min} · Máx {max} · Méd {avg}",
+      "filters": {
+        "from": "Data inicial",
+        "to": "Data final",
+        "segmentField": "Campo de segmentação",
+        "segmentValue": "Valor do segmento",
+        "none": "Nenhum",
+        "allValues": "Todos os valores"
+      },
+      "kpis": {
+        "totalResponses": "Total de respostas",
+        "uniqueIps": "IPs únicos",
+        "completionRate": "Taxa de preenchimento",
+        "avgAnswered": "Média de campos respondidos"
+      },
+      "charts": {
+        "submissionTrend": "Tendência de envios",
+        "submissionTrendSubtitle": "Respostas ao longo do tempo",
+        "segmentShare": "Participação por segmento",
+        "segmentShareSubtitle": "Distribuição para o campo de segmentação selecionado",
+        "topAnswers": "Principais respostas",
+        "pickFieldHint": "Opções mais frequentes de um campo"
+      },
+      "bi": {
+        "title": "Insights de BI",
+        "subtitle": "Crescimento, comparativos e estimativa",
+        "currentPeriod": "Últimos 7 dias",
+        "previousPeriod": "7 dias anteriores",
+        "delta": "Variação",
+        "forecast": "Previsão",
+        "forecastValue": "Estimativa para o próximo período: {value} respostas",
+        "estimateDisclaimer": "Estimativa baseada na tendência recente e deve ser interpretada como direcional."
+      },
+      "anomalies": {
+        "title": "Sinais de anomalia",
+        "responses": "respostas"
+      },
+      "tabs": {
+        "responses": "Gráficos de Respostas",
+        "bi": "Insights de BI",
+        "behavior": "Analytics de Comportamento"
+      },
+      "behavior": {
+        "title": "Analytics de comportamento",
+        "subtitle": "Performance de sessão e interação",
+        "empty": "Ainda não há telemetria comportamental. Novas interações públicas aparecerão aqui.",
+        "slowestQuestions": "Perguntas mais lentas (segundos médios)",
+        "slowestQuestionsSubtitle": "Perguntas que levam mais tempo para responder",
+        "deviceBreakdown": "Distribuição por dispositivo",
+        "deviceBreakdownSubtitle": "Sessões agrupadas por tipo de dispositivo",
+        "insights": "Insights comportamentais",
+        "insightsSubtitle": "Velocidade de conclusão e sinais de fricção",
+        "avgCompletion": "Tempo médio de conclusão: {seconds}s",
+        "medianCompletion": "Tempo mediano de conclusão: {seconds}s",
+        "fieldStats": "Média {avgSeconds}s · edições {edits} · abandonos {dropOffs}",
+        "kpis": {
+          "totalSessions": "Sessões totais",
+          "started": "Sessões iniciadas",
+          "submitted": "Sessões enviadas",
+          "completionRate": "Taxa de conclusão"
+        },
+        "funnel": {
+          "title": "Funil comportamental",
+          "subtitle": "Abertura -> início -> envio",
+          "open": "Abertura",
+          "start": "Início",
+          "submit": "Envio"
+        }
+      }
     },
     "validation": {
       "required": "Este campo é obrigatório",

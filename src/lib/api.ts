@@ -1,4 +1,5 @@
 import type {
+  FormBehaviorAnalytics,
   Form,
   FormPlanResponse,
   FormResponse,
@@ -252,6 +253,38 @@ export const api = {
   getFormResponses: (token: string, formId: string) =>
     request<FormResponse[]>(`/forms/${formId}/responses`, {
       headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getFormBehaviorAnalytics: (token: string, formId: string) =>
+    request<FormBehaviorAnalytics>(`/forms/${formId}/behavior-analytics`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  trackPublicFormBehavior: (
+    slug: string,
+    data: {
+      sessionId: string;
+      eventType:
+        | "form_open"
+        | "form_start"
+        | "field_focus"
+        | "field_blur"
+        | "field_change"
+        | "submit_attempt"
+        | "submit_success"
+        | "submit_error"
+        | "form_abandon";
+      fieldId?: string;
+      payload?: Record<string, unknown>;
+      locale?: string;
+      referer?: string;
+      viewport?: string;
+      deviceType?: string;
+    },
+  ) =>
+    request<{ id: string }>(`/forms/public/${slug}/behavior`, {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 
   getAiSettings: (token: string) =>

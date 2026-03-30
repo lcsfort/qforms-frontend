@@ -123,3 +123,36 @@ export interface FormPlanReadyResponse {
 }
 
 export type FormPlanResponse = FormPlanQuestionsResponse | FormPlanReadyResponse;
+
+export interface BehaviorFunnelStep {
+  step: "open" | "start" | "submit";
+  count: number;
+}
+
+export interface BehaviorFieldStat {
+  fieldId: string;
+  averageTimeMs: number;
+  medianTimeMs: number;
+  edits: number;
+  dropOffs: number;
+}
+
+export interface BehaviorBreakdownItem {
+  label: string;
+  count: number;
+}
+
+export interface FormBehaviorAnalytics {
+  overview: {
+    totalSessions: number;
+    startedSessions: number;
+    submittedSessions: number;
+    completionRate: number;
+    averageCompletionMs: number;
+    medianCompletionMs: number;
+  };
+  funnel: BehaviorFunnelStep[];
+  fields: BehaviorFieldStat[];
+  deviceBreakdown: BehaviorBreakdownItem[];
+  localeBreakdown: BehaviorBreakdownItem[];
+}

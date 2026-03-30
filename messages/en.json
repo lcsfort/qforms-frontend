@@ -136,7 +136,13 @@
     "subtitle": "Your dashboard is ready. Describe a form and let AI do the rest.",
     "emptyTitle": "Generate your first form",
     "emptyDesc": "Tell AI what kind of form you need and it will generate the fields, logic, and design for you.",
-    "generateBtn": "Generate with AI"
+    "generateBtn": "Generate with AI",
+    "searchPlaceholder": "Search forms",
+    "searchShortcut": "Ctrl/⌘ K",
+    "resultsCount": "{count, plural, =0 {No forms} one {# form} other {# forms}}",
+    "noSearchResults": "No forms found",
+    "noSearchResultsDesc": "Try another search term or clear the search.",
+    "clearSearch": "Clear search"
   },
   "language": {
     "label": "Language",
@@ -245,6 +251,10 @@
     "generate": {
       "title": "Create a new form",
       "subtitle": "Describe the form you need and AI will generate it for you.",
+      "premiumBadge": "AI-powered builder",
+      "promptLabel": "What should this form do?",
+      "promptHint": "Be specific about audience, outcome, and the exact information you need to collect.",
+      "straightModeHint": "Generate the form immediately from your prompt.",
       "placeholder": "e.g. A customer satisfaction survey with ratings, open feedback, and contact info...",
       "submit": "Generate Form",
       "generating": "Generating...",
@@ -252,6 +262,9 @@
       "planning": {
         "mode": "Planning Mode",
         "straightMode": "Straight Build",
+        "modeHint": "We ask follow-up questions and refine before generating.",
+        "conversationTitle": "Planning conversation",
+        "autoContinueLabel": "Auto-continuing",
         "startButton": "Start Planning",
         "awaitingAnswers": "Waiting for your answers...",
         "answerPrompt": "Answer the following questions to continue:",
@@ -317,6 +330,7 @@
       "copyRespondentLinkTooltip": "Copy respondent link",
       "deleteForm": "Delete Form",
       "backToForms": "Back to forms",
+      "viewResponses": "View responses",
       "designSection": "Design",
       "close": "Close",
       "pageBackground": "Page background",
@@ -353,7 +367,81 @@
       "noResponsesDesc": "Share your form to start collecting responses.",
       "submittedAt": "Submitted",
       "totalResponses": "{count, plural, =0 {No responses} one {1 response} other {# responses}}",
-      "backToForm": "Back to form"
+      "backToForm": "Back to form",
+      "emptyChart": "Not enough data for this chart yet.",
+      "fieldBreakdowns": "Field breakdowns",
+      "showRawData": "Show raw data",
+      "hideRawData": "Hide raw data",
+      "fieldStats": "{answered} answered · {missing}% missing",
+      "numericStats": "Min {min} · Max {max} · Avg {avg}",
+      "filters": {
+        "from": "From date",
+        "to": "To date",
+        "segmentField": "Segment field",
+        "segmentValue": "Segment value",
+        "none": "None",
+        "allValues": "All values"
+      },
+      "kpis": {
+        "totalResponses": "Total responses",
+        "uniqueIps": "Unique IPs",
+        "completionRate": "Completion rate",
+        "avgAnswered": "Avg answered fields"
+      },
+      "charts": {
+        "submissionTrend": "Submission trend",
+        "submissionTrendSubtitle": "Responses over time",
+        "segmentShare": "Segment share",
+        "segmentShareSubtitle": "Distribution for selected segment field",
+        "topAnswers": "Top answers",
+        "pickFieldHint": "Most frequent options from a field"
+      },
+      "bi": {
+        "title": "BI insights",
+        "subtitle": "Growth, comparisons, and estimate",
+        "currentPeriod": "Last 7 days",
+        "previousPeriod": "Previous 7 days",
+        "delta": "Delta",
+        "forecast": "Forecast",
+        "forecastValue": "Estimated next period: {value} responses",
+        "estimateDisclaimer": "Estimate based on recent trend and should be interpreted as directional."
+      },
+      "anomalies": {
+        "title": "Anomaly signals",
+        "responses": "responses"
+      },
+      "tabs": {
+        "responses": "Response Charts",
+        "bi": "BI Insights",
+        "behavior": "Behavior Analytics"
+      },
+      "behavior": {
+        "title": "Behavior analytics",
+        "subtitle": "Session and interaction performance",
+        "empty": "No behavior telemetry yet. New public interactions will appear here.",
+        "slowestQuestions": "Slowest questions (avg seconds)",
+        "slowestQuestionsSubtitle": "Questions taking most time to answer",
+        "deviceBreakdown": "Device breakdown",
+        "deviceBreakdownSubtitle": "Sessions grouped by device type",
+        "insights": "Behavior insights",
+        "insightsSubtitle": "Completion speed and friction signals",
+        "avgCompletion": "Average completion time: {seconds}s",
+        "medianCompletion": "Median completion time: {seconds}s",
+        "fieldStats": "Avg {avgSeconds}s · edits {edits} · drop-offs {dropOffs}",
+        "kpis": {
+          "totalSessions": "Total sessions",
+          "started": "Started sessions",
+          "submitted": "Submitted sessions",
+          "completionRate": "Completion rate"
+        },
+        "funnel": {
+          "title": "Behavior funnel",
+          "subtitle": "Open -> start -> submit",
+          "open": "Open",
+          "start": "Start",
+          "submit": "Submit"
+        }
+      }
     },
     "validation": {
       "required": "This field is required",
