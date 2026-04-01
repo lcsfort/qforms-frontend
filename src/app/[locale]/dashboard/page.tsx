@@ -160,7 +160,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 pt-8 pb-12">
+      <main className="max-w-7xl mx-auto px-6 pt-8 pb-12">
         <div className="flex items-end justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold mb-1">{t("welcome", { name: user.name || "empty" })}</h1>
@@ -221,11 +221,11 @@ export default function DashboardPage() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-4 xl:grid-cols-2">
             {filteredForms.map((form) => (
               <div
                 key={form.id}
-                className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
+                className="h-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 flex items-center justify-between hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
               >
                 <Link href={`/dashboard/forms/${form.id}`} className="flex-1 min-w-0 mr-4">
                   <div className="flex items-center gap-3 mb-1">
