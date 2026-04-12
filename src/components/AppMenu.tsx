@@ -33,20 +33,20 @@ function MenuItem({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3.5 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] rounded-lg transition-colors duration-100 cursor-pointer ${
         active
-          ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+          ? "bg-[var(--primary)]/8 text-[var(--primary)]"
           : danger
-            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-            : "text-[var(--foreground)] hover:bg-[var(--surface)]"
+            ? "text-red-500 hover:bg-red-500/[0.06] dark:hover:bg-red-500/10"
+            : "text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.04]"
       }`}
     >
-      <span className="w-5 h-5 flex items-center justify-center shrink-0 opacity-70">
+      <span className="w-4 h-4 flex items-center justify-center shrink-0 opacity-60">
         {icon}
       </span>
       <span className="flex-1 text-left">{label}</span>
       {shortcut && (
-        <span className="text-xs text-[var(--muted)] font-mono">
+        <span className="text-[10px] text-[var(--muted)]/60 font-mono border border-[var(--border)] rounded px-1 py-px">
           {shortcut}
         </span>
       )}
@@ -55,13 +55,14 @@ function MenuItem({
 }
 
 function Divider() {
-  return <div className="my-1.5 border-t border-[var(--border)]" />;
+  return <div className="my-1.5 border-t border-[var(--border)]/50" />;
 }
 
 function ThemeRow({ theme, setTheme, label }: { theme: Theme; setTheme: (t: Theme) => void; label: string }) {
-  const options: { value: Theme; icon: ReactNode }[] = [
+  const options: { value: Theme; icon: ReactNode; name: string }[] = [
     {
       value: "light",
+      name: "Light",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
@@ -70,6 +71,7 @@ function ThemeRow({ theme, setTheme, label }: { theme: Theme; setTheme: (t: Them
     },
     {
       value: "dark",
+      name: "Dark",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
@@ -79,21 +81,22 @@ function ThemeRow({ theme, setTheme, label }: { theme: Theme; setTheme: (t: Them
   ];
 
   return (
-    <div className="px-3.5 py-2">
-      <span className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">{label}</span>
-      <div className="flex gap-1 mt-2">
+    <div className="px-3 py-2">
+      <span className="text-[11px] font-medium text-[var(--muted)]/70 uppercase tracking-wider">{label}</span>
+      <div className="flex gap-1 mt-2 p-0.5 rounded-lg bg-[var(--foreground)]/[0.03] dark:bg-[var(--foreground)]/[0.04]">
         {options.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => setTheme(opt.value)}
-            className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-colors cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[12px] font-medium transition-all duration-100 cursor-pointer ${
               theme === opt.value
-                ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
-                : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface)]"
+                ? "bg-[var(--card)] text-[var(--foreground)] shadow-sm"
+                : "text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
           >
             {opt.icon}
+            <span>{opt.name}</span>
           </button>
         ))}
       </div>
@@ -124,19 +127,19 @@ function LanguageRow({ label }: { label: string }) {
   };
 
   return (
-    <div className="px-3.5 py-2" ref={ref}>
-      <span className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">{label}</span>
+    <div className="px-3 py-2" ref={ref}>
+      <span className="text-[11px] font-medium text-[var(--muted)]/70 uppercase tracking-wider">{label}</span>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="mt-2 w-full flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--surface)] transition-colors text-sm cursor-pointer"
+        className="mt-2 w-full flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--foreground)]/[0.02] transition-colors duration-100 text-[13px] cursor-pointer"
       >
         <span className="flex items-center gap-2">
-          <span className="text-base leading-none">{flags[locale]}</span>
+          <span className="text-sm leading-none">{flags[locale]}</span>
           <span>{langLabels[locale]}</span>
         </span>
         <svg
-          className={`w-3.5 h-3.5 text-[var(--muted)] transition-transform ${open ? "rotate-180" : ""}`}
+          className={`w-3 h-3 text-[var(--muted)]/60 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={2.5}
@@ -146,22 +149,22 @@ function LanguageRow({ label }: { label: string }) {
         </svg>
       </button>
       {open && (
-        <div className="mt-1 rounded-lg border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-lg">
+        <div className="mt-1 rounded-lg border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-md">
           {routing.locales.map((loc) => (
             <button
               key={loc}
               type="button"
               onClick={() => switchLocale(loc)}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition-colors duration-100 cursor-pointer ${
                 loc === locale
-                  ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                  : "text-[var(--foreground)] hover:bg-[var(--surface)]"
+                  ? "bg-[var(--primary)]/8 text-[var(--primary)]"
+                  : "text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.03]"
               }`}
             >
-              <span className="text-base leading-none">{flags[loc]}</span>
+              <span className="text-sm leading-none">{flags[loc]}</span>
               <span>{langLabels[loc]}</span>
               {loc === locale && (
-                <svg className="w-4 h-4 ml-auto" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <svg className="w-3.5 h-3.5 ml-auto" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               )}
@@ -216,10 +219,10 @@ export function AppMenu() {
         type="button"
         onClick={() => setOpen(!open)}
         aria-label="Menu"
-        className="flex items-center justify-center w-9 h-9 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+        className="flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--foreground)]/[0.03] transition-colors duration-100 cursor-pointer"
       >
         <svg
-          className="w-[18px] h-[18px] text-[var(--foreground)]"
+          className="w-4 h-4 text-[var(--foreground)]"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.8}
@@ -230,23 +233,23 @@ export function AppMenu() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-64 rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-xl shadow-black/8 dark:shadow-black/25 z-50 py-2 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute left-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--border)]/80 bg-[var(--card)] glass-panel shadow-xl shadow-black/8 dark:shadow-black/20 z-50 py-1.5 menu-enter">
           {user && (
             <>
-              <div className="px-4 py-2.5 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface)] shrink-0 flex items-center justify-center relative">
+              <div className="mx-2 px-3 py-2.5 flex items-center gap-2.5 rounded-lg">
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface)] shrink-0 flex items-center justify-center relative">
                   {avatarUrl ? (
                     <Image src={avatarUrl} alt={primaryLabel ?? "User"} fill className="object-cover" unoptimized />
                   ) : (
-                    <span className="text-xs font-semibold text-[var(--foreground)]">{initials}</span>
+                    <span className="text-[11px] font-semibold text-[var(--foreground)]">{initials}</span>
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-[var(--foreground)] truncate">
+                  <p className="text-[13px] font-medium text-[var(--foreground)] truncate leading-tight">
                     {primaryLabel}
                   </p>
                   {user.name && (
-                    <p className="text-xs text-[var(--muted)] truncate">
+                    <p className="text-[11px] text-[var(--muted)] truncate">
                       {user.email}
                     </p>
                   )}
@@ -259,7 +262,7 @@ export function AppMenu() {
           <div className="px-1.5">
             <MenuItem
               icon={
-                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                 </svg>
               }
@@ -268,7 +271,7 @@ export function AppMenu() {
             />
             <MenuItem
               icon={
-                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
                 </svg>
               }
@@ -283,7 +286,7 @@ export function AppMenu() {
           <div className="px-1.5">
             <MenuItem
               icon={
-                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                 </svg>
               }

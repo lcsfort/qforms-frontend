@@ -15,6 +15,7 @@ import { LineChartCard } from "@/components/analytics/LineChartCard";
 import { BarChartCard } from "@/components/analytics/BarChartCard";
 import { DonutChartCard } from "@/components/analytics/DonutChartCard";
 import { ChartCard } from "@/components/analytics/ChartCard";
+import { DashboardShell } from "@/components/DashboardShell";
 
 export default function ResponsesPage() {
   const t = useTranslations("forms.responsesPage");
@@ -215,8 +216,8 @@ export default function ResponsesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <main className="max-w-6xl mx-auto px-6 pt-8 pb-12">
+    <DashboardShell contentContainerClassName="max-w-6xl mx-auto">
+      <main className="px-6 pt-8 pb-12">
         <Link
           href={`/dashboard/forms/${formId}`}
           className="inline-flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors mb-6"
@@ -712,6 +713,6 @@ export default function ResponsesPage() {
           </div>
         )}
       </main>
-    </div>
+    </DashboardShell>
   );
 }

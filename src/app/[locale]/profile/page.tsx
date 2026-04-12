@@ -15,8 +15,8 @@ import Image from "next/image";
 import { useRouter } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile, setUser } from "@/lib/redux/authSlice";
-import { AppMenu } from "@/components/AppMenu";
 import { api } from "@/lib/api";
+import { DashboardShell } from "@/components/DashboardShell";
 import {
   getUpdateNameSchema,
   getChangePasswordSchema,
@@ -77,12 +77,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="fixed top-4 left-4 z-50">
-        <AppMenu />
-      </div>
-
-      <main className="max-w-2xl mx-auto px-6 pt-20 pb-12">
+    <DashboardShell contentContainerClassName="max-w-2xl mx-auto" showSearch={false}>
+      <main className="px-6 pt-2 pb-12">
         <div className="mb-6">
           <Link
             href="/dashboard"
@@ -116,7 +112,7 @@ export default function ProfilePage() {
           </ProfileSection>
         </div>
       </main>
-    </div>
+    </DashboardShell>
   );
 }
 

@@ -4,6 +4,8 @@ import type {
   Form,
   FormBuildMode,
   FormPlanResponse,
+  ListFormsParams,
+  ListFormsResponse,
 } from "../types";
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
@@ -12,7 +14,12 @@ interface FormsState {
   forms: Form[];
   currentForm: Form | null;
   loading: boolean;
+  loadingMore: boolean;
   generating: boolean;
+  nextCursor: number | null;
+  hasMore: boolean;
+  totalCount: number;
+  activeQueryKey: string | null;
   selectedBuildMode: FormBuildMode;
   planningSessionId: string | null;
   planStatus: "idle" | "needs_questions" | "ready";
@@ -26,7 +33,12 @@ const initialState: FormsState = {
   forms: [],
   currentForm: null,
   loading: false,
+  loadingMore: false,
   generating: false,
+  nextCursor: null,
+  hasMore: false,
+  totalCount: 0,
+  activeQueryKey: null,
   selectedBuildMode: "planning",
   planningSessionId: null,
   planStatus: "idle",
@@ -45,13 +57,28 @@ function getVersionMeta(form: Form | null): { versionCursor: number; versionCoun
   return { versionCursor: cursor, versionCount: count };
 }
 
-export const fetchForms = createAsyncThunk(
+type FetchFormsArgs = ListFormsParams & {
+  append?: boolean;
+  queryKey?: string;
+};
+
+type FetchFormsPayload = ListFormsResponse & {
+  append: boolean;
+  queryKey: string;
+};
+
+export const fetchForms = createAsyncThunk<FetchFormsPayload, FetchFormsArgs | undefined>(
   "forms/fetchForms",
-  async (_, { getState, rejectWithValue }) => {
+  async (params, { getState, rejectWithValue }) => {
     try {
       const token = (getState() as { auth: { token: string | null } }).auth
         .token!;
-      return await api.listForms(token);
+      const response = await api.listForms(token, params);
+      return {
+        ...response,
+        append: Boolean(params?.append),
+        queryKey: params?.queryKey ?? "",
+      };
     } catch (err: unknown) {
       const error = err as { message?: string };
       return rejectWithValue(error.message ?? "Failed to load forms");
@@ -271,16 +298,39 @@ const formsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchForms.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchForms.pending, (state, action) => {
+        const append = Boolean(action.meta.arg?.append);
+        const queryKey = action.meta.arg?.queryKey ?? "";
+        if (!append) {
+          state.activeQueryKey = queryKey;
+          state.nextCursor = null;
+          state.hasMore = false;
+          state.totalCount = 0;
+        }
+        state.loading = !append;
+        state.loadingMore = append;
         state.error = null;
       })
       .addCase(fetchForms.fulfilled, (state, action) => {
         state.loading = false;
-        state.forms = action.payload;
+        state.loadingMore = false;
+        if (action.payload.queryKey !== state.activeQueryKey) {
+          return;
+        }
+        if (action.payload.append) {
+          const existingIds = new Set(state.forms.map((f) => f.id));
+          const incoming = action.payload.items.filter((f) => !existingIds.has(f.id));
+          state.forms = [...state.forms, ...incoming];
+        } else {
+          state.forms = action.payload.items;
+        }
+        state.nextCursor = action.payload.nextCursor;
+        state.hasMore = action.payload.hasMore;
+        state.totalCount = action.payload.totalCount;
       })
       .addCase(fetchForms.rejected, (state, action) => {
         state.loading = false;
+        state.loadingMore = false;
         state.error = action.payload as string;
       })
       .addCase(fetchForm.pending, (state) => {
@@ -300,6 +350,7 @@ const formsSlice = createSlice({
       })
       .addCase(createForm.fulfilled, (state, action) => {
         state.forms.unshift(action.payload);
+        state.totalCount += 1;
         state.currentForm = action.payload;
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
@@ -322,7 +373,11 @@ const formsSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(deleteForm.fulfilled, (state, action) => {
+        const prevLength = state.forms.length;
         state.forms = state.forms.filter((f) => f.id !== action.payload);
+        if (state.forms.length < prevLength) {
+          state.totalCount = Math.max(0, state.totalCount - 1);
+        }
         if (state.currentForm?.id === action.payload) {
           state.currentForm = null;
         }

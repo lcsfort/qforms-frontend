@@ -12,6 +12,7 @@ import {
   startFormPlan,
   submitFormPlanAnswers,
 } from "@/lib/redux/formsSlice";
+import { DashboardShell } from "@/components/DashboardShell";
 import type {
   FormBuildMode,
   FormPlanQuestion,
@@ -261,7 +262,8 @@ export default function NewFormPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.18),transparent_56%),var(--background)] relative overflow-x-hidden">
+    <DashboardShell contentContainerClassName="max-w-4xl mx-auto">
+      <div className="min-h-full bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.18),transparent_56%),var(--background)] relative overflow-x-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-28 -right-24 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="absolute top-56 -left-24 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
@@ -440,6 +442,7 @@ export default function NewFormPage() {
           </button>
         </section>
       </main>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }

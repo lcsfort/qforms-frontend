@@ -1,6 +1,8 @@
 import type {
   FormBehaviorAnalytics,
   Form,
+  ListFormsParams,
+  ListFormsResponse,
   FormPlanResponse,
   FormResponse,
   GeneratedFormSchema,
@@ -138,10 +140,18 @@ export const api = {
 
   // --- Forms ---
 
-  listForms: (token: string) =>
-    request<Form[]>("/forms", {
+  listForms: (token: string, params?: ListFormsParams) => {
+    const searchParams = new URLSearchParams();
+    if (typeof params?.cursor === "number") searchParams.set("cursor", String(params.cursor));
+    if (typeof params?.limit === "number") searchParams.set("limit", String(params.limit));
+    if (params?.sort) searchParams.set("sort", params.sort);
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.query && params.query.trim()) searchParams.set("query", params.query.trim());
+    const query = searchParams.toString();
+    return request<ListFormsResponse>(`/forms${query ? `?${query}` : ""}`, {
       headers: { Authorization: `Bearer ${token}` },
-    }),
+    });
+  },
 
   getForm: (token: string, id: string) =>
     request<Form>(`/forms/${id}`, {

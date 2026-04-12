@@ -85,6 +85,24 @@ export interface Form {
   _count?: { responses: number };
 }
 
+export type FormListSort = "recent" | "oldest" | "title";
+export type FormListStatus = "all" | "draft" | "published";
+
+export interface ListFormsParams {
+  cursor?: number;
+  limit?: number;
+  sort?: FormListSort;
+  status?: FormListStatus;
+  query?: string;
+}
+
+export interface ListFormsResponse {
+  items: Form[];
+  nextCursor: number | null;
+  hasMore: boolean;
+  totalCount: number;
+}
+
 export interface FormResponse {
   id: string;
   formId: string;
