@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
-import { hydrateAuth } from "./authSlice";
+import { fetchProfile, hydrateAuth } from "./authSlice";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   const hydrated = useRef(false);
@@ -12,6 +12,10 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated.current) {
       hydrated.current = true;
       store.dispatch(hydrateAuth());
+      const { token, user } = store.getState().auth;
+      if (token && !user) {
+        void store.dispatch(fetchProfile());
+      }
     }
   }, []);
 

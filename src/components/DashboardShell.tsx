@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import { usePathname, useRouter as useNextRouter } from "next/navigation";
@@ -18,6 +18,7 @@ type DashboardShellProps = {
   children: ReactNode;
   contentContainerClassName?: string;
   mainClassName?: string;
+  hideHeader?: boolean;
   showSearch?: boolean;
   searchQuery?: string;
   onSearchQueryChange?: (value: string) => void;
@@ -32,6 +33,7 @@ export function DashboardShell({
   children,
   contentContainerClassName = "max-w-5xl mx-auto",
   mainClassName = "dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 pt-[88px] pb-16 bg-[var(--background)]/70",
+  hideHeader = false,
   showSearch = true,
   searchQuery,
   onSearchQueryChange,
@@ -52,6 +54,7 @@ export function DashboardShell({
   const { user } = useAppSelector((state) => state.auth);
 
   const [isContentScrolled, setIsContentScrolled] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [localSearchFocused, setLocalSearchFocused] = useState(false);
   const localSearchInputRef = useRef<HTMLInputElement>(null);
@@ -102,11 +105,66 @@ export function DashboardShell({
 
   const avatarUrl = user ? getUserAvatarUrl(user) : null;
   const initials = user ? getUserInitials(user) : "";
+  const shouldShowHeader = !hideHeader || isSidebarCollapsed;
+  const isDarkTheme = theme === "dark";
+  const headerGlassStyle: CSSProperties = {
+    backgroundColor: isDarkTheme
+      ? (isContentScrolled ? "rgba(16, 13, 28, 0.9)" : "rgba(16, 13, 28, 0.96)")
+      : (isContentScrolled ? "rgba(255, 255, 255, 0.86)" : "rgba(255, 255, 255, 0.94)"),
+    backdropFilter: isContentScrolled
+      ? "blur(96px) saturate(1.35) brightness(0.72) contrast(0.9)"
+      : "blur(56px) saturate(1.25) brightness(0.8) contrast(0.92)",
+    WebkitBackdropFilter: isContentScrolled
+      ? "blur(96px) saturate(1.35) brightness(0.72) contrast(0.9)"
+      : "blur(56px) saturate(1.25) brightness(0.8) contrast(0.92)",
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)]">
-      <aside className="hidden lg:block w-[288px] shrink-0 h-screen sticky top-0 overflow-hidden border-r border-[var(--border)]/60 bg-[var(--background)] px-3 py-3">
-        <div className="h-full rounded-2xl border border-[var(--border)]/70 bg-[var(--card)]/80 backdrop-blur-sm p-3 flex flex-col overflow-hidden">
+      <aside
+        className={`hidden lg:block shrink-0 h-screen sticky top-0 overflow-hidden bg-[var(--background)] ${
+          isSidebarCollapsed ? "w-0" : "w-[288px]"
+        }`}
+        style={{
+          transitionProperty: "width",
+          transitionDuration: "360ms",
+          transitionTimingFunction: "cubic-bezier(0.32, 0.72, 0, 1)",
+          willChange: "width",
+        }}
+      >
+        <div
+          className={`w-[288px] h-full pl-3 pr-1.5 py-3 ${
+            isSidebarCollapsed
+              ? "opacity-0 -translate-x-2"
+              : "opacity-100 translate-x-0"
+          }`}
+          style={{
+            transitionProperty: "opacity, transform",
+            transitionDuration: "320ms",
+            transitionTimingFunction: "cubic-bezier(0.32, 0.72, 0, 1)",
+            willChange: "opacity, transform",
+          }}
+        >
+          <div className="h-full rounded-2xl border border-[var(--border)]/70 bg-[var(--card)]/80 backdrop-blur-sm p-3 flex flex-col overflow-hidden">
+          <div className="mb-3 flex items-center justify-between">
+            <Link href="/dashboard" className="flex items-center min-w-0 shrink-0 px-2.5 py-1 rounded-2xl bg-[var(--surface)]/50 border border-[var(--border)]/60">
+              <span className="font-semibold text-[17px] tracking-tight">
+                <span className="text-[var(--primary)]">Q</span>
+                <span className="text-[var(--foreground)]">Forms</span>
+              </span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed(true)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)]/60 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+              aria-label="Collapse sidebar"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                <rect x="3.75" y="4.5" width="16.5" height="15" rx="2.5" />
+                <path strokeLinecap="round" d="M12 6.75v10.5" />
+              </svg>
+            </button>
+          </div>
           <div className="mb-4 rounded-xl border border-[var(--border)]/60 bg-[var(--surface)]/45 px-3 py-3">
             <div className="flex items-center gap-3">
               <div className="relative w-11 h-11 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--card)] flex items-center justify-center shrink-0">
@@ -219,77 +277,108 @@ export function DashboardShell({
               </div>
             </div>
           </div>
+          </div>
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 p-3">
+      <div className="flex-1 min-w-0 pl-1.5 pr-3 py-3">
         <div className="relative h-full rounded-2xl border border-[var(--border)]/70 bg-[var(--card)]/80 backdrop-blur-sm overflow-hidden flex flex-col">
-          <header
-            className={`absolute top-0 left-0 right-0 z-50 border-b transition-all duration-200 ${
-              isContentScrolled ? "header-glass-scrolled shadow-sm" : "header-glass-top"
-            }`}
-          >
-            <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
-              <div className="lg:hidden">
-                <AppMenu />
-              </div>
-
-              <Link href="/dashboard" className="flex items-center min-w-0 shrink-0 px-2.5 py-1 rounded-2xl bg-[var(--surface)]/50 border border-[var(--border)]/60">
-                <span className="font-semibold text-[17px] tracking-tight">
-                  <span className="text-[var(--primary)]">Q</span>
-                  <span className="text-[var(--foreground)]">Forms</span>
-                </span>
-              </Link>
-
-              {showSearch ? (
-                <div className="flex-1 flex justify-center px-4">
-                  <div className="relative w-full max-w-2xl">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
-                    </svg>
-                    <input
-                      ref={resolvedSearchRef}
-                      type="text"
-                      value={resolvedQuery}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onFocus={handleSearchFocus}
-                      onBlur={handleSearchBlur}
-                      placeholder={tDashboard("searchPlaceholder")}
-                      className={`w-full h-10 rounded-2xl border border-[var(--border)] bg-[var(--background)] pl-9 text-sm outline-none transition-all duration-200 focus:ring-1 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/40 ${
-                        resolvedQuery || resolvedFocused ? "pr-8" : "pr-16"
-                      }`}
-                    />
-                    {resolvedQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-                        aria-label={tDashboard("clearSearch")}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
-                    {!resolvedQuery && !resolvedFocused && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--muted)] border border-[var(--border)] rounded px-1.5 py-px hidden sm:inline pointer-events-none font-mono">
-                        {tDashboard("searchShortcut")}
-                      </span>
-                    )}
-                  </div>
+          {shouldShowHeader && (
+            <header
+              className={`absolute top-0 left-0 right-0 z-50 border-b transition-all duration-200 ${
+                isContentScrolled ? "header-glass-scrolled shadow-sm" : "header-glass-top"
+              }`}
+              style={headerGlassStyle}
+            >
+              <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+                <div className="lg:hidden">
+                  <AppMenu />
                 </div>
-              ) : (
-                <div className="flex-1" />
-              )}
 
-              {headerRight}
-            </div>
-          </header>
+                <div className="hidden lg:flex">
+                  {isSidebarCollapsed && (
+                    <button
+                      type="button"
+                      onClick={() => setIsSidebarCollapsed(false)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)]/60 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+                      aria-label="Expand sidebar"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                        <rect x="3.75" y="4.5" width="16.5" height="15" rx="2.5" />
+                        <path strokeLinecap="round" d="M12 6.75v10.5" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                <Link href="/dashboard" className="lg:hidden flex items-center min-w-0 shrink-0 px-2.5 py-1 rounded-2xl bg-[var(--surface)]/50 border border-[var(--border)]/60">
+                  <span className="font-semibold text-[17px] tracking-tight">
+                    <span className="text-[var(--primary)]">Q</span>
+                    <span className="text-[var(--foreground)]">Forms</span>
+                  </span>
+                </Link>
+
+                {isSidebarCollapsed && (
+                  <Link href="/dashboard" className="hidden lg:flex items-center min-w-0 shrink-0 px-2.5 py-1 rounded-2xl bg-[var(--surface)]/50 border border-[var(--border)]/60">
+                    <span className="font-semibold text-[17px] tracking-tight">
+                      <span className="text-[var(--primary)]">Q</span>
+                      <span className="text-[var(--foreground)]">Forms</span>
+                    </span>
+                  </Link>
+                )}
+
+                {showSearch ? (
+                  <div className="flex-1 flex justify-center px-4">
+                    <div className="relative w-full max-w-2xl">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
+                      </svg>
+                      <input
+                        ref={resolvedSearchRef}
+                        type="text"
+                        value={resolvedQuery}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onFocus={handleSearchFocus}
+                        onBlur={handleSearchBlur}
+                        placeholder={tDashboard("searchPlaceholder")}
+                        className={`w-full h-10 rounded-2xl border border-[var(--border)] bg-[var(--background)] pl-9 text-sm outline-none transition-all duration-200 focus:ring-1 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/40 ${
+                          resolvedQuery || resolvedFocused ? "pr-8" : "pr-16"
+                        }`}
+                      />
+                      {resolvedQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                          aria-label={tDashboard("clearSearch")}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                      {!resolvedQuery && !resolvedFocused && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--muted)] border border-[var(--border)] rounded px-1.5 py-px hidden sm:inline pointer-events-none font-mono">
+                          {tDashboard("searchShortcut")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1" />
+                )}
+
+                {headerRight}
+              </div>
+            </header>
+          )}
 
           <main
             ref={contentScrollRef}
             onScroll={handleContentScroll}
-            className={mainClassName}
+            className={`${mainClassName} ${
+              hideHeader && shouldShowHeader ? "pt-14" : ""
+            }`}
           >
             <div className={contentContainerClassName}>
               {children}

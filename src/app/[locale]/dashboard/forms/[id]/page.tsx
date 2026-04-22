@@ -20,59 +20,25 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaintbrush } from "@fortawesome/free-solid-svg-icons";
 import { DesignPanel } from "@/components/DesignPanel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { SettingsPanel } from "./_components/settings/SettingsPanel";
 
 const FIELD_TYPES: FieldType[] = [
   "text", "textarea", "email", "number", "select", "radio", "checkbox", "date", "file", "rating", "scale",
 ];
 
-function SettingsPanel({
-  settings,
-  setSettings,
-  t,
-}: {
-  settings: FormSettings;
-  setSettings: (s: FormSettings) => void;
-  t: (key: string) => string;
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">{t("submissionSection")}</h3>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">{t("submitMessage")}</label>
-          <input
-            type="text"
-            value={(settings.submit_message as string) ?? ""}
-            onChange={(e) => setSettings({ ...settings, submit_message: e.target.value })}
-            placeholder={t("submitMessageDefault")}
-            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <label className="flex items-center gap-2.5 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.allow_multiple_submissions ?? false}
-            onChange={(e) => setSettings({ ...settings, allow_multiple_submissions: e.target.checked })}
-            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-          />
-          {t("allowMultiple")}
-        </label>
-      </div>
-    </div>
-  );
-}
-
 export default function FormEditorPage() {
   const t = useTranslations("forms.editor");
+  const tSettings = useTranslations("forms.editor.settingsPanel");
   const tf = useTranslations("forms");
   const tft = useTranslations("forms.fieldTypes");
+  const tResume = useTranslations("forms.generate.resume");
   const dispatch = useAppDispatch();
   const router = useRouter();
   const params = useParams();
   const formId = params.id as string;
 
   const { currentForm, loading, autosaveStatus, versionCursor, versionCount } = useAppSelector((state) => state.forms);
-  const { token, hydrated } = useAppSelector((state) => state.auth);
+  const { token, hydrated, user } = useAppSelector((state) => state.auth);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -82,6 +48,7 @@ export default function FormEditorPage() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteMatchTitle, setDeleteMatchTitle] = useState("");
   const [designPanelOpen, setDesignPanelOpen] = useState(false);
   const [autosavePending, setAutosavePending] = useState(false);
   const initializedRef = useRef(false);
@@ -285,6 +252,10 @@ export default function FormEditorPage() {
     dispatch(publishForm(formId));
   };
 
+  const handleSaveSchedule = async () => {
+    await flushSave();
+  };
+
   const handleUnpublish = () => {
     dispatch(unpublishForm(formId));
   };
@@ -300,12 +271,14 @@ export default function FormEditorPage() {
   };
 
   const handleDeleteClick = () => {
+    setDeleteMatchTitle(title.trim() || tf("blankFormTitle"));
     setShowDeleteConfirm(true);
   };
 
   const handleDeleteConfirm = async () => {
     await dispatch(deleteForm(formId)).unwrap();
     setShowDeleteConfirm(false);
+    setDeleteMatchTitle("");
     router.push("/dashboard");
   };
 
@@ -489,6 +462,21 @@ export default function FormEditorPage() {
                     ? t("autosaveSaved")
                     : t("autosaveIdle")}
             </div>
+            <Link
+              href={
+                currentForm.planSession?.id
+                  ? `/dashboard/forms/new?sessionId=${currentForm.planSession.id}&formId=${formId}`
+                  : `/dashboard/forms/new?formId=${formId}`
+              }
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors inline-flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+              </svg>
+              {currentForm.planSession?.id
+                ? tResume("continueChat")
+                : tResume("startChat")}
+            </Link>
             <Link
               href={`/dashboard/forms/${formId}/responses`}
               className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -861,7 +849,20 @@ export default function FormEditorPage() {
 
             {/* Settings Tab */}
             {activeTab === "settings" && (
-              <SettingsPanel settings={settings} setSettings={setSettings} t={t} />
+              <SettingsPanel
+                settings={settings}
+                setSettings={setSettings}
+                fields={fields}
+                formId={formId}
+                status={currentForm.status}
+                shareUrl={respondentLink}
+                token={token}
+                userEmail={user?.email ?? null}
+                onPublishNow={handlePublish}
+                onSaveSchedule={handleSaveSchedule}
+                onUnpublish={handleUnpublish}
+                t={tSettings}
+              />
             )}
 
         {/* Danger zone */}
@@ -880,13 +881,19 @@ export default function FormEditorPage() {
 
       <ConfirmDialog
         open={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setDeleteMatchTitle("");
+        }}
         onConfirm={handleDeleteConfirm}
         title={tf("deleteTitle")}
         message={tf("deleteConfirm")}
         confirmLabel={tf("editor.deleteForm")}
         cancelLabel={tf("cancel")}
         variant="danger"
+        confirmMatchText={showDeleteConfirm ? deleteMatchTitle : undefined}
+        confirmMatchInstruction={tf("deleteTypeInstruction")}
+        confirmMatchInputLabel={tf("deleteTypeInputLabel")}
       />
     </div>
   );

@@ -38,6 +38,25 @@ export interface FormField {
 
 export type FormMaxWidth = "mobile" | "tablet" | "desktop";
 
+export type FormPublishingMode = "now" | "scheduled";
+
+export interface FormPublishingSettings {
+  mode?: FormPublishingMode;
+  scheduledPublishAt?: string | null;
+  timezone?: string;
+}
+
+export type FormAccessMode = "public" | "domains";
+
+export interface FormAccessSettings {
+  mode?: FormAccessMode;
+  allowedDomains?: string[];
+}
+
+export interface FormNotificationSettings {
+  emailOnResponse?: boolean;
+}
+
 export interface FormSettings {
   submit_message?: string;
   allow_multiple_submissions?: boolean;
@@ -59,6 +78,10 @@ export interface FormSettings {
   question_font_size?: number;
   text_font_family?: string;
   text_font_size?: number;
+
+  publishing?: FormPublishingSettings;
+  access?: FormAccessSettings;
+  notifications?: FormNotificationSettings;
 }
 
 export interface FormVersionSnapshot {
@@ -67,6 +90,34 @@ export interface FormVersionSnapshot {
   schema: FormField[];
   settings: FormSettings;
   savedAt: string;
+}
+
+export interface FormPlanSessionRef {
+  id: string;
+  updatedAt: string;
+}
+
+/** Real aggregates returned with GET /forms list items only. */
+export interface FormListStats {
+  lastResponseAt: string | null;
+  /** Distinct behavior sessions (approx. form opens / visits). */
+  viewCount: number;
+  /** % of sessions that reached submit_success after form_start; null if no starts. */
+  completionRate: number | null;
+  startedSessions: number;
+  submittedSessions: number;
+  integrationsActive: boolean;
+}
+
+export function defaultFormListStats(): FormListStats {
+  return {
+    lastResponseAt: null,
+    viewCount: 0,
+    completionRate: null,
+    startedSessions: 0,
+    submittedSessions: 0,
+    integrationsActive: false,
+  };
 }
 
 export interface Form {
@@ -79,10 +130,13 @@ export interface Form {
   settings: FormSettings;
   versions?: FormVersionSnapshot[];
   version_cursor?: number;
+  scheduledPublishAt?: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
   _count?: { responses: number };
+  planSession?: FormPlanSessionRef | null;
+  listStats?: FormListStats;
 }
 
 export type FormListSort = "recent" | "oldest" | "title";
@@ -101,6 +155,8 @@ export interface ListFormsResponse {
   nextCursor: number | null;
   hasMore: boolean;
   totalCount: number;
+  responsesThisMonth: number;
+  bestCompletionRate: number | null;
 }
 
 export interface FormResponse {
@@ -125,6 +181,7 @@ export interface FormPlanQuestion {
   question: string;
   placeholder?: string;
   options?: string[];
+  multi_select?: boolean;
 }
 
 export interface FormPlanQuestionsResponse {
@@ -141,6 +198,76 @@ export interface FormPlanReadyResponse {
 }
 
 export type FormPlanResponse = FormPlanQuestionsResponse | FormPlanReadyResponse;
+
+export interface StoredChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  kind: "text" | "snapshot";
+  content?: string;
+  schema?: GeneratedFormSchema;
+}
+
+export interface StoredPlanSessionLinkedForm {
+  id: string;
+  title: string;
+  description: string | null;
+  schema: FormField[];
+  settings: FormSettings;
+  slug: string;
+  status: "draft" | "published";
+  updatedAt: string;
+}
+
+export interface StoredPlanQaEntry {
+  questionId: string;
+  question: string;
+  answer: string | null;
+}
+
+export interface StoredPlanSession {
+  id: string;
+  userId: string;
+  originalPrompt: string;
+  qaHistory: StoredPlanQaEntry[];
+  status: "active" | "completed";
+  title: string | null;
+  chatMessages: StoredChatMessage[];
+  readySchema: GeneratedFormSchema | null;
+  formId: string | null;
+  lastSyncedFormUpdatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  form?: StoredPlanSessionLinkedForm | null;
+}
+
+export interface PlanSessionSummary {
+  id: string;
+  title: string | null;
+  originalPrompt: string;
+  status: "active" | "completed";
+  formId: string | null;
+  updatedAt: string;
+  createdAt: string;
+  form: { id: string; title: string; slug: string } | null;
+}
+
+export interface ListPlanSessionsResponse {
+  items: PlanSessionSummary[];
+  nextCursor: number | null;
+  hasMore: boolean;
+  totalCount: number;
+}
+
+export interface ListPlanSessionsParams {
+  cursor?: number;
+  limit?: number;
+}
+
+export interface UpdatePlanSessionPayload {
+  chatMessages?: StoredChatMessage[];
+  readySchema?: GeneratedFormSchema | null;
+  title?: string;
+}
 
 export interface BehaviorFunnelStep {
   step: "open" | "start" | "submit";

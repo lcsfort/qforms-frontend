@@ -1,11 +1,15 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "../api";
-import type {
-  Form,
-  FormBuildMode,
-  FormPlanResponse,
-  ListFormsParams,
-  ListFormsResponse,
+import {
+  defaultFormListStats,
+  type Form,
+  type FormBuildMode,
+  type FormPlanReadyResponse,
+  type FormPlanResponse,
+  type ListFormsParams,
+  type ListFormsResponse,
+  type ListPlanSessionsParams,
+  type UpdatePlanSessionPayload,
 } from "../types";
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
@@ -19,6 +23,10 @@ interface FormsState {
   nextCursor: number | null;
   hasMore: boolean;
   totalCount: number;
+  /** Workspace insight from last GET /forms (UTC month). */
+  responsesThisMonth: number | null;
+  /** Best completion % across all owned forms with analytics; null if none. */
+  bestWorkspaceCompletionRate: number | null;
   activeQueryKey: string | null;
   selectedBuildMode: FormBuildMode;
   planningSessionId: string | null;
@@ -38,6 +46,8 @@ const initialState: FormsState = {
   nextCursor: null,
   hasMore: false,
   totalCount: 0,
+  responsesThisMonth: null,
+  bestWorkspaceCompletionRate: null,
   activeQueryKey: null,
   selectedBuildMode: "planning",
   planningSessionId: null,
@@ -55,6 +65,14 @@ function getVersionMeta(form: Form | null): { versionCursor: number; versionCoun
   const cursorRaw = typeof form.version_cursor === "number" ? form.version_cursor : 0;
   const cursor = count > 0 ? Math.max(0, Math.min(cursorRaw, count - 1)) : 0;
   return { versionCursor: cursor, versionCount: count };
+}
+
+/** PATCH/publish responses often omit list stats; keep prior row metrics when updating the list. */
+function withPreservedListStats(prev: Form | undefined, next: Form): Form {
+  return {
+    ...next,
+    listStats: next.listStats ?? prev?.listStats,
+  };
 }
 
 type FetchFormsArgs = ListFormsParams & {
@@ -108,6 +126,7 @@ export const createForm = createAsyncThunk(
       description?: string;
       schema: unknown[];
       settings?: Record<string, unknown>;
+      planSessionId?: string;
     },
     { getState, rejectWithValue },
   ) => {
@@ -134,6 +153,7 @@ export const updateForm = createAsyncThunk(
       description?: string;
       schema?: unknown[];
       settings?: Record<string, unknown>;
+      planSessionId?: string;
     },
     { getState, rejectWithValue },
   ) => {
@@ -267,6 +287,71 @@ export const submitFormPlanAnswers = createAsyncThunk(
   },
 );
 
+export const refineFormPlan = createAsyncThunk(
+  "forms/refineFormPlan",
+  async (
+    {
+      sessionId,
+      refinement,
+    }: { sessionId: string; refinement: string },
+    { getState, rejectWithValue },
+  ) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth
+        .token!;
+      return await api.refineFormPlan(token, sessionId, refinement);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to refine the form plan");
+    }
+  },
+);
+
+export const listPlanSessions = createAsyncThunk(
+  "forms/listPlanSessions",
+  async (params: ListPlanSessionsParams | undefined, { getState, rejectWithValue }) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth.token!;
+      return await api.listPlanSessions(token, params);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to load sessions");
+    }
+  },
+);
+
+export const getPlanSession = createAsyncThunk(
+  "forms/getPlanSession",
+  async (sessionId: string, { getState, rejectWithValue }) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth.token!;
+      return await api.getPlanSession(token, sessionId);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to load session");
+    }
+  },
+);
+
+export const updatePlanSession = createAsyncThunk(
+  "forms/updatePlanSession",
+  async (
+    {
+      sessionId,
+      data,
+    }: { sessionId: string; data: UpdatePlanSessionPayload },
+    { getState, rejectWithValue },
+  ) => {
+    try {
+      const token = (getState() as { auth: { token: string | null } }).auth.token!;
+      return await api.updatePlanSession(token, sessionId, data);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      return rejectWithValue(error.message ?? "Failed to save chat");
+    }
+  },
+);
+
 const formsSlice = createSlice({
   name: "forms",
   initialState,
@@ -327,6 +412,8 @@ const formsSlice = createSlice({
         state.nextCursor = action.payload.nextCursor;
         state.hasMore = action.payload.hasMore;
         state.totalCount = action.payload.totalCount;
+        state.responsesThisMonth = action.payload.responsesThisMonth;
+        state.bestWorkspaceCompletionRate = action.payload.bestCompletionRate;
       })
       .addCase(fetchForms.rejected, (state, action) => {
         state.loading = false;
@@ -349,7 +436,11 @@ const formsSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(createForm.fulfilled, (state, action) => {
-        state.forms.unshift(action.payload);
+        const form = action.payload;
+        state.forms.unshift({
+          ...form,
+          listStats: form.listStats ?? defaultFormListStats(),
+        });
         state.totalCount += 1;
         state.currentForm = action.payload;
         const meta = getVersionMeta(action.payload);
@@ -362,7 +453,7 @@ const formsSlice = createSlice({
       .addCase(updateForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = action.payload;
+        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
         state.autosaveStatus = "saved";
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
@@ -385,7 +476,7 @@ const formsSlice = createSlice({
       .addCase(publishForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = action.payload;
+        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;
@@ -393,7 +484,7 @@ const formsSlice = createSlice({
       .addCase(unpublishForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = action.payload;
+        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;
@@ -401,7 +492,7 @@ const formsSlice = createSlice({
       .addCase(stepFormVersionBack.fulfilled, (state, action) => {
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = action.payload;
+        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;
@@ -409,7 +500,7 @@ const formsSlice = createSlice({
       .addCase(stepFormVersionForward.fulfilled, (state, action) => {
         state.currentForm = action.payload;
         const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = action.payload;
+        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;
@@ -418,9 +509,14 @@ const formsSlice = createSlice({
         state.generating = true;
         state.error = null;
       })
-      .addCase(generateFormSchema.fulfilled, (state) => {
-        state.generating = false;
-      })
+      .addCase(
+        generateFormSchema.fulfilled,
+        (state, action: { payload: FormPlanReadyResponse }) => {
+          state.generating = false;
+          state.planningSessionId = action.payload.sessionId;
+          state.planStatus = "ready";
+        },
+      )
       .addCase(generateFormSchema.rejected, (state, action) => {
         state.generating = false;
         state.error = action.payload as string;
@@ -453,6 +549,23 @@ const formsSlice = createSlice({
         },
       )
       .addCase(submitFormPlanAnswers.rejected, (state, action) => {
+        state.generating = false;
+        state.error = action.payload as string;
+      })
+      .addCase(refineFormPlan.pending, (state) => {
+        state.generating = true;
+        state.error = null;
+      })
+      .addCase(
+        refineFormPlan.fulfilled,
+        (state, action: { payload: FormPlanResponse }) => {
+          state.generating = false;
+          state.planningSessionId = action.payload.sessionId;
+          state.planStatus =
+            action.payload.status === "questions_needed" ? "needs_questions" : "ready";
+        },
+      )
+      .addCase(refineFormPlan.rejected, (state, action) => {
         state.generating = false;
         state.error = action.payload as string;
       });

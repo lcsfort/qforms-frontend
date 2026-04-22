@@ -4,8 +4,12 @@ import type {
   ListFormsParams,
   ListFormsResponse,
   FormPlanResponse,
+  FormPlanReadyResponse,
   FormResponse,
-  GeneratedFormSchema,
+  ListPlanSessionsParams,
+  ListPlanSessionsResponse,
+  StoredPlanSession,
+  UpdatePlanSessionPayload,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -165,6 +169,7 @@ export const api = {
       description?: string;
       schema: unknown[];
       settings?: Record<string, unknown>;
+      planSessionId?: string;
     },
   ) =>
     request<Form>("/forms", {
@@ -181,6 +186,7 @@ export const api = {
       description?: string;
       schema?: unknown[];
       settings?: Record<string, unknown>;
+      planSessionId?: string;
     },
   ) =>
     request<Form>(`/forms/${id}`, {
@@ -207,6 +213,16 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
+  sendFormByEmail: (token: string, id: string, emails: string[]) =>
+    request<{ sent: number; invalid: string[]; failed: string[] }>(
+      `/forms/${id}/send-email`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ emails }),
+      },
+    ),
+
   stepFormVersionBack: (token: string, id: string) =>
     request<Form>(`/forms/${id}/version/back`, {
       method: "POST",
@@ -220,7 +236,7 @@ export const api = {
     }),
 
   generateFormSchema: (token: string, prompt: string) =>
-    request<GeneratedFormSchema>("/forms/generate", {
+    request<FormPlanReadyResponse>("/forms/generate", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ prompt }),
@@ -242,6 +258,42 @@ export const api = {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ answers }),
+    }),
+
+  refineFormPlan: (token: string, sessionId: string, refinement: string) =>
+    request<FormPlanResponse>(`/forms/generate/plan/${sessionId}/refine`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ refinement }),
+    }),
+
+  listPlanSessions: (token: string, params?: ListPlanSessionsParams) => {
+    const searchParams = new URLSearchParams();
+    if (typeof params?.cursor === "number") searchParams.set("cursor", String(params.cursor));
+    if (typeof params?.limit === "number") searchParams.set("limit", String(params.limit));
+    const query = searchParams.toString();
+    return request<ListPlanSessionsResponse>(
+      `/forms/generate/plan${query ? `?${query}` : ""}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
+
+  getPlanSession: (token: string, sessionId: string) =>
+    request<StoredPlanSession>(`/forms/generate/plan/${sessionId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  updatePlanSession: (
+    token: string,
+    sessionId: string,
+    data: UpdatePlanSessionPayload,
+  ) =>
+    request<StoredPlanSession>(`/forms/generate/plan/${sessionId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
     }),
 
   getPublicForm: (slug: string) =>
