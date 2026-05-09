@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { api } from "@/lib/api";
 import type { FormField, FormSettings, FormMaxWidth } from "@/lib/types";
-import { FormRenderer } from "@/components/FormRenderer";
+import { QFormsRenderer } from "@/components/public-form/QFormsRenderer";
 
 const WIDTH_CLASSES: Record<FormMaxWidth, string> = {
   mobile: "max-w-sm",
@@ -147,6 +147,10 @@ export default function FormPreviewPage() {
   const headerHeight = form.settings.header_height ?? 200;
   const pageBg = form.settings.page_background_color;
   const formBg = form.settings.form_background_color;
+  const customCss =
+    typeof (form.settings as Record<string, unknown>).custom_css === "string"
+      ? ((form.settings as Record<string, unknown>).custom_css as string)
+      : undefined;
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-[var(--background)]">
@@ -189,11 +193,12 @@ export default function FormPreviewPage() {
               {form.description && (
                 <p className="text-sm text-gray-500 mb-6" style={textStyle}>{form.description}</p>
               )}
-              <FormRenderer
-                fields={form.schema}
-                settings={form.settings}
+              <QFormsRenderer
+                form={{ schema: form.schema, settings: form.settings }}
+                customCss={customCss}
                 onSubmit={() => {}}
                 disabled
+                mode="preview"
                 submitLabel={tEditor("preview")}
               />
             </div>

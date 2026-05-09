@@ -1,6 +1,7 @@
 import type {
   FormBehaviorAnalytics,
   Form,
+  FormPipelineConfig,
   ListFormsParams,
   ListFormsResponse,
   FormPlanResponse,
@@ -8,11 +9,37 @@ import type {
   FormResponse,
   ListPlanSessionsParams,
   ListPlanSessionsResponse,
+  PipelineBoardPayload,
   StoredPlanSession,
   UpdatePlanSessionPayload,
+  WorkspaceInvite,
+  WorkspaceMemberRow,
+  WorkspaceSummary,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+
+const ACTIVE_WORKSPACE_KEY = "activeWorkspaceId";
+
+/** Active workspace id persisted for API `X-Workspace-Id` header. */
+export function getActiveWorkspaceId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ACTIVE_WORKSPACE_KEY);
+}
+
+export function setActiveWorkspaceIdStorage(id: string | null) {
+  if (typeof window === "undefined") return;
+  if (id) localStorage.setItem(ACTIVE_WORKSPACE_KEY, id);
+  else localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+}
+
+function bearer(token: string): Record<string, string> {
+  const ws = getActiveWorkspaceId();
+  return {
+    Authorization: `Bearer ${token}`,
+    ...(ws ? { "X-Workspace-Id": ws } : {}),
+  };
+}
 
 function getLocale(): string {
   try {
@@ -36,15 +63,30 @@ async function request<T>(
 ): Promise<T> {
   const locale = getLocale();
   const { headers: optionsHeaders, ...restOptions } = options;
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...restOptions,
-    headers: {
-      "Content-Type": "application/json",
-      "Accept-Language": locale,
-      "X-Locale": locale,
-      ...(optionsHeaders as Record<string, string>),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${endpoint}`, {
+      ...restOptions,
+      headers: {
+        "Content-Type": "application/json",
+        "Accept-Language": locale,
+        "X-Locale": locale,
+        ...(optionsHeaders as Record<string, string>),
+      },
+    });
+  } catch (err: unknown) {
+    const isFailedFetch =
+      err instanceof TypeError &&
+      (err.message === "Failed to fetch" ||
+        err.message.includes("fetch") ||
+        err.message.includes("NetworkError"));
+    const hint = isFailedFetch
+      ? ` Cannot reach ${API_URL}. Start the backend (e.g. npm run start:dev in backend), set NEXT_PUBLIC_API_URL if needed, and ensure FRONTEND_URL on the API matches this origin (CORS).`
+      : "";
+    throw new Error(
+      `${err instanceof Error ? err.message : "Network error"}.${hint}`,
+    );
+  }
 
   const data = await res.json();
 
@@ -115,20 +157,20 @@ export const api = {
 
   getProfile: (token: string) =>
     request<AuthProfile>("/auth/profile", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   updateName: (token: string, data: { name: string }) =>
     request<AuthProfile>("/auth/profile/name", {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify(data),
     }),
 
   updateAvatar: (token: string, data: { avatarUrl: string | null }) =>
     request<AuthProfile>("/auth/profile/avatar", {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify(data),
     }),
 
@@ -138,7 +180,7 @@ export const api = {
   ) =>
     request<{ message: string }>("/auth/profile/change-password", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify(data),
     }),
 
@@ -153,13 +195,13 @@ export const api = {
     if (params?.query && params.query.trim()) searchParams.set("query", params.query.trim());
     const query = searchParams.toString();
     return request<ListFormsResponse>(`/forms${query ? `?${query}` : ""}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     });
   },
 
   getForm: (token: string, id: string) =>
     request<Form>(`/forms/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   createForm: (
@@ -174,7 +216,7 @@ export const api = {
   ) =>
     request<Form>("/forms", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify(data),
     }),
 
@@ -191,26 +233,26 @@ export const api = {
   ) =>
     request<Form>(`/forms/${id}`, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify(data),
     }),
 
   deleteForm: (token: string, id: string) =>
     request<{ message: string }>(`/forms/${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   publishForm: (token: string, id: string) =>
     request<Form>(`/forms/${id}/publish`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   unpublishForm: (token: string, id: string) =>
     request<Form>(`/forms/${id}/unpublish`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   sendFormByEmail: (token: string, id: string, emails: string[]) =>
@@ -218,7 +260,7 @@ export const api = {
       `/forms/${id}/send-email`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: bearer(token),
         body: JSON.stringify({ emails }),
       },
     ),
@@ -226,26 +268,26 @@ export const api = {
   stepFormVersionBack: (token: string, id: string) =>
     request<Form>(`/forms/${id}/version/back`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   stepFormVersionForward: (token: string, id: string) =>
     request<Form>(`/forms/${id}/version/forward`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   generateFormSchema: (token: string, prompt: string) =>
     request<FormPlanReadyResponse>("/forms/generate", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify({ prompt }),
     }),
 
   startFormPlan: (token: string, prompt: string) =>
     request<FormPlanResponse>("/forms/generate/plan", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify({ prompt }),
     }),
 
@@ -256,14 +298,14 @@ export const api = {
   ) =>
     request<FormPlanResponse>(`/forms/generate/plan/${sessionId}/answers`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify({ answers }),
     }),
 
   refineFormPlan: (token: string, sessionId: string, refinement: string) =>
     request<FormPlanResponse>(`/forms/generate/plan/${sessionId}/refine`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify({ refinement }),
     }),
 
@@ -275,14 +317,14 @@ export const api = {
     return request<ListPlanSessionsResponse>(
       `/forms/generate/plan${query ? `?${query}` : ""}`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: bearer(token),
       },
     );
   },
 
   getPlanSession: (token: string, sessionId: string) =>
     request<StoredPlanSession>(`/forms/generate/plan/${sessionId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   updatePlanSession: (
@@ -292,7 +334,7 @@ export const api = {
   ) =>
     request<StoredPlanSession>(`/forms/generate/plan/${sessionId}`, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify(data),
     }),
 
@@ -314,12 +356,225 @@ export const api = {
 
   getFormResponses: (token: string, formId: string) =>
     request<FormResponse[]>(`/forms/${formId}/responses`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   getFormBehaviorAnalytics: (token: string, formId: string) =>
     request<FormBehaviorAnalytics>(`/forms/${formId}/behavior-analytics`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
+    }),
+
+  // --- Workspaces ---
+
+  listWorkspaces: (token: string) =>
+    request<WorkspaceSummary[]>("/workspaces", {
+      headers: bearer(token),
+    }),
+
+  createWorkspace: (token: string, name: string) =>
+    request<{ id: string; name: string; slug: string }>("/workspaces", {
+      method: "POST",
+      headers: bearer(token),
+      body: JSON.stringify({ name }),
+    }),
+
+  listWorkspaceMembers: (token: string, workspaceId: string) =>
+    request<WorkspaceMemberRow[]>(`/workspaces/${workspaceId}/members`, {
+      headers: bearer(token),
+    }),
+
+  updateWorkspaceMemberRole: (
+    token: string,
+    workspaceId: string,
+    userId: string,
+    role: string,
+  ) =>
+    request<unknown>(`/workspaces/${workspaceId}/members/${userId}`, {
+      method: "PATCH",
+      headers: bearer(token),
+      body: JSON.stringify({ role }),
+    }),
+
+  removeWorkspaceMember: (
+    token: string,
+    workspaceId: string,
+    userId: string,
+  ) =>
+    request<{ ok: boolean }>(`/workspaces/${workspaceId}/members/${userId}`, {
+      method: "DELETE",
+      headers: bearer(token),
+    }),
+
+  createWorkspaceInvite: (
+    token: string,
+    workspaceId: string,
+    email: string,
+    role: string,
+  ) =>
+    request<WorkspaceInvite>(`/workspaces/${workspaceId}/invites`, {
+      method: "POST",
+      headers: bearer(token),
+      body: JSON.stringify({ email, role }),
+    }),
+
+  listWorkspaceInvites: (token: string, workspaceId: string) =>
+    request<WorkspaceInvite[]>(`/workspaces/${workspaceId}/invites`, {
+      headers: bearer(token),
+    }),
+
+  cancelWorkspaceInvite: (
+    token: string,
+    workspaceId: string,
+    inviteId: string,
+  ) =>
+    request<{ ok: boolean }>(
+      `/workspaces/${workspaceId}/invites/${inviteId}`,
+      {
+        method: "DELETE",
+        headers: bearer(token),
+      },
+    ),
+
+  acceptWorkspaceInvite: (token: string, inviteToken: string) =>
+    request<{ id: string; name: string }>("/workspaces/invites/accept", {
+      method: "POST",
+      headers: bearer(token),
+      body: JSON.stringify({ token: inviteToken }),
+    }),
+
+  // --- Response pipeline ---
+
+  getFormPipeline: (token: string, formId: string) =>
+    request<FormPipelineConfig | null>(`/forms/${formId}/pipeline`, {
+      headers: bearer(token),
+    }),
+
+  patchFormPipeline: (token: string, formId: string, isEnabled: boolean) =>
+    request<FormPipelineConfig>(`/forms/${formId}/pipeline`, {
+      method: "PATCH",
+      headers: bearer(token),
+      body: JSON.stringify({ isEnabled }),
+    }),
+
+  getPipelineBoard: (token: string, formId: string) =>
+    request<PipelineBoardPayload>(`/forms/${formId}/pipeline/board`, {
+      headers: bearer(token),
+    }),
+
+  movePipelineResponse: (
+    token: string,
+    formId: string,
+    responseId: string,
+    stageId: string,
+  ) =>
+    request<unknown>(`/forms/${formId}/pipeline/responses/${responseId}/move`, {
+      method: "POST",
+      headers: bearer(token),
+      body: JSON.stringify({ stageId }),
+    }),
+
+  assignPipelineResponse: (
+    token: string,
+    formId: string,
+    responseId: string,
+    assigneeUserId: string | null,
+  ) =>
+    request<unknown>(
+      `/forms/${formId}/pipeline/responses/${responseId}/assign`,
+      {
+        method: "POST",
+        headers: bearer(token),
+        body: JSON.stringify({ assigneeUserId }),
+      },
+    ),
+
+  getPipelineResponseDetail: (token: string, formId: string, responseId: string) =>
+    request<Record<string, unknown>>(
+      `/forms/${formId}/pipeline/responses/${responseId}/detail`,
+      { headers: bearer(token) },
+    ),
+
+  listPipelineNotes: (token: string, formId: string, responseId: string) =>
+    request<unknown[]>(
+      `/forms/${formId}/pipeline/responses/${responseId}/notes`,
+      { headers: bearer(token) },
+    ),
+
+  addPipelineNote: (
+    token: string,
+    formId: string,
+    responseId: string,
+    body: string,
+  ) =>
+    request<unknown>(
+      `/forms/${formId}/pipeline/responses/${responseId}/notes`,
+      {
+        method: "POST",
+        headers: bearer(token),
+        body: JSON.stringify({ body }),
+      },
+    ),
+
+  deletePipelineNote: (
+    token: string,
+    formId: string,
+    responseId: string,
+    noteId: string,
+  ) =>
+    request<{ ok: boolean }>(
+      `/forms/${formId}/pipeline/responses/${responseId}/notes/${noteId}`,
+      { method: "DELETE", headers: bearer(token) },
+    ),
+
+  listPipelineActivities: (
+    token: string,
+    formId: string,
+    responseId: string,
+  ) =>
+    request<unknown[]>(
+      `/forms/${formId}/pipeline/responses/${responseId}/activities`,
+      { headers: bearer(token) },
+    ),
+
+  createPipelineStage: (
+    token: string,
+    formId: string,
+    data: { name: string; color?: string | null; isTerminal?: boolean },
+  ) =>
+    request<unknown>(`/forms/${formId}/pipeline/stages`, {
+      method: "POST",
+      headers: bearer(token),
+      body: JSON.stringify(data),
+    }),
+
+  updatePipelineStage: (
+    token: string,
+    formId: string,
+    stageId: string,
+    data: Partial<{
+      name: string;
+      color: string | null;
+      isDefault: boolean;
+      isTerminal: boolean;
+    }>,
+  ) =>
+    request<unknown>(`/forms/${formId}/pipeline/stages/${stageId}`, {
+      method: "PATCH",
+      headers: bearer(token),
+      body: JSON.stringify(data),
+    }),
+
+  deletePipelineStage: (token: string, formId: string, stageId: string) =>
+    request<{ ok: boolean }>(
+      `/forms/${formId}/pipeline/stages/${stageId}`,
+      { method: "DELETE", headers: bearer(token) },
+    ),
+
+  reorderPipelineStages: (token: string, formId: string, stageIds: string[]) =>
+    request<unknown[]>(`/forms/${formId}/pipeline/stages/reorder`, {
+      method: "POST",
+      headers: bearer(token),
+      body: JSON.stringify({ stageIds }),
     }),
 
   trackPublicFormBehavior: (
@@ -355,7 +610,7 @@ export const api = {
       model: string | null;
       hasApiKey: boolean;
     }>("/auth/profile/ai-settings", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
     }),
 
   updateAiSettings: (
@@ -372,7 +627,7 @@ export const api = {
       hasApiKey: boolean;
     }>("/auth/profile/ai-settings", {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: JSON.stringify(data),
     }),
 
@@ -385,7 +640,7 @@ export const api = {
     formData.append("file", file);
     const res = await fetch(`${API_URL}/uploads?purpose=${purpose}`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: bearer(token),
       body: formData,
     });
     const data = await res.json();
@@ -409,7 +664,7 @@ export const api = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...bearer(token),
         "Accept-Language": loc,
         "X-Locale": loc,
       },

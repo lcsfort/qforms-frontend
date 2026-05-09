@@ -2,11 +2,7 @@
 
 import { useRef } from "react";
 import type { FieldProps } from "./types";
-import {
-  DEFAULT_LABEL_CLASS,
-  DEFAULT_ERROR_CLASS,
-  DEFAULT_HELP_CLASS,
-} from "./types";
+import { FieldShell } from "./FieldShell";
 
 export function FileField({
   field,
@@ -18,16 +14,14 @@ export function FileField({
   labelClassName,
   labelStyle,
   helpTextStyle,
+  hideMeta,
+  inputId,
 }: FieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileName = value instanceof File ? value.name : (value as string) ?? "";
 
-  return (
-    <div className={className}>
-      <label className={labelClassName ?? DEFAULT_LABEL_CLASS} style={labelStyle}>
-        {field.label}
-        {field.required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
+  const control = (
+    <>
       <div
         role="button"
         tabIndex={0}
@@ -58,7 +52,7 @@ export function FileField({
       </div>
       <input
         ref={inputRef}
-        id={field.id}
+        id={inputId ?? field.id}
         type="file"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -68,14 +62,23 @@ export function FileField({
         className="hidden"
         aria-invalid={!!error}
       />
-      {field.help_text && !error && (
-        <p className={DEFAULT_HELP_CLASS} style={helpTextStyle}>{field.help_text}</p>
-      )}
-      {error && (
-        <p role="alert" className={DEFAULT_ERROR_CLASS}>
-          {error}
-        </p>
-      )}
-    </div>
+    </>
+  );
+
+  if (hideMeta) return <div className={className}>{control}</div>;
+
+  return (
+    <FieldShell
+      id={inputId ?? field.id}
+      label={field.label}
+      required={field.required}
+      helpText={field.help_text}
+      error={error}
+      className={className}
+      labelStyle={labelStyle}
+      helpTextStyle={helpTextStyle}
+    >
+      {control}
+    </FieldShell>
   );
 }

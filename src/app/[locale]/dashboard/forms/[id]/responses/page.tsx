@@ -16,6 +16,7 @@ import { BarChartCard } from "@/components/analytics/BarChartCard";
 import { DonutChartCard } from "@/components/analytics/DonutChartCard";
 import { ChartCard } from "@/components/analytics/ChartCard";
 import { DashboardShell } from "@/components/DashboardShell";
+import { FormPipelineTab } from "@/components/forms/FormPipelineTab";
 
 export default function ResponsesPage() {
   const t = useTranslations("forms.responsesPage");
@@ -23,12 +24,15 @@ export default function ResponsesPage() {
   const router = useRouter();
   const formId = params.id as string;
   const { token, hydrated } = useAppSelector((state) => state.auth);
+  const activeWorkspaceId = useAppSelector((s) => s.workspace.activeWorkspaceId);
 
   const [form, setForm] = useState<Form | null>(null);
   const [responses, setResponses] = useState<FormResponse[]>([]);
   const [behavior, setBehavior] = useState<FormBehaviorAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"responses" | "bi" | "behavior">("responses");
+  const [activeTab, setActiveTab] = useState<
+    "responses" | "bi" | "behavior" | "pipeline"
+  >("responses");
   const [filters, setFilters] = useState<ResponsesFilters>({
     dateFrom: "",
     dateTo: "",
@@ -55,7 +59,7 @@ export default function ResponsesPage() {
         setBehavior(b);
       })
       .finally(() => setLoading(false));
-  }, [hydrated, token, formId, router]);
+  }, [hydrated, token, formId, router, activeWorkspaceId]);
 
   const dashboard = useMemo(
     () => buildResponsesDashboardData(form, responses, filters),
@@ -238,11 +242,14 @@ export default function ResponsesPage() {
         </div>
 
         <div className="inline-flex p-1 rounded-xl bg-[var(--card)] border border-[var(--border)] mb-6">
-          {([
-            ["responses", t("tabs.responses")],
-            ["bi", t("tabs.bi")],
-            ["behavior", t("tabs.behavior")],
-          ] as const).map(([key, label]) => (
+          {(
+            [
+              ["responses", t("tabs.responses")],
+              ["bi", t("tabs.bi")],
+              ["behavior", t("tabs.behavior")],
+              ["pipeline", t("tabs.pipeline")],
+            ] as const
+          ).map(([key, label]) => (
             <button
               key={key}
               type="button"
@@ -258,7 +265,9 @@ export default function ResponsesPage() {
           ))}
         </div>
 
-        {responses.length === 0 ? (
+        {activeTab === "pipeline" && token ? (
+          <FormPipelineTab formId={formId} token={token} />
+        ) : responses.length === 0 ? (
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-12 text-center">
             <h2 className="text-lg font-semibold mb-2">{t("noResponses")}</h2>
             <p className="text-[var(--muted)] text-sm">{t("noResponsesDesc")}</p>

@@ -132,6 +132,8 @@ export interface Form {
   version_cursor?: number;
   scheduledPublishAt?: string | null;
   createdBy: string;
+  /** Present on API forms for tenancy (optional for older cached payloads). */
+  workspaceId?: string;
   createdAt: string;
   updatedAt: string;
   _count?: { responses: number };
@@ -301,3 +303,70 @@ export interface FormBehaviorAnalytics {
   deviceBreakdown: BehaviorBreakdownItem[];
   localeBreakdown: BehaviorBreakdownItem[];
 }
+
+// --- Workspaces & pipeline ---
+
+export type WorkspaceRole = "owner" | "admin" | "member";
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  slug: string;
+  role: WorkspaceRole;
+  createdAt: string;
+}
+
+export interface WorkspaceMemberRow {
+  id: string;
+  userId: string;
+  role: WorkspaceRole;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    avatarUrl?: string | null;
+    googleAvatarUrl?: string | null;
+  };
+}
+
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  email: string;
+  token: string;
+  role: WorkspaceRole;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface PipelineStage {
+  id: string;
+  formPipelineId: string;
+  name: string;
+  slug: string;
+  color: string | null;
+  position: number;
+  isDefault: boolean;
+  isTerminal: boolean;
+}
+
+export interface FormPipelineConfig {
+  id?: string;
+  formId?: string;
+  isEnabled: boolean;
+  stages: PipelineStage[];
+}
+
+export interface PipelineBoardPayload {
+  pipeline: FormPipelineConfig | null;
+  stages: Array<
+    PipelineStage & {
+      responses: FormResponse[];
+    }
+  >;
+  members: Array<{
+    userId: string;
+    user: WorkspaceMemberRow["user"];
+  }>;
+}
+

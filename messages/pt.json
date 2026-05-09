@@ -623,6 +623,8 @@
       "defaultThankYou": "Obrigado pelo seu envio!",
       "submitAnother": "Enviar outra resposta",
       "submit": "Enviar",
+      "submitting": "Enviando...",
+      "previewMode": "Modo de preview",
       "poweredByPrefix": "Criado com "
     },
     "responsesPage": {
@@ -677,7 +679,8 @@
       "tabs": {
         "responses": "Gráficos de Respostas",
         "bi": "Insights de BI",
-        "behavior": "Analytics de Comportamento"
+        "behavior": "Analytics de Comportamento",
+        "pipeline": "Pipeline"
       },
       "behavior": {
         "title": "Analytics de comportamento",
@@ -728,5 +731,32 @@
       "rating": "Avaliação",
       "scale": "Escala"
     }
+  },
+  "workspace": {
+    "title": "Workspace",
+    "untitled": "Workspace sem nome",
+    "members": "Membros",
+    "membersHint": "Gerencie a função e nível de acesso de cada membro.",
+    "invite": "Convidar pessoas",
+    "inviteHint": "Envie convites com uma função específica.",
+    "emailPlaceholder": "colega@empresa.com",
+    "sendInvite": "Enviar convite",
+    "cancel": "Revogar",
+    "acceptHelp": "Convites pendentes aparecem abaixo. Os membros podem aceitar pelo link do email ou usando o token.",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "removeMember": "Remover",
+    "noInvites": "Sem convites pendentes.",
+    "inviteSent": "Convite enviado.",
+    "inviteCancelled": "Convite cancelado.",
+    "inviteAccepted": "Convite aceito.",
+    "inviteAcceptFailed": "Nao foi possivel aceitar o convite.",
+    "memberRoleUpdated": "Funcao do membro atualizada.",
+    "memberRemoved": "Membro removido.",
+    "loadFailed": "Nao foi possivel carregar dados do workspace.",
+    "saveFailed": "Nao foi possivel salvar alteracoes do workspace."
   }
 }

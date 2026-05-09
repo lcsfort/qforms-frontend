@@ -623,6 +623,8 @@
       "defaultThankYou": "Thank you for your submission!",
       "submitAnother": "Submit another response",
       "submit": "Submit",
+      "submitting": "Submitting...",
+      "previewMode": "Preview mode",
       "poweredByPrefix": "Powered by "
     },
     "responsesPage": {
@@ -677,7 +679,8 @@
       "tabs": {
         "responses": "Response Charts",
         "bi": "BI Insights",
-        "behavior": "Behavior Analytics"
+        "behavior": "Behavior Analytics",
+        "pipeline": "Pipeline"
       },
       "behavior": {
         "title": "Behavior analytics",
@@ -728,5 +731,32 @@
       "rating": "Rating",
       "scale": "Scale"
     }
+  },
+  "workspace": {
+    "title": "Workspace",
+    "untitled": "Untitled workspace",
+    "members": "Members",
+    "membersHint": "Manage each member's role and access level.",
+    "invite": "Invite people",
+    "inviteHint": "Send workspace invites with a specific role.",
+    "emailPlaceholder": "colleague@company.com",
+    "sendInvite": "Send invite",
+    "cancel": "Revoke",
+    "acceptHelp": "Pending invites appear below. Members can accept from the email link or using the invite token.",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "removeMember": "Remove",
+    "noInvites": "No pending invites.",
+    "inviteSent": "Invite sent.",
+    "inviteCancelled": "Invite cancelled.",
+    "inviteAccepted": "Invitation accepted.",
+    "inviteAcceptFailed": "Could not accept invite.",
+    "memberRoleUpdated": "Member role updated.",
+    "memberRemoved": "Member removed.",
+    "loadFailed": "Could not load workspace data.",
+    "saveFailed": "Could not save workspace changes."
   }
 }

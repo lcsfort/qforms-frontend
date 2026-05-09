@@ -7,6 +7,9 @@ export { DateField } from "./DateField";
 export { FileField } from "./FileField";
 export { RatingField } from "./RatingField";
 export { ScaleField } from "./ScaleField";
+export { UnsupportedField } from "./UnsupportedField";
+export { FieldShell } from "./FieldShell";
+export { getFieldComponent } from "./registry";
 export type { FieldProps } from "./types";
 export {
   DEFAULT_LABEL_CLASS,

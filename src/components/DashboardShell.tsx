@@ -9,6 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/authSlice";
 import { AppMenu } from "@/components/AppMenu";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
 
 const flags: Record<string, string> = { en: "🇺🇸", pt: "🇧🇷" };
@@ -186,6 +187,8 @@ export function DashboardShell({
               </div>
             </div>
           </div>
+
+          <WorkspaceSwitcher />
 
           <nav className="flex flex-col gap-0.5 mb-auto">
             <Link
