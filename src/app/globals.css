@@ -268,8 +268,8 @@ input[type="number"] {
 .hero-aurora::before {
   content: "";
   position: absolute;
-  inset: -72px -12% auto -12%;
-  height: 320px;
+  inset: -78px -12% auto -12%;
+  height: 290px;
   z-index: -1;
   pointer-events: none;
   /* Light: cool-neutral base + faint lavender from surface/primary */
@@ -285,8 +285,8 @@ input[type="number"] {
       color-mix(in srgb, var(--background) 97%, var(--accent) 3%) 0%,
       transparent 55%
     );
-  opacity: 0.88;
-  filter: blur(22px);
+  opacity: 0.72;
+  filter: blur(26px);
 }
 .dark .hero-aurora::before {
   /* Dark: same idea as light — depth from surface tint, almost no saturated primary */
@@ -302,8 +302,42 @@ input[type="number"] {
       color-mix(in srgb, var(--background) 98%, var(--accent) 2%) 0%,
       transparent 58%
     );
-  opacity: 0.72;
-  filter: blur(24px);
+  opacity: 0.62;
+  filter: blur(28px);
+}
+.hero-atmosphere-mesh {
+  position: absolute;
+  inset: 8px 10% auto 10%;
+  height: 188px;
+  border-radius: 9999px;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      62% 84% at 24% 18%,
+      color-mix(in srgb, var(--primary) 8%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      58% 80% at 78% 24%,
+      color-mix(in srgb, #60a5fa 7%, transparent) 0%,
+      transparent 72%
+    );
+  opacity: 0.5;
+  filter: blur(30px);
+}
+.dark .hero-atmosphere-mesh {
+  opacity: 0.44;
+  background:
+    radial-gradient(
+      60% 82% at 24% 18%,
+      color-mix(in srgb, var(--primary) 12%, transparent) 0%,
+      transparent 74%
+    ),
+    radial-gradient(
+      58% 80% at 78% 24%,
+      color-mix(in srgb, #60a5fa 10%, transparent) 0%,
+      transparent 74%
+    );
 }
 
 /* Primary gradient CTA — "Create with AI" */
@@ -331,22 +365,22 @@ input[type="number"] {
 /* Command center — AI-native palette */
 .command-center {
   position: relative;
-  border-radius: 18px;
+  border-radius: 16px;
   background: color-mix(in srgb, var(--card) 88%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
-  backdrop-filter: blur(16px) saturate(1.12);
-  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
   box-shadow:
     0 1px 0 color-mix(in srgb, #ffffff 10%, transparent) inset,
-    0 10px 30px -18px color-mix(in srgb, var(--foreground) 12%, transparent),
-    0 16px 44px -30px color-mix(in srgb, var(--primary) 32%, transparent);
+    0 8px 24px -16px color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 12px 34px -26px color-mix(in srgb, var(--primary) 24%, transparent);
   transition: border-color 240ms ease, box-shadow 240ms ease, background 240ms ease;
 }
 .command-center-row {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.84rem 0.92rem 0.78rem 1.05rem;
+  gap: 0.7rem;
+  padding: 0.7rem 0.82rem 0.62rem 0.92rem;
 }
 .command-center--open {
   background: color-mix(in srgb, var(--card) 93%, transparent);
@@ -384,17 +418,42 @@ input[type="number"] {
 .command-center--open {
   border-color: transparent;
   box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent),
-    0 20px 46px -20px color-mix(in srgb, var(--primary) 32%, transparent);
+    0 0 0 3px color-mix(in srgb, var(--primary) 11%, transparent),
+    0 16px 36px -20px color-mix(in srgb, var(--primary) 28%, transparent);
 }
 .command-dropdown {
+  display: flex;
+  flex-direction: column;
+  max-height: min(54vh, 420px);
+  min-height: 0;
+  overflow: hidden;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   background: color-mix(in srgb, var(--card) 94%, transparent);
-  padding: 0.6rem;
   box-shadow:
     0 1px 0 color-mix(in srgb, #ffffff 10%, transparent) inset,
     0 18px 40px -20px color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+.command-dropdown-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.44rem;
+  -webkit-overflow-scrolling: touch;
+}
+.command-dropdown-scroll .command-item {
+  scroll-margin-block: 6px;
+}
+.command-dropdown-footer {
+  flex-shrink: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  padding: 0.45rem 0.55rem 0.52rem;
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+}
+.dark .command-dropdown-footer {
+  border-top-color: color-mix(in srgb, var(--border) 72%, #ffffff 5%);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
 }
 .command-chip-row {
   margin: 0.2rem 0.62rem 0.72rem;
@@ -436,8 +495,8 @@ input[type="number"] {
   background: color-mix(in srgb, var(--card) 84%, transparent);
 }
 .command-section-title {
-  padding: 0 0.35rem;
-  font-size: 0.65rem;
+  padding: 0 0.3rem;
+  font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -446,10 +505,14 @@ input[type="number"] {
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
   border-radius: 0.65rem;
-  padding: 0.45rem;
+  padding: 0.36rem 0.4rem;
   transition: background 140ms ease, border-color 140ms ease;
+}
+.command-item--ai {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
 }
 .command-item:hover {
   background: color-mix(in srgb, var(--surface) 72%, transparent);
@@ -457,10 +520,25 @@ input[type="number"] {
 .command-item--active {
   background: color-mix(in srgb, var(--surface) 90%, transparent);
 }
+.dark .command-item:hover {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.dark .command-item--active,
+.dark .command-item--active:hover {
+  background: color-mix(in srgb, var(--primary) 22%, var(--card));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+.dark .command-item--active .command-item-icon {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--primary) 14%, var(--card));
+  color: color-mix(in srgb, var(--foreground) 70%, var(--primary) 30%);
+}
 .command-item-icon {
   display: inline-flex;
-  height: 1.65rem;
-  width: 1.65rem;
+  height: 1.5rem;
+  width: 1.5rem;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;

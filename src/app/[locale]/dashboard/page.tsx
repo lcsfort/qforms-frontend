@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createForm, deleteForm, fetchForms } from "@/lib/redux/formsSlice";
 import { fetchProfile } from "@/lib/redux/authSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DashboardShell } from "@/components/DashboardShell";
-import { defaultFormListStats, type FormListSort, type FormListStatus } from "@/lib/types";
+import { defaultFormListStats, type Form, type FormListSort, type FormListStatus } from "@/lib/types";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowUpDown,
   BarChart3,
   CircleDashed,
-  Command,
   CornerDownLeft,
   Eye,
   FileText,
   Plus,
   Sparkles,
-  Upload,
+  Target,
   Workflow,
 } from "lucide-react";
 
@@ -38,6 +38,16 @@ function SparkleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+    </svg>
+  );
+}
+
+/** Matches the responses glyph on each form card (used for KPI + cards). */
+function ResponsesGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5V6.75A2.25 2.25 0 0 1 4.5 4.5h15a2.25 2.25 0 0 1 2.25 2.25v6.75m-19.5 0v4.5A2.25 2.25 0 0 0 4.5 20.25h15a2.25 2.25 0 0 0 2.25-2.25v-4.5" />
     </svg>
   );
 }
@@ -67,8 +77,9 @@ export default function DashboardPage() {
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [paletteForms, setPaletteForms] = useState<Form[] | null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandActiveIndex, setCommandActiveIndex] = useState(0);
   const [commandNavigated, setCommandNavigated] = useState(false);
@@ -78,8 +89,8 @@ export default function DashboardPage() {
   const [openToolbarMenu, setOpenToolbarMenu] = useState<"sort" | "filter" | null>(null);
   const [creatingBlankForm, setCreatingBlankForm] = useState(false);
   const [blankFormError, setBlankFormError] = useState<string | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
+  const commandDropdownScrollRef = useRef<HTMLDivElement>(null);
   const commandPanelRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -151,31 +162,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      const key = event.key.toLowerCase();
+      const mod = event.metaKey || event.ctrlKey;
+
+      // AI command center + generate prompt (same shortcut as Create with AI badge)
+      if (mod && !event.shiftKey && key === "k") {
         event.preventDefault();
         commandInputRef.current?.focus();
         setCommandOpen(true);
         return;
       }
-      if (
-        event.key === "/" &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey &&
-        !event.shiftKey
-      ) {
-        const target = event.target as HTMLElement | null;
-        const typingInField =
-          target instanceof HTMLInputElement ||
-          target instanceof HTMLTextAreaElement ||
-          target?.isContentEditable;
-        if (!typingInField) {
-          event.preventDefault();
-          commandInputRef.current?.focus();
-          setCommandOpen(true);
-        }
-        return;
-      }
+
       if (event.key === "Escape") {
         setOpenToolbarMenu(null);
         setCommandOpen(false);
@@ -210,6 +207,41 @@ export default function DashboardPage() {
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [commandOpen]);
+
+  /** Server-side form matches for the command palette when typing (not limited to loaded page / top 4). */
+  useEffect(() => {
+    if (!token || !user?.isEmailVerified) return;
+    if (!commandOpen) {
+      setPaletteForms(null);
+      return;
+    }
+    const q = aiPrompt.trim();
+    if (!q) {
+      setPaletteForms(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const res = await api.listForms(token, {
+            cursor: 0,
+            limit: 50,
+            sort: "recent",
+            status: "all",
+            query: q,
+          });
+          if (!cancelled) setPaletteForms(res.items);
+        } catch {
+          if (!cancelled) setPaletteForms([]);
+        }
+      })();
+    }, 280);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [aiPrompt, commandOpen, token, user?.isEmailVerified]);
 
   const executeCommandQuery = (rawValue: string) => {
     const trimmed = rawValue.trim();
@@ -258,17 +290,46 @@ export default function DashboardPage() {
     ],
     [t],
   );
+  const rotatingPlaceholders = useMemo(
+    () => [
+      t("aiPlaceholderRotateHiring"),
+      t("aiPlaceholderRotateEvent"),
+      t("aiPlaceholderRotateIntake"),
+      t("aiPlaceholderRotateAnalyze"),
+    ],
+    [t],
+  );
+
+  const formsForPalette = useMemo(() => {
+    const q = aiPrompt.trim();
+    if (q && paletteForms !== null) return paletteForms;
+    return forms;
+  }, [aiPrompt, paletteForms, forms]);
+
+  const createBlankFormAndOpenEditor = useCallback(async () => {
+    if (!token || creatingBlankForm) return;
+    setBlankFormError(null);
+    setCreatingBlankForm(true);
+    try {
+      const form = await dispatch(
+        createForm({
+          title: tf("blankFormTitle"),
+          schema: [],
+          settings: {},
+        }),
+      ).unwrap();
+      router.push(`/dashboard/forms/${form.id}`);
+      setCommandOpen(false);
+    } catch (err: unknown) {
+      const e = err as string | { message?: string };
+      setBlankFormError(typeof e === "string" ? e : e?.message ?? tf("blankFormError"));
+    } finally {
+      setCreatingBlankForm(false);
+    }
+  }, [token, creatingBlankForm, dispatch, router, tf]);
 
   const quickActions = useMemo<CommandItem[]>(
     () => [
-      {
-        id: "create-form",
-        title: t("actionCreateForm"),
-        description: t("actionCreateFormDesc"),
-        section: "actions",
-        icon: Plus,
-        onSelect: () => router.push("/dashboard/forms/new"),
-      },
       {
         id: "generate-ai",
         title: t("actionGenerateAi"),
@@ -284,12 +345,12 @@ export default function DashboardPage() {
         },
       },
       {
-        id: "import-responses",
-        title: t("actionImportResponses"),
-        description: t("actionImportResponsesDesc"),
+        id: "create-form",
+        title: t("actionCreateForm"),
+        description: t("actionCreateFormDesc"),
         section: "actions",
-        icon: Upload,
-        onSelect: () => router.push("/dashboard/forms/new"),
+        icon: Plus,
+        onSelect: () => void createBlankFormAndOpenEditor(),
       },
       {
         id: "create-workflow",
@@ -299,25 +360,13 @@ export default function DashboardPage() {
         icon: Workflow,
         onSelect: () => setSearchQuery("workflow"),
       },
-      {
-        id: "open-analytics",
-        title: t("actionOpenAnalytics"),
-        description: t("actionOpenAnalyticsDesc"),
-        section: "actions",
-        icon: BarChart3,
-        onSelect: () => {
-          if (forms[0]?.id) {
-            router.push(`/dashboard/forms/${forms[0].id}/responses`);
-          }
-        },
-      },
     ],
-    [aiPrompt, forms, router, t],
+    [aiPrompt, createBlankFormAndOpenEditor, router, t],
   );
 
   const recentFormCommands = useMemo<CommandItem[]>(
     () =>
-      forms.slice(0, 4).map((form) => ({
+      formsForPalette.slice(0, aiPrompt.trim() ? 5 : 3).map((form) => ({
         id: `recent-${form.id}`,
         title: form.title,
         description: `${tf(form.status === "published" ? "published" : "draft")} · ${tf("edited")} ${format.relativeTime(new Date(form.updatedAt), now)}`,
@@ -326,7 +375,7 @@ export default function DashboardPage() {
         badge: form.status === "published" ? tf("published") : tf("draft"),
         onSelect: () => router.push(`/dashboard/forms/${form.id}`),
       })),
-    [forms, format, now, router, tf],
+    [aiPrompt, formsForPalette, format, now, router, tf],
   );
 
   const aiSuggestions = useMemo<CommandItem[]>(
@@ -382,6 +431,22 @@ export default function DashboardPage() {
     }
   }, [commandOpen]);
 
+  useLayoutEffect(() => {
+    if (!commandOpen || commandItems.length === 0) return;
+    const root = commandDropdownScrollRef.current;
+    if (!root) return;
+    const el = root.querySelector<HTMLElement>(`[data-command-item-index="${commandActiveIndex}"]`);
+    el?.scrollIntoView({ block: "nearest", behavior: "auto" });
+  }, [commandActiveIndex, commandOpen, commandItems]);
+
+  useEffect(() => {
+    if (aiPrompt.trim()) return;
+    const timer = window.setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % rotatingPlaceholders.length);
+    }, 3600);
+    return () => window.clearInterval(timer);
+  }, [aiPrompt, rotatingPlaceholders.length]);
+
   const handleAiSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     executeCommandQuery(aiPrompt);
@@ -389,24 +454,7 @@ export default function DashboardPage() {
   };
 
   const handleNewBlankForm = async () => {
-    if (!token || creatingBlankForm) return;
-    setBlankFormError(null);
-    setCreatingBlankForm(true);
-    try {
-      const form = await dispatch(
-        createForm({
-          title: tf("blankFormTitle"),
-          schema: [],
-          settings: {},
-        }),
-      ).unwrap();
-      router.push(`/dashboard/forms/${form.id}`);
-    } catch (err: unknown) {
-      const e = err as string | { message?: string };
-      setBlankFormError(typeof e === "string" ? e : e?.message ?? tf("blankFormError"));
-    } finally {
-      setCreatingBlankForm(false);
-    }
+    await createBlankFormAndOpenEditor();
   };
 
   useEffect(() => {
@@ -460,33 +508,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardShell
-      searchQuery={searchQuery}
-      onSearchQueryChange={setSearchQuery}
-      isSearchFocused={isSearchFocused}
-      onSearchFocus={() => setIsSearchFocused(true)}
-      onSearchBlur={() => setIsSearchFocused(false)}
-      searchInputRef={searchInputRef}
-    >
+    <DashboardShell showSearch={false}>
 
             {/* ── Hero area ── */}
             <section className="hero-aurora mb-10 pt-2">
-              <div className="pointer-events-none absolute inset-x-[-8%] top-[-64px] z-0 h-[260px] overflow-hidden">
-                <motion.div
-                  className="aurora-orb aurora-orb--primary"
-                  animate={{ x: [0, 26, -12, 0], y: [0, 8, -6, 0], opacity: [0.42, 0.58, 0.48, 0.42] }}
-                  transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                  className="aurora-orb aurora-orb--secondary"
-                  animate={{ x: [0, -20, 12, 0], y: [0, -8, 6, 0], opacity: [0.32, 0.44, 0.36, 0.32] }}
-                  transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                  className="aurora-orb aurora-orb--accent"
-                  animate={{ x: [0, 18, -10, 0], y: [0, 6, -5, 0], opacity: [0.24, 0.36, 0.28, 0.24] }}
-                  transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-                />
+              <div className="pointer-events-none absolute inset-x-[-8%] top-[-72px] z-0 h-[240px] overflow-hidden">
+                <div className="hero-atmosphere-mesh" />
               </div>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div className="min-w-0">
@@ -503,7 +530,12 @@ export default function DashboardPage() {
                       className="cta-gradient order-1 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-[14px] font-semibold text-white sm:order-2 sm:w-auto sm:px-5"
                     >
                       <SparkleIcon className="h-[18px] w-[18px] shrink-0" />
-                      {t("createWithAi")}
+                      <span className="flex min-w-0 items-center justify-center gap-2 sm:justify-start">
+                        <span>{t("createWithAi")}</span>
+                        <span className="hidden shrink-0 rounded-md border border-white/25 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] font-medium leading-none text-white/90 sm:inline-flex">
+                          {t("searchShortcut")}
+                        </span>
+                      </span>
                     </Link>
                     <button
                       type="button"
@@ -565,47 +597,63 @@ export default function DashboardPage() {
                         >
                           <SparkleIcon className="h-5 w-5 text-[var(--primary)]" />
                         </motion.div>
-                        <input
-                          ref={commandInputRef}
-                          type="text"
-                          value={aiPrompt}
-                          onFocus={() => setCommandOpen(true)}
-                          onChange={(e) => {
-                            setAiPrompt(e.target.value);
-                            setCommandNavigated(false);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Escape") {
-                              setCommandOpen(false);
-                              return;
-                            }
-                            if (!commandItems.length) return;
-                            if (event.key === "ArrowDown") {
-                              event.preventDefault();
-                              setCommandOpen(true);
-                              setCommandNavigated(true);
-                              setCommandActiveIndex((prev) => (prev + 1) % commandItems.length);
-                            } else if (event.key === "ArrowUp") {
-                              event.preventDefault();
-                              setCommandOpen(true);
-                              setCommandNavigated(true);
-                              setCommandActiveIndex(
-                                (prev) => (prev - 1 + commandItems.length) % commandItems.length,
-                              );
-                            } else if (event.key === "Enter" && commandOpen && commandNavigated) {
-                              event.preventDefault();
-                              const selected = commandItems[commandActiveIndex];
-                              if (!selected) return;
-                              selected.onSelect();
-                              setCommandOpen(false);
-                            }
-                          }}
-                          placeholder={t("commandPlaceholder")}
-                          className="min-w-0 flex-1 bg-transparent py-1.5 text-[14px] outline-none placeholder:text-[var(--muted)]"
-                        />
+                        <div className="relative min-w-0 flex-1">
+                          <input
+                            ref={commandInputRef}
+                            type="text"
+                            value={aiPrompt}
+                            onFocus={() => setCommandOpen(true)}
+                            onChange={(e) => {
+                              setAiPrompt(e.target.value);
+                              setCommandNavigated(false);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Escape") {
+                                setCommandOpen(false);
+                                return;
+                              }
+                              if (!commandItems.length) return;
+                              if (event.key === "ArrowDown") {
+                                event.preventDefault();
+                                setCommandOpen(true);
+                                setCommandNavigated(true);
+                                setCommandActiveIndex((prev) => (prev + 1) % commandItems.length);
+                              } else if (event.key === "ArrowUp") {
+                                event.preventDefault();
+                                setCommandOpen(true);
+                                setCommandNavigated(true);
+                                setCommandActiveIndex(
+                                  (prev) => (prev - 1 + commandItems.length) % commandItems.length,
+                                );
+                              } else if (event.key === "Enter" && commandOpen && commandNavigated) {
+                                event.preventDefault();
+                                const selected = commandItems[commandActiveIndex];
+                                if (!selected) return;
+                                selected.onSelect();
+                                setCommandOpen(false);
+                              }
+                            }}
+                            placeholder=""
+                            className="relative z-[1] min-w-0 w-full bg-transparent py-1 text-[14px] outline-none"
+                          />
+                          <AnimatePresence mode="wait" initial={false}>
+                            {!aiPrompt && (
+                              <motion.span
+                                key={placeholderIndex}
+                                initial={{ opacity: 0, y: 3 }}
+                                animate={{ opacity: 0.9, y: 0 }}
+                                exit={{ opacity: 0, y: -2 }}
+                                transition={{ duration: 0.32, ease: "easeOut" }}
+                                className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center truncate text-[14px] text-[var(--muted)]"
+                              >
+                                {rotatingPlaceholders[placeholderIndex]}
+                                <span className="ml-0.5 inline-block h-[0.95em] w-px animate-pulse bg-[var(--primary)]/50" />
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </div>
                         <div className="hidden items-center gap-1.5 text-[11px] text-[var(--muted)] md:flex">
-                          <span className="command-kbd"><Command className="h-3 w-3" />K</span>
-                          <span className="command-kbd">/</span>
+                          <span className="command-kbd whitespace-nowrap">{t("searchShortcut")}</span>
                         </div>
                         <button
                           type="submit"
@@ -618,7 +666,7 @@ export default function DashboardPage() {
                         </button>
                       </div>
 
-                      <div className="mx-3 mb-3 mt-1.5 flex flex-wrap items-center gap-2 border-t border-[var(--border)]/65 px-1 pt-2.5">
+                      <div className="mx-2.5 mb-2 mt-1 flex flex-wrap items-center gap-1.5 border-t border-[var(--border)]/65 px-1 pt-2">
                         {suggestionChips.map((chip) => (
                           <motion.button
                             key={chip}
@@ -629,7 +677,7 @@ export default function DashboardPage() {
                               setCommandOpen(true);
                               commandInputRef.current?.focus();
                             }}
-                            className="inline-flex min-h-7 items-center gap-1 rounded-full border border-[var(--border)]/85 bg-[var(--card)]/80 px-2.5 py-1 text-[11px] font-medium leading-none text-[var(--muted)] shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] transition-all duration-150 hover:-translate-y-px hover:border-[var(--primary)]/35 hover:bg-[var(--surface)]/70 hover:text-[var(--foreground)]"
+                            className="inline-flex min-h-6 items-center gap-1 rounded-full border border-[var(--border)]/82 bg-[var(--card)]/80 px-2 py-0.5 text-[10.5px] font-medium leading-none text-[var(--muted)] shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] transition-all duration-150 hover:-translate-y-px hover:border-[var(--primary)]/35 hover:bg-[var(--surface)]/70 hover:text-[var(--foreground)]"
                           >
                             <Sparkles className="h-3 w-3" />
                             {chip}
@@ -644,54 +692,17 @@ export default function DashboardPage() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 6, scale: 0.99 }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="command-dropdown mt-3"
+                            className="command-dropdown mt-2"
                           >
-                            {commandItems.length === 0 ? (
-                              <div className="px-3 py-4 text-sm text-[var(--muted)]">
-                                {t("noSearchResults")}
-                              </div>
-                            ) : (
-                              <>
-                                <div className="space-y-1">
-                                  <p className="command-section-title">{t("commandQuickActions")}</p>
-                                  {commandItems
-                                    .filter((item) => item.section === "actions")
-                                    .map((item) => {
-                                      const index = commandItems.findIndex((candidate) => candidate.id === item.id);
-                                      const Icon = item.icon;
-                                      const active = index === commandActiveIndex;
-                                      return (
-                                        <motion.button
-                                          key={item.id}
-                                          type="button"
-                                          initial={{ opacity: 0, y: 4 }}
-                                          animate={{ opacity: 1, y: 0 }}
-                                          transition={{ duration: 0.18, delay: index * 0.02 }}
-                                          onMouseEnter={() => {
-                                            setCommandActiveIndex(index);
-                                            setCommandNavigated(true);
-                                          }}
-                                          onClick={() => {
-                                            item.onSelect();
-                                            setCommandOpen(false);
-                                          }}
-                                          className={`command-item ${active ? "command-item--active" : ""}`}
-                                        >
-                                          <span className="command-item-icon"><Icon className="h-4 w-4" /></span>
-                                          <span className="min-w-0 text-left">
-                                            <span className="block truncate text-sm font-medium text-[var(--foreground)]">{item.title}</span>
-                                            <span className="block truncate text-xs text-[var(--muted)]">{item.description}</span>
-                                          </span>
-                                        </motion.button>
-                                      );
-                                    })}
-                                </div>
-
-                                {commandItems.some((item) => item.section === "recent") && (
-                                  <div className="mt-3 space-y-1">
-                                    <p className="command-section-title">{t("commandRecentForms")}</p>
+                            <div ref={commandDropdownScrollRef} className="command-dropdown-scroll">
+                              {commandItems.length === 0 ? (
+                                <div className="px-3 py-4 text-sm text-[var(--muted)]">{t("noSearchResults")}</div>
+                              ) : (
+                                <>
+                                  <div className="space-y-0.5">
+                                    <p className="command-section-title">{t("commandQuickActions")}</p>
                                     {commandItems
-                                      .filter((item) => item.section === "recent")
+                                      .filter((item) => item.section === "actions")
                                       .map((item) => {
                                         const index = commandItems.findIndex((candidate) => candidate.id === item.id);
                                         const Icon = item.icon;
@@ -700,6 +711,7 @@ export default function DashboardPage() {
                                           <motion.button
                                             key={item.id}
                                             type="button"
+                                            data-command-item-index={index}
                                             initial={{ opacity: 0, y: 4 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.18, delay: index * 0.02 }}
@@ -715,67 +727,102 @@ export default function DashboardPage() {
                                           >
                                             <span className="command-item-icon"><Icon className="h-4 w-4" /></span>
                                             <span className="min-w-0 text-left">
-                                              <span className="flex items-center gap-2 truncate text-sm font-medium text-[var(--foreground)]">
-                                                <span className="truncate">{item.title}</span>
-                                                {item.badge && (
-                                                  <span className="rounded-full border border-[var(--border)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--muted)]">
-                                                    {item.badge}
-                                                  </span>
-                                                )}
-                                              </span>
+                                              <span className="block truncate text-sm font-medium text-[var(--foreground)]">{item.title}</span>
                                               <span className="block truncate text-xs text-[var(--muted)]">{item.description}</span>
                                             </span>
                                           </motion.button>
                                         );
                                       })}
                                   </div>
-                                )}
 
-                                <div className="mt-3 space-y-1">
-                                  <p className="command-section-title">{t("commandAiSuggestions")}</p>
-                                  {commandItems
-                                    .filter((item) => item.section === "ai")
-                                    .map((item) => {
-                                      const index = commandItems.findIndex((candidate) => candidate.id === item.id);
-                                      const Icon = item.icon;
-                                      const active = index === commandActiveIndex;
-                                      return (
-                                        <motion.button
-                                          key={item.id}
-                                          type="button"
-                                          initial={{ opacity: 0, y: 4 }}
-                                          animate={{ opacity: 1, y: 0 }}
-                                          transition={{ duration: 0.18, delay: index * 0.02 }}
-                                          onMouseEnter={() => {
-                                            setCommandActiveIndex(index);
-                                            setCommandNavigated(true);
-                                          }}
-                                          onClick={() => {
-                                            item.onSelect();
-                                            setCommandOpen(false);
-                                          }}
-                                          className={`command-item ${active ? "command-item--active" : ""}`}
-                                        >
-                                          <span className="command-item-icon"><Icon className="h-4 w-4" /></span>
-                                          <span className="min-w-0 text-left">
-                                            <span className="block truncate text-sm font-medium text-[var(--foreground)]">{item.title}</span>
-                                            <span className="block truncate text-xs text-[var(--muted)]">{item.description}</span>
-                                          </span>
-                                        </motion.button>
-                                      );
-                                    })}
-                                </div>
+                                  {commandItems.some((item) => item.section === "recent") && (
+                                    <div className="mt-2.5 space-y-0.5">
+                                      <p className="command-section-title">{t("commandRecentForms")}</p>
+                                      {commandItems
+                                        .filter((item) => item.section === "recent")
+                                        .map((item) => {
+                                          const index = commandItems.findIndex((candidate) => candidate.id === item.id);
+                                          const Icon = item.icon;
+                                          const active = index === commandActiveIndex;
+                                          return (
+                                            <motion.button
+                                              key={item.id}
+                                              type="button"
+                                              data-command-item-index={index}
+                                              initial={{ opacity: 0, y: 4 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              transition={{ duration: 0.18, delay: index * 0.02 }}
+                                              onMouseEnter={() => {
+                                                setCommandActiveIndex(index);
+                                                setCommandNavigated(true);
+                                              }}
+                                              onClick={() => {
+                                                item.onSelect();
+                                                setCommandOpen(false);
+                                              }}
+                                              className={`command-item ${active ? "command-item--active" : ""}`}
+                                            >
+                                              <span className="command-item-icon"><Icon className="h-4 w-4" /></span>
+                                              <span className="min-w-0 text-left">
+                                                <span className="flex items-center gap-2 truncate text-sm font-medium text-[var(--foreground)]">
+                                                  <span className="truncate">{item.title}</span>
+                                                  {item.badge && (
+                                                    <span className="rounded-full border border-[var(--border)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                                                      {item.badge}
+                                                    </span>
+                                                  )}
+                                                </span>
+                                                <span className="block truncate text-xs text-[var(--muted)]">{item.description}</span>
+                                              </span>
+                                            </motion.button>
+                                          );
+                                        })}
+                                    </div>
+                                  )}
 
-                                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--border)]/80 px-1 pt-2 text-[11px] text-[var(--muted)]">
-                                  <span className="command-kbd"><ArrowUpDown className="h-3 w-3" /></span>
-                                  <span>{t("shortcutNavigate")}</span>
-                                  <span className="command-kbd"><CornerDownLeft className="h-3 w-3" /></span>
-                                  <span>{t("shortcutSelect")}</span>
-                                  <span className="command-kbd">/</span>
-                                  <span>{t("shortcutCommands")}</span>
-                                </div>
-                              </>
-                            )}
+                                  <div className="mt-2.5 space-y-0.5">
+                                    <p className="command-section-title">{t("commandAiSuggestions")}</p>
+                                    {commandItems
+                                      .filter((item) => item.section === "ai")
+                                      .map((item) => {
+                                        const index = commandItems.findIndex((candidate) => candidate.id === item.id);
+                                        const Icon = item.icon;
+                                        const active = index === commandActiveIndex;
+                                        return (
+                                          <motion.button
+                                            key={item.id}
+                                            type="button"
+                                            data-command-item-index={index}
+                                            initial={{ opacity: 0, y: 4 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.18, delay: index * 0.02 }}
+                                            onMouseEnter={() => {
+                                              setCommandActiveIndex(index);
+                                              setCommandNavigated(true);
+                                            }}
+                                            onClick={() => {
+                                              item.onSelect();
+                                              setCommandOpen(false);
+                                            }}
+                                            className={`command-item command-item--ai ${active ? "command-item--active" : ""}`}
+                                          >
+                                            <span className="command-item-icon"><Icon className="h-4 w-4" /></span>
+                                            <span className="min-w-0 text-left">
+                                              <span className="block truncate text-sm font-medium text-[var(--foreground)]">{item.title}</span>
+                                            </span>
+                                          </motion.button>
+                                        );
+                                      })}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <div className="command-dropdown-footer flex flex-wrap items-center gap-1.5 text-[10.5px] text-[var(--muted)]">
+                              <span className="command-kbd"><ArrowUpDown className="h-3 w-3" /></span>
+                              <span>{t("shortcutNavigate")}</span>
+                              <span className="command-kbd"><CornerDownLeft className="h-3 w-3" /></span>
+                              <span>{t("shortcutSelect")}</span>
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -793,18 +840,38 @@ export default function DashboardPage() {
 
             <section className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
               <div className="premium-card p-4">
-                <p className="text-xs text-[var(--muted)]">{t("metricResponsesThisMonth")}</p>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--foreground)]">
-                  {responsesThisMonth != null ? responsesThisMonth : t("noData")}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-[var(--muted)]">{t("metricResponsesThisMonth")}</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--foreground)]">
+                      {responsesThisMonth != null ? responsesThisMonth : t("noData")}
+                    </p>
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 bg-[var(--surface)]/60 text-[var(--primary)]/75"
+                  >
+                    <ResponsesGlyph className="h-4 w-4" />
+                  </span>
+                </div>
               </div>
               <div className="premium-card p-4">
-                <p className="text-xs text-[var(--muted)]">{t("metricBestCompletion")}</p>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--foreground)]">
-                  {bestWorkspaceCompletionRate != null
-                    ? `${bestWorkspaceCompletionRate}%`
-                    : t("noData")}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-[var(--muted)]">{t("metricBestCompletion")}</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--foreground)]">
+                      {bestWorkspaceCompletionRate != null
+                        ? `${bestWorkspaceCompletionRate}%`
+                        : t("noData")}
+                    </p>
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 bg-[var(--surface)]/60 text-[var(--primary)]/75"
+                  >
+                    <Target className="h-4 w-4" />
+                  </span>
+                </div>
               </div>
             </section>
 
@@ -1072,10 +1139,7 @@ export default function DashboardPage() {
                       <div className="relative mb-4 space-y-2.5">
                         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
                           <span className="inline-flex items-center gap-1.5 text-[var(--foreground)]">
-                            <svg className="h-4 w-4 shrink-0 text-[var(--primary)]/80" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5V6.75A2.25 2.25 0 0 1 4.5 4.5h15a2.25 2.25 0 0 1 2.25 2.25v6.75m-19.5 0v4.5A2.25 2.25 0 0 0 4.5 20.25h15a2.25 2.25 0 0 0 2.25-2.25v-4.5" />
-                            </svg>
+                            <ResponsesGlyph className="h-4 w-4 shrink-0 text-[var(--primary)]/80" />
                             <span className="font-semibold tabular-nums">{tf("responses", { count: responseCount })}</span>
                           </span>
                           <span className="inline-flex items-center gap-1.5 text-[var(--foreground)]">
@@ -1105,8 +1169,10 @@ export default function DashboardPage() {
                                 {t("lastResponseLabel")}{" "}
                                 {format.relativeTime(new Date(stats.lastResponseAt), now)}
                               </>
+                            ) : form.status === "published" ? (
+                              t("responsesWaitingFirst")
                             ) : (
-                              tf("responsesPage.noResponses")
+                              t("responsesReadyCollect")
                             )}
                           </span>
                         </div>
