@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { SparkleIcon } from "@/components/icons/SparkleIcon";
-import { defaultFormListStats, type Form, type FormField } from "@/lib/types";
+import { type Form, type FormField } from "@/lib/types";
 
 type FormCardProps = {
   form: Form;
@@ -161,22 +161,35 @@ function StatusPill({ published, label }: { published: boolean; label: string })
 }
 
 export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardProps) {
-  const t = useTranslations("dashboard");
   const tf = useTranslations("forms");
   const tResume = useTranslations("forms.generate.resume");
   const format = useFormatter();
   const now = useNow();
 
-  const stats = form.listStats ?? defaultFormListStats();
   const responseCount = form._count?.responses ?? 0;
-  const completion = stats.completionRate;
   const published = form.status === "published";
   const statusLabel = published ? tf("published") : tf("draft");
 
-  /* Action cluster floats on the preview, which always keeps light form colors,
-     so it uses the same fixed light palette in both app themes. */
-  const actions = (
-    <div className="flex items-center gap-0.5 rounded-lg border border-[#23201B]/10 bg-[#FFFDF8]/95 p-0.5 shadow-sm backdrop-blur-sm">
+  /* In the grid the cluster floats on the preview (always light form colors), so it
+     uses a fixed light palette; in the row it sits on the card and follows the theme. */
+  const renderActions = (overlay: boolean) => {
+    const style = overlay
+      ? {
+          container:
+            "flex items-center gap-0.5 rounded-lg border border-[#23201B]/10 bg-[#FFFDF8]/95 p-0.5 shadow-sm backdrop-blur-sm",
+          primary: "text-[#1F6F66] hover:bg-[#1F6F66]/10",
+          neutral: "text-[#6B6358] hover:bg-[#23201B]/5 hover:text-[#23201B]",
+          danger: "text-[#6B6358] hover:bg-red-50 hover:text-red-500",
+        }
+      : {
+          container: "flex items-center gap-0.5",
+          primary: "text-[var(--primary)] hover:bg-[var(--primary)]/10",
+          neutral: "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--foreground)]",
+          danger: "text-[var(--muted)] hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10",
+        };
+
+    return (
+    <div className={style.container}>
       <div className="relative group/action">
         <span aria-hidden="true" className="pointer-events-none absolute right-0 bottom-full mb-1.5 whitespace-nowrap rounded-md border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-[11px] text-[var(--foreground)] opacity-0 shadow-sm transition-opacity group-hover/action:opacity-100 group-focus-within/action:opacity-100 z-10">
           {form.planSession?.id ? tResume("continueChat") : tResume("startChat")}
@@ -188,7 +201,7 @@ export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardPr
               : `/dashboard/forms/new?formId=${form.id}`
           }
           aria-label={form.planSession?.id ? tResume("continueChat") : tResume("startChat")}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#1F6F66] transition-colors hover:bg-[#1F6F66]/10"
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors ${style.primary}`}
         >
           <SparkleIcon className="h-4 w-4" />
         </Link>
@@ -201,7 +214,7 @@ export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardPr
         <Link
           href={`/dashboard/forms/${form.id}/responses`}
           aria-label={tf("responsesPage.title")}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6B6358] transition-colors hover:bg-[#23201B]/5 hover:text-[#23201B]"
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors ${style.neutral}`}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859" />
@@ -218,7 +231,7 @@ export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardPr
           type="button"
           onClick={() => onDelete(form.id, form.title)}
           aria-label={tf("editor.deleteForm")}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6B6358] transition-colors hover:bg-red-50 hover:text-red-500"
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors ${style.danger}`}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -226,7 +239,8 @@ export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardPr
         </button>
       </div>
     </div>
-  );
+    );
+  };
 
   const revealOnHover =
     "md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:opacity-100 md:group-focus-within:opacity-100";
@@ -267,22 +281,7 @@ export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardPr
           </p>
         </div>
 
-        {completion != null && (
-          <div className="hidden w-28 shrink-0 md:block">
-            <div className="flex items-baseline justify-between gap-2 text-[11px]">
-              <span className="text-[var(--muted)]">{t("metricCompletion")}</span>
-              <span className="font-semibold tabular-nums text-[var(--foreground)]">{completion}%</span>
-            </div>
-            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--surface)]" aria-hidden="true">
-              <div
-                className="h-full rounded-full bg-[var(--primary)]"
-                style={{ width: `${Math.min(100, Math.max(0, completion))}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        <div className={`shrink-0 pr-1 ${revealOnHover}`}>{actions}</div>
+        <div className={`shrink-0 pr-1 ${revealOnHover}`}>{renderActions(false)}</div>
       </article>
     );
   }
@@ -297,7 +296,7 @@ export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardPr
         <span className="absolute left-2 top-2">
           <StatusPill published={published} label={statusLabel} />
         </span>
-        <div className={`absolute right-2 top-2 ${revealOnHover}`}>{actions}</div>
+        <div className={`absolute right-2 top-2 ${revealOnHover}`}>{renderActions(true)}</div>
       </div>
 
       <div className="flex flex-1 flex-col px-2.5 pb-2.5 pt-3">
@@ -317,21 +316,6 @@ export function FormCard({ form, index, onDelete, variant = "grid" }: FormCardPr
           <span aria-hidden="true"> · </span>
           {tf("edited")} {format.relativeTime(new Date(form.updatedAt), now)}
         </p>
-
-        {completion != null && (
-          <div className="mt-auto pt-3">
-            <div className="flex items-baseline justify-between gap-2 text-[11px]">
-              <span className="text-[var(--muted)]">{t("metricCompletion")}</span>
-              <span className="font-semibold tabular-nums text-[var(--foreground)]">{completion}%</span>
-            </div>
-            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--surface)]" aria-hidden="true">
-              <div
-                className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-500"
-                style={{ width: `${Math.min(100, Math.max(0, completion))}%` }}
-              />
-            </div>
-          </div>
-        )}
       </div>
     </article>
   );

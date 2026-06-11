@@ -227,7 +227,6 @@
     "noData": "—",
     "metricResponsesThisMonth": "Responses this month",
     "metricBestCompletion": "Best completion rate",
-    "metricCompletion": "completion",
     "lastResponseLabel": "Last response",
     "emptyTitle": "Generate your first form",
     "emptyDesc": "Tell AI what kind of form you need and it will generate the fields, logic, and design for you."
