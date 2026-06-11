@@ -86,8 +86,8 @@ export default function ResponsesPage() {
         {
           label: t("charts.submissionTrend"),
           data: dashboard.trend.map((point) => point.count),
-          borderColor: "#7C3AED",
-          backgroundColor: "rgba(124,58,237,0.16)",
+          borderColor: "#1F6F66",
+          backgroundColor: "rgba(31,111,102,0.16)",
           fill: true,
         },
       ],
@@ -102,12 +102,12 @@ export default function ResponsesPage() {
         {
           data: segmentOptions.map((item) => item.count),
           backgroundColor: [
-            "#7C3AED",
-            "#06B6D4",
-            "#10B981",
-            "#F59E0B",
-            "#EF4444",
-            "#6366F1",
+            "#1F6F66",
+            "#B5862F",
+            "#A8584A",
+            "#5E7C6E",
+            "#3E6F84",
+            "#6B7146",
           ],
           borderWidth: 0,
         },
@@ -129,7 +129,7 @@ export default function ResponsesPage() {
         {
           label: t("charts.topAnswers"),
           data: topFieldChoices?.topChoices.map((item) => item.count) ?? [],
-          backgroundColor: "rgba(124,58,237,0.85)",
+          backgroundColor: "rgba(31,111,102,0.85)",
           borderRadius: 8,
         },
       ],
@@ -152,7 +152,7 @@ export default function ResponsesPage() {
         {
           label: t("behavior.funnel.title"),
           data: behavior?.funnel.map((step) => step.count) ?? [],
-          backgroundColor: "rgba(124,58,237,0.85)",
+          backgroundColor: "rgba(31,111,102,0.85)",
           borderRadius: 8,
         },
       ],
@@ -163,12 +163,12 @@ export default function ResponsesPage() {
   const slowestQuestionsData = useMemo(
     () => {
       const palette = [
-        "#FF5F57",
-        "#FEBB2E",
-        "#28C840",
-        "#0A84FF",
-        "#BF5AF2",
-        "#64D2FF",
+        "#1F6F66",
+        "#B5862F",
+        "#A8584A",
+        "#5E7C6E",
+        "#3E6F84",
+        "#6B7146",
       ];
       const topFields = behavior?.fields.slice(0, 6) ?? [];
       return {
@@ -187,7 +187,7 @@ export default function ResponsesPage() {
   );
 
   const slowestQuestionsLegend = useMemo(() => {
-    const palette = ["#FF5F57", "#FEBB2E", "#28C840", "#0A84FF", "#BF5AF2", "#64D2FF"];
+    const palette = ["#1F6F66", "#B5862F", "#A8584A", "#5E7C6E", "#3E6F84", "#6B7146"];
     const topFields = behavior?.fields.slice(0, 6) ?? [];
     return topFields.map((field, index) => ({
       key: field.fieldId,
@@ -203,7 +203,7 @@ export default function ResponsesPage() {
       datasets: [
         {
           data: behavior?.deviceBreakdown.map((item) => item.count) ?? [],
-          backgroundColor: ["#7C3AED", "#06B6D4", "#10B981", "#F59E0B", "#EF4444"],
+          backgroundColor: ["#1F6F66", "#B5862F", "#A8584A", "#5E7C6E", "#3E6F84"],
           borderWidth: 0,
         },
       ],
@@ -233,7 +233,7 @@ export default function ResponsesPage() {
         </Link>
 
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">
+          <h1 className="font-display text-2xl font-bold tracking-tight">
             {t("title")} — {form?.title}
           </h1>
           <span className="text-sm text-[var(--muted)]">
@@ -474,7 +474,7 @@ export default function ResponsesPage() {
                     {
                       label: t("charts.segmentShare"),
                       data: segmentOptions.map((item) => item.count),
-                      backgroundColor: "rgba(124,58,237,0.85)",
+                      backgroundColor: "rgba(31,111,102,0.85)",
                       borderRadius: 8,
                     },
                   ],

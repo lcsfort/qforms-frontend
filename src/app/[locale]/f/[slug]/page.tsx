@@ -223,7 +223,7 @@ export default function PublicFormPage() {
         style={pageBg ? { backgroundColor: pageBg } : undefined}
       >
         <div
-          className={`rounded-2xl shadow-lg p-10 max-w-md w-full mx-auto text-center ${!formBg ? "bg-white dark:bg-gray-800" : ""}`}
+          className={`rounded-2xl shadow-lg p-10 max-w-md w-full mx-auto text-center ${!formBg ? "bg-card dark:bg-gray-800" : ""}`}
           style={formBg ? { backgroundColor: formBg } : undefined}
         >
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -272,7 +272,7 @@ export default function PublicFormPage() {
     >
       <div className={`${widthClass} mx-auto w-full`}>
         <div
-          className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-white dark:bg-gray-800" : ""}`}
+          className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-card dark:bg-gray-800" : ""}`}
           style={formBg ? { backgroundColor: formBg } : undefined}
         >
           {headerUrl && (

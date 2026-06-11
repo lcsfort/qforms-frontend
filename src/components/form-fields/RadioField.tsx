@@ -27,7 +27,7 @@ export function RadioField({
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg border cursor-pointer transition-all text-sm ${
                 isSelected
                   ? "border-indigo-500 bg-indigo-50 text-gray-900"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                  : "border-gray-200 bg-card text-gray-700 hover:border-gray-300"
               } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <span

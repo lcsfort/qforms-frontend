@@ -23,7 +23,7 @@ export function ReadyPlanCard({ schema, variant = "live", actions }: Props) {
       }`}
     >
       {!isSnapshot && (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.12),transparent_55%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--primary)_12%,transparent),transparent_55%)] pointer-events-none" />
       )}
       <div className="relative">
         <div

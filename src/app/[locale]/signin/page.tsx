@@ -61,7 +61,7 @@ export default function SigninPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-card to-surface dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold tracking-tight">
@@ -69,8 +69,8 @@ export default function SigninPage() {
           </Link>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8">
-          <h1 className="text-2xl font-bold mb-1">{t("title")}</h1>
+        <div className="bg-card dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8">
+          <h1 className="font-display text-2xl font-bold mb-1">{t("title")}</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
             {t("subtitle")}
           </p>
@@ -98,7 +98,7 @@ export default function SigninPage() {
                   if (fieldErrors.email) setFieldErrors((prev) => { const next = { ...prev }; delete next.email; return next; });
                 }}
                 placeholder={t("emailPlaceholder")}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-card dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
                 aria-invalid={!!fieldErrors.email}
                 aria-describedby={fieldErrors.email ? "email-error" : undefined}
               />
@@ -136,7 +136,7 @@ export default function SigninPage() {
                   if (fieldErrors.password) setFieldErrors((prev) => { const next = { ...prev }; delete next.password; return next; });
                 }}
                 placeholder={t("passwordPlaceholder")}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-card dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow text-sm"
                 aria-invalid={!!fieldErrors.password}
                 aria-describedby={fieldErrors.password ? "password-error" : undefined}
               />
@@ -161,7 +161,7 @@ export default function SigninPage() {
             <GoogleSignInButton
               mode="signin"
               disabled={loading}
-              className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm transition-colors [&>div]:!flex [&>div]:!justify-center [&>div]:!w-full"
+              className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-card dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm transition-colors [&>div]:!flex [&>div]:!justify-center [&>div]:!w-full"
             />
           </form>
 

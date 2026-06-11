@@ -3,30 +3,36 @@
 /* Class-based dark mode (user choice overrides system) */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* theme.md: light theme */
+/* ───────────────────────────────────────────────────────────────
+   QForms theme — "Deep teal on warm ivory"
+   Warm, calm, editorial. Paper canvas, espresso ink, one teal accent,
+   a restrained ochre secondary used sparingly.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Light theme */
 :root {
-  --background: #FAFAFC;
-  --foreground: #111827;
-  --card: #FFFFFF;
-  --border: #E5E7EB;
-  --muted: #6B7280;
-  --primary: #7C3AED;
-  --primary-dark: #2E1065;
-  --surface: #F5F3FF;
-  --accent: #06B6D4;
+  --background: #F7F4ED;   /* warm ivory paper */
+  --foreground: #23201B;   /* warm espresso ink */
+  --card: #FFFDF8;         /* warm off-white surface */
+  --border: #E6E0D4;       /* soft warm-sand border */
+  --muted: #6B6358;        /* warm taupe-gray (secondary text) */
+  --primary: #1F6F66;      /* deep teal accent */
+  --primary-dark: #154A45; /* deeper teal (hover / active) */
+  --surface: #EFE9DD;      /* soft warm raised tint (hover / active) */
+  --accent: #B5862F;       /* muted ochre secondary — used sparingly */
 }
 
-/* theme.md: dark theme */
+/* Dark theme — warm charcoal, not cold slate */
 .dark {
-  --background: #0f0a1a;
-  --foreground: #f3f4f6;
-  --card: #1a1625;
-  --border: #2d2a3a;
-  --muted: #9ca3af;
-  --primary: #8b5cf6;
-  --primary-dark: #5b21b6;
-  --surface: #1e1b2e;
-  --accent: #22d3ee;
+  --background: #1A1714;   /* warm near-black */
+  --foreground: #F2EDE3;   /* warm off-white */
+  --card: #232019;         /* warm dark surface */
+  --border: #38322A;       /* warm dark border */
+  --muted: #A89E8C;        /* warm gray */
+  --primary: #2F9082;      /* teal that reads on dark + carries white text */
+  --primary-dark: #246F64;
+  --surface: #2C2820;      /* warm raised */
+  --accent: #D2A24C;       /* warm ochre secondary */
 }
 
 @theme inline {
@@ -39,14 +45,74 @@
   --color-primary-dark: var(--primary-dark);
   --color-surface: var(--surface);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-hanken);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Brand recolor of Tailwind's default ramps.
+   Components lean on `indigo-*` as the brand color and `gray-*` /
+   `neutral-*` as neutrals — remapping the ramps here rebrands the
+   whole app to teal + warm-neutral without touching components.
+   Lightness is preserved per step; only hue/temperature shifts.
+   ─────────────────────────────────────────────────────────────── */
+@theme {
+  /* indigo → deep teal */
+  --color-indigo-50: #ECF3F1;
+  --color-indigo-100: #D5E7E2;
+  --color-indigo-200: #AFD2CB;
+  --color-indigo-300: #7FB7AD;
+  --color-indigo-400: #4F988C;
+  --color-indigo-500: #2F8275;
+  --color-indigo-600: #1F6F66;
+  --color-indigo-700: #185952;
+  --color-indigo-800: #164A44;
+  --color-indigo-900: #143E39;
+  --color-indigo-950: #0A2421;
+
+  /* gray → warm neutral (paper / sand / ink) */
+  --color-gray-50: #F8F5EF;
+  --color-gray-100: #F0EBE1;
+  --color-gray-200: #E4DDD0;
+  --color-gray-300: #D2C9B9;
+  --color-gray-400: #AEA493;
+  --color-gray-500: #847B6B;
+  --color-gray-600: #645B4D;
+  --color-gray-700: #4B463B;
+  --color-gray-800: #322E27;
+  --color-gray-900: #221F19;
+  --color-gray-950: #15120D;
+
+  /* neutral → same warm ramp for consistency */
+  --color-neutral-50: #F8F5EF;
+  --color-neutral-100: #F0EBE1;
+  --color-neutral-200: #E4DDD0;
+  --color-neutral-300: #D2C9B9;
+  --color-neutral-400: #AEA493;
+  --color-neutral-500: #847B6B;
+  --color-neutral-600: #645B4D;
+  --color-neutral-700: #4B463B;
+  --color-neutral-800: #322E27;
+  --color-neutral-900: #221F19;
+  --color-neutral-950: #15120D;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv01", "ss01";
+}
+
+/* Editorial display face for hero / large headings (opt-in via .font-display) */
+.font-display {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+  font-feature-settings: "liga", "calt";
+  letter-spacing: -0.01em;
 }
 
 /* Keep native date picker behavior (prevents stuck picker overlays). */
@@ -92,16 +158,16 @@ input[type="number"] {
 
 /* Force light theme variables inside the form builder canvas */
 .force-light-theme {
-  --background: #FAFAFC;
-  --foreground: #111827;
-  --card: #FFFFFF;
-  --border: #E5E7EB;
-  --muted: #6B7280;
-  --primary: #7C3AED;
-  --primary-dark: #2E1065;
-  --surface: #F5F3FF;
-  --accent: #06B6D4;
-  color: #111827;
+  --background: #F7F4ED;
+  --foreground: #23201B;
+  --card: #FFFDF8;
+  --border: #E6E0D4;
+  --muted: #6B6358;
+  --primary: #1F6F66;
+  --primary-dark: #154A45;
+  --surface: #EFE9DD;
+  --accent: #B5862F;
+  color: #23201B;
 }
 
 /* ── Dashboard card entrance ── */
@@ -113,52 +179,52 @@ input[type="number"] {
   animation: card-enter 0.3s ease-out both;
 }
 
-/* ── Glass panel (AppMenu dropdown) ── */
+/* ── Soft panel (AppMenu dropdown) — restrained frost, warm paper ── */
 .glass-panel {
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
 }
 
-/* ── Dashboard header glass states ── */
+/* ── Dashboard header — warm, mostly-solid paper (calm, low gloss) ── */
 .header-glass-top {
-  border-color: rgba(229, 231, 235, 0.72);
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(18px) saturate(1.18);
-  -webkit-backdrop-filter: blur(18px) saturate(1.18);
+  border-color: rgba(230, 224, 212, 0.85);
+  background: rgba(247, 244, 237, 0.92);
+  backdrop-filter: blur(14px) saturate(1.04);
+  -webkit-backdrop-filter: blur(14px) saturate(1.04);
 }
 
 .header-glass-scrolled {
-  border-color: rgba(229, 231, 235, 0.55);
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(40px) saturate(1.28);
-  -webkit-backdrop-filter: blur(40px) saturate(1.28);
+  border-color: rgba(230, 224, 212, 0.7);
+  background: rgba(247, 244, 237, 0.82);
+  backdrop-filter: blur(22px) saturate(1.06);
+  -webkit-backdrop-filter: blur(22px) saturate(1.06);
 }
 
 .dark .header-glass-top {
-  border-color: rgba(45, 42, 58, 0.72);
-  background: rgba(26, 22, 37, 0.9);
+  border-color: rgba(56, 50, 42, 0.85);
+  background: rgba(26, 23, 20, 0.92);
 }
 
 .dark .header-glass-scrolled {
-  border-color: rgba(45, 42, 58, 0.55);
-  background: rgba(26, 22, 37, 0.68);
+  border-color: rgba(56, 50, 42, 0.7);
+  background: rgba(26, 23, 20, 0.82);
 }
 
 @supports not ((backdrop-filter: blur(1px))) {
   .header-glass-top {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(247, 244, 237, 0.97);
   }
 
   .header-glass-scrolled {
-    background: rgba(255, 255, 255, 0.84);
+    background: rgba(247, 244, 237, 0.9);
   }
 
   .dark .header-glass-top {
-    background: rgba(26, 22, 37, 0.95);
+    background: rgba(26, 23, 20, 0.97);
   }
 
   .dark .header-glass-scrolled {
-    background: rgba(26, 22, 37, 0.84);
+    background: rgba(26, 23, 20, 0.9);
   }
 }
 
@@ -171,7 +237,7 @@ input[type="number"] {
   animation: menu-enter 0.2s ease-out both;
 }
 
-/* ── AI prompt input glow ── */
+/* ── Prompt input focus — calm hairline + gentle lift (single accent) ── */
 .ai-prompt-glow {
   position: relative;
 }
@@ -181,9 +247,9 @@ input[type="number"] {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: color-mix(in srgb, var(--primary) 55%, transparent);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.22s ease;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -197,9 +263,9 @@ input[type="number"] {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: 0 0 24px -4px color-mix(in srgb, var(--primary) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.22s ease;
   pointer-events: none;
 }
 .ai-prompt-glow:focus-within::after {
@@ -314,12 +380,12 @@ input[type="number"] {
   background:
     radial-gradient(
       62% 84% at 24% 18%,
-      color-mix(in srgb, var(--primary) 8%, transparent) 0%,
+      color-mix(in srgb, var(--primary) 7%, transparent) 0%,
       transparent 72%
     ),
     radial-gradient(
       58% 80% at 78% 24%,
-      color-mix(in srgb, #60a5fa 7%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 6%, transparent) 0%,
       transparent 72%
     );
   opacity: 0.5;
@@ -330,33 +396,31 @@ input[type="number"] {
   background:
     radial-gradient(
       60% 82% at 24% 18%,
-      color-mix(in srgb, var(--primary) 12%, transparent) 0%,
+      color-mix(in srgb, var(--primary) 11%, transparent) 0%,
       transparent 74%
     ),
     radial-gradient(
       58% 80% at 78% 24%,
-      color-mix(in srgb, #60a5fa 10%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 9%, transparent) 0%,
       transparent 74%
     );
 }
 
-/* Primary gradient CTA — "Create with AI" */
+/* Primary CTA — "Create with AI": solid deep teal, refined depth (no gradient) */
 .cta-gradient {
-  background: linear-gradient(
-    135deg,
-    var(--primary) 0%,
-    color-mix(in srgb, var(--primary) 58%, var(--accent)) 100%
-  );
+  background: var(--primary);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 22%, transparent),
-    0 6px 18px -6px color-mix(in srgb, var(--primary) 55%, transparent);
-  transition: filter 180ms ease, box-shadow 220ms ease, transform 140ms ease;
+    inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
+    0 1px 2px color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 8px 20px -10px color-mix(in srgb, var(--primary) 50%, transparent);
+  transition: background 180ms ease, box-shadow 220ms ease, transform 140ms ease;
 }
 .cta-gradient:hover {
-  filter: brightness(1.06);
+  background: color-mix(in srgb, var(--primary) 90%, #ffffff);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent),
-    0 10px 26px -8px color-mix(in srgb, var(--primary) 68%, transparent);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 24%, transparent),
+    0 2px 4px color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 12px 28px -10px color-mix(in srgb, var(--primary) 60%, transparent);
 }
 .cta-gradient:active {
   transform: translateY(1px) scale(0.995);
@@ -398,11 +462,7 @@ input[type="number"] {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary) 80%, transparent),
-    color-mix(in srgb, var(--accent) 55%, transparent)
-  );
+  background: color-mix(in srgb, var(--primary) 60%, transparent);
   opacity: 0;
   transition: opacity 240ms ease;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -557,10 +617,11 @@ input[type="number"] {
   padding: 0.16rem 0.35rem;
   font-size: 0.65rem;
 }
+/* Ambient washes — quiet warm depth, single hue family (no colored blobs) */
 .aurora-orb {
   position: absolute;
   border-radius: 999px;
-  filter: blur(46px);
+  filter: blur(52px);
   will-change: transform, opacity;
 }
 .aurora-orb--primary {
@@ -568,33 +629,33 @@ input[type="number"] {
   top: 4%;
   height: 210px;
   width: 360px;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 26%, transparent) 0%, transparent 72%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 72%);
 }
 .aurora-orb--secondary {
   right: 12%;
   top: 0;
   height: 210px;
   width: 320px;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, #60a5fa 16%, transparent) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 7%, transparent) 0%, transparent 70%);
 }
 .aurora-orb--accent {
   left: 34%;
   top: 18%;
   height: 180px;
   width: 280px;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, #f472b6 14%, transparent) 0%, transparent 74%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 74%);
 }
 .dark .aurora-orb--primary {
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 30%, transparent) 0%, transparent 72%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 72%);
 }
 .dark .aurora-orb--secondary {
-  background: radial-gradient(ellipse at center, color-mix(in srgb, #38bdf8 20%, transparent) 0%, transparent 72%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 72%);
 }
 .dark .aurora-orb--accent {
-  background: radial-gradient(ellipse at center, color-mix(in srgb, #f472b6 18%, transparent) 0%, transparent 74%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 74%);
 }
 
-/* Premium form card — layered surface, idle elevation, tight hover accent */
+/* Premium form card — balanced elevation, soft hover lift */
 .premium-card {
   position: relative;
   isolation: isolate;
@@ -603,16 +664,15 @@ input[type="number"] {
   background:
     linear-gradient(
       165deg,
-      color-mix(in srgb, var(--card) 100%, #ffffff 14%) 0%,
+      color-mix(in srgb, var(--card) 100%, #ffffff 10%) 0%,
       var(--card) 48%,
-      color-mix(in srgb, var(--card) 96%, var(--border) 4%) 100%
+      color-mix(in srgb, var(--card) 98%, var(--border) 2%) 100%
     );
-  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--foreground) 6%);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, var(--foreground) 4%);
   box-shadow:
-    0 1px 0 color-mix(in srgb, #ffffff 55%, transparent) inset,
-    0 0 0 1px color-mix(in srgb, var(--foreground) 4%, transparent) inset,
-    0 10px 28px -18px color-mix(in srgb, var(--foreground) 12%, transparent),
-    0 2px 8px -4px color-mix(in srgb, var(--foreground) 6%, transparent);
+    0 1px 0 color-mix(in srgb, #ffffff 38%, transparent) inset,
+    0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 4px 14px -6px color-mix(in srgb, var(--foreground) 8%, transparent);
   transition:
     transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 220ms ease,
@@ -637,10 +697,10 @@ input[type="number"] {
     ),
     radial-gradient(
       120% 90% at 0% 0%,
-      color-mix(in srgb, var(--primary) 5%, transparent),
+      color-mix(in srgb, var(--primary) 3%, transparent),
       transparent 52%
     );
-  opacity: 0.65;
+  opacity: 0.45;
   transition: opacity 220ms ease;
 }
 .premium-card::after {
@@ -651,8 +711,8 @@ input[type="number"] {
   z-index: 0;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--primary) 45%, transparent),
-    color-mix(in srgb, var(--accent) 22%, transparent)
+    color-mix(in srgb, var(--primary) 50%, transparent),
+    color-mix(in srgb, var(--primary) 22%, transparent)
   );
   opacity: 0;
   transition: opacity 200ms ease;
@@ -660,60 +720,59 @@ input[type="number"] {
 }
 .premium-card:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--border) 65%, var(--primary) 22%);
+  border-color: color-mix(in srgb, var(--border) 72%, var(--primary) 14%);
   box-shadow:
-    0 1px 0 color-mix(in srgb, #ffffff 70%, transparent) inset,
-    0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent) inset,
-    0 18px 44px -22px color-mix(in srgb, var(--primary) 18%, transparent),
-    0 8px 24px -12px color-mix(in srgb, var(--foreground) 10%, transparent);
+    0 1px 0 color-mix(in srgb, #ffffff 45%, transparent) inset,
+    0 2px 4px color-mix(in srgb, var(--foreground) 6%, transparent),
+    0 8px 20px -8px color-mix(in srgb, var(--foreground) 10%, transparent),
+    0 4px 12px -6px color-mix(in srgb, var(--primary) 6%, transparent);
 }
 .premium-card:hover::before {
-  opacity: 0.95;
+  opacity: 0.58;
 }
 .premium-card:hover::after {
-  opacity: 0.85;
+  opacity: 0.45;
 }
 
-/* Dark: brighter face vs canvas, cleaner rim, less muddy hover */
+/* Dark: clean separation from canvas, restrained depth */
 .dark .premium-card {
   background:
     linear-gradient(
       165deg,
-      color-mix(in srgb, var(--card) 92%, #ffffff 8%) 0%,
+      color-mix(in srgb, var(--card) 94%, #ffffff 6%) 0%,
       var(--card) 45%,
-      color-mix(in srgb, var(--card) 94%, var(--background) 6%) 100%
+      color-mix(in srgb, var(--card) 96%, var(--background) 4%) 100%
     );
-  border-color: color-mix(in srgb, var(--border) 88%, #ffffff 8%);
+  border-color: color-mix(in srgb, var(--border) 90%, #ffffff 6%);
   box-shadow:
-    0 1px 0 color-mix(in srgb, #ffffff 8%, transparent) inset,
-    0 0 0 1px color-mix(in srgb, #ffffff 5%, transparent) inset,
-    0 12px 40px -24px rgba(0, 0, 0, 0.55),
-    0 0 0 1px color-mix(in srgb, var(--foreground) 6%, transparent);
+    0 1px 0 color-mix(in srgb, #ffffff 6%, transparent) inset,
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    0 6px 18px -8px rgba(0, 0, 0, 0.38);
 }
 .dark .premium-card::before {
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, #ffffff 6%, transparent) 0%,
+      color-mix(in srgb, #ffffff 4%, transparent) 0%,
       transparent 36%
     ),
     radial-gradient(
       115% 95% at 0% 0%,
-      color-mix(in srgb, var(--primary) 8%, transparent),
+      color-mix(in srgb, var(--primary) 4%, transparent),
       transparent 50%
     );
-  opacity: 0.55;
+  opacity: 0.38;
 }
 .dark .premium-card:hover {
-  border-color: color-mix(in srgb, var(--border) 75%, var(--primary) 25%);
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary) 16%);
   box-shadow:
-    0 1px 0 color-mix(in srgb, #ffffff 10%, transparent) inset,
-    0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent) inset,
-    0 20px 50px -24px rgba(0, 0, 0, 0.65),
-    0 12px 32px -18px color-mix(in srgb, var(--primary) 14%, transparent);
+    0 1px 0 color-mix(in srgb, #ffffff 8%, transparent) inset,
+    0 2px 4px rgba(0, 0, 0, 0.32),
+    0 10px 24px -10px rgba(0, 0, 0, 0.45),
+    0 4px 14px -8px color-mix(in srgb, var(--primary) 5%, transparent);
 }
 .dark .premium-card:hover::before {
-  opacity: 0.75;
+  opacity: 0.5;
 }
 
 /* Soft divider inside cards */
@@ -782,13 +841,13 @@ input[type="number"] {
   border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
 }
 .premium-card-chip--cyan {
-  color: color-mix(in srgb, #0891b2 85%, var(--foreground));
-  background: color-mix(in srgb, #22d3ee 10%, transparent);
-  border: 1px solid color-mix(in srgb, #22d3ee 22%, transparent);
+  color: color-mix(in srgb, var(--accent) 72%, var(--foreground));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
 }
 .dark .premium-card-chip--cyan {
-  color: #5eead4;
-  border-color: color-mix(in srgb, #22d3ee 30%, transparent);
+  color: color-mix(in srgb, var(--accent) 80%, var(--foreground));
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
 }
 
 /* ── React Day Picker (Calendar) ── */

@@ -20,7 +20,7 @@ const options: ChartOptions<"doughnut"> = {
     legend: {
       position: "bottom",
       labels: {
-        color: "#6B7280",
+        color: "#6B6358",
         boxWidth: 12,
       },
     },

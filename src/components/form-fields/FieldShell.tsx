@@ -31,30 +31,30 @@ export function FieldShell({
     <div className={className}>
       <label
         htmlFor={id}
-        className="block text-sm font-medium text-[var(--qf-label,#1f2937)] mb-1.5"
+        className="block text-sm font-medium text-[var(--qf-label,#23201B)] mb-1.5"
         style={labelStyle}
       >
         {label}
         {required ? (
-          <span className="text-[var(--qf-danger,#dc2626)] ml-0.5">*</span>
+          <span className="text-[var(--qf-danger,#C0473A)] ml-0.5">*</span>
         ) : null}
       </label>
       {description ? (
-        <p className="text-xs text-[var(--qf-muted,#6b7280)] mb-2">{description}</p>
+        <p className="text-xs text-[var(--qf-muted,#6B6358)] mb-2">{description}</p>
       ) : null}
       {children}
       {error ? (
         <p
           id={`${id}-error`}
           role="alert"
-          className="text-[var(--qf-danger,#dc2626)] text-xs mt-1.5"
+          className="text-[var(--qf-danger,#C0473A)] text-xs mt-1.5"
         >
           {error}
         </p>
       ) : helpText ? (
         <p
           id={`${id}-help`}
-          className="text-[var(--qf-muted,#6b7280)] text-xs mt-1.5"
+          className="text-[var(--qf-muted,#6B6358)] text-xs mt-1.5"
           style={helpTextStyle}
         >
           {helpText}

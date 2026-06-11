@@ -56,9 +56,9 @@ export default function Home() {
       <LandingNav />
 
       <main className="flex-1 flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950" />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-card to-surface dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--accent)]/10 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 py-24 text-center">
           <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-sm font-medium px-4 py-1.5 rounded-full mb-8">
@@ -69,9 +69,9 @@ export default function Home() {
             {t("hero.badge")}
           </div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-tight mb-6">
+          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-tight mb-6">
             {t("hero.titleLine1")}
-            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] bg-clip-text text-transparent">
               {" "}
               {t("hero.titleLine2")}
             </span>
@@ -132,7 +132,7 @@ export default function Home() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 hover:shadow-lg transition-shadow"
+                className="bg-card dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 hover:shadow-lg transition-shadow"
               >
                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-5">
                   <svg

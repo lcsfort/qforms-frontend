@@ -374,7 +374,7 @@ export function FormRenderer({
         <button
           type="submit"
           disabled={disabled || isSubmitting || mode === "preview"}
-          className="w-full mt-6 py-2.5 px-4 rounded-[var(--qf-radius,12px)] bg-[var(--qf-accent,#7c3aed)] hover:opacity-95 text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full mt-6 py-2.5 px-4 rounded-[var(--qf-radius,12px)] bg-[var(--qf-accent,#1F6F66)] hover:opacity-95 text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <span className="inline-flex items-center gap-2">
@@ -393,11 +393,11 @@ export function FormRenderer({
           )}
         </button>
       ) : null}
-      <p className="mt-6 pt-4 text-center text-xs text-[var(--qf-muted,#6b7280)]">
+      <p className="mt-6 pt-4 text-center text-xs text-[var(--qf-muted,#6B6358)]">
         {t("poweredByPrefix")}
         <Link
           href="/"
-          className="text-[var(--qf-label,#1f2937)] hover:text-[var(--qf-accent,#7c3aed)] hover:underline transition-colors"
+          className="text-[var(--qf-label,#23201B)] hover:text-[var(--qf-accent,#1F6F66)] hover:underline transition-colors"
         >
           Qforms
         </Link>

@@ -46,7 +46,7 @@ export function QFormsRenderer({
   return (
     <div
       id={scopeId}
-      className="qf-root text-[var(--qf-text,#111827)]"
+      className="qf-root text-[var(--qf-text,#23201B)]"
       style={themeVars as CSSProperties}
       data-mode={mode}
     >

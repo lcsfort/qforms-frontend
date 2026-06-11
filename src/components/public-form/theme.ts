@@ -17,14 +17,14 @@ export function buildThemeFromSettings(
 ): Record<string, string> {
   return {
     "--qf-radius": override?.radius ?? "12px",
-    "--qf-accent": override?.accent ?? "#7c3aed",
-    "--qf-label": override?.label ?? "#1f2937",
-    "--qf-muted": override?.muted ?? "#6b7280",
-    "--qf-text": override?.text ?? "#111827",
-    "--qf-bg": override?.background ?? settings?.page_background_color ?? "#f8fafc",
+    "--qf-accent": override?.accent ?? "#1F6F66",
+    "--qf-label": override?.label ?? "#23201B",
+    "--qf-muted": override?.muted ?? "#6B6358",
+    "--qf-text": override?.text ?? "#23201B",
+    "--qf-bg": override?.background ?? settings?.page_background_color ?? "#F7F4ED",
     "--qf-surface":
-      override?.surface ?? settings?.form_background_color ?? "#ffffff",
-    "--qf-danger": override?.danger ?? "#dc2626",
+      override?.surface ?? settings?.form_background_color ?? "#FFFDF8",
+    "--qf-danger": override?.danger ?? "#C0473A",
   };
 }
 

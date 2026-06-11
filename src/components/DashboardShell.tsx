@@ -110,8 +110,8 @@ export function DashboardShell({
   const isDarkTheme = theme === "dark";
   const headerGlassStyle: CSSProperties = {
     backgroundColor: isDarkTheme
-      ? (isContentScrolled ? "rgba(16, 13, 28, 0.9)" : "rgba(16, 13, 28, 0.96)")
-      : (isContentScrolled ? "rgba(255, 255, 255, 0.86)" : "rgba(255, 255, 255, 0.94)"),
+      ? (isContentScrolled ? "rgba(26, 23, 20, 0.9)" : "rgba(26, 23, 20, 0.96)")
+      : (isContentScrolled ? "rgba(255, 253, 248, 0.86)" : "rgba(255, 253, 248, 0.94)"),
     backdropFilter: isContentScrolled
       ? "blur(96px) saturate(1.35) brightness(0.72) contrast(0.9)"
       : "blur(56px) saturate(1.25) brightness(0.8) contrast(0.92)",

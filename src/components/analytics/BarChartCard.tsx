@@ -32,12 +32,12 @@ const baseOptions: ChartOptions<"bar"> = {
   scales: {
     x: {
       grid: { display: false },
-      ticks: { color: "#6B7280" },
+      ticks: { color: "#6B6358" },
     },
     y: {
       beginAtZero: true,
-      ticks: { color: "#6B7280", precision: 0 },
-      grid: { color: "rgba(107,114,128,0.15)" },
+      ticks: { color: "#6B6358", precision: 0 },
+      grid: { color: "rgba(107,99,88,0.15)" },
     },
   },
 };

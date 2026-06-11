@@ -736,7 +736,7 @@ export default function FormEditorPage() {
                                   value={field.label}
                                   onChange={(e) => updateField(field.id, { label: e.target.value })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                               <div>
@@ -745,7 +745,7 @@ export default function FormEditorPage() {
                                   value={field.type}
                                   onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                                   {FIELD_TYPES.map((ft) => (
                                     <option key={ft} value={ft}>{tft(ft)}</option>
@@ -761,7 +761,7 @@ export default function FormEditorPage() {
                                   value={field.placeholder ?? ""}
                                   onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                               <div>
@@ -771,7 +771,7 @@ export default function FormEditorPage() {
                                   value={field.help_text ?? ""}
                                   onChange={(e) => updateField(field.id, { help_text: e.target.value })}
                                   style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                               </div>
                             </div>
@@ -797,7 +797,7 @@ export default function FormEditorPage() {
                                         onChange={(e) => updateOption(field.id, optIdx, { label: e.target.value })}
                                         placeholder={t("optionLabel")}
                                         style={textStyle}
-                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                       />
                                       <input
                                         type="text"
@@ -805,7 +805,7 @@ export default function FormEditorPage() {
                                         onChange={(e) => updateOption(field.id, optIdx, { value: e.target.value })}
                                         placeholder={t("optionValue")}
                                         style={textStyle}
-                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                       />
                                       <button
                                         onClick={() => removeOption(field.id, optIdx)}
@@ -837,7 +837,7 @@ export default function FormEditorPage() {
                       <button
                         key={type}
                         onClick={() => addField(type)}
-                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium hover:bg-gray-50 transition-colors"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-card text-xs font-medium hover:bg-gray-50 transition-colors"
                       >
                         + {tft(type)}
                       </button>

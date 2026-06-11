@@ -29,7 +29,7 @@ export function HeroHeader() {
           <span className="h-1 w-1 rounded-full bg-[var(--primary)]" />
           {t("eyebrow")}
         </div>
-        <h1 className="text-[34px] md:text-[42px] font-semibold tracking-tight leading-[1.05] text-[var(--foreground)]">
+        <h1 className="font-display text-[34px] md:text-[42px] font-semibold tracking-tight leading-[1.05] text-[var(--foreground)]">
           {t("heading")}
         </h1>
         <p className="mt-4 max-w-[52ch] text-[15px] leading-relaxed text-[var(--muted)]">

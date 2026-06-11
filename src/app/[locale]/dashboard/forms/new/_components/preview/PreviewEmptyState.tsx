@@ -6,8 +6,8 @@ export function PreviewEmptyState() {
 
   return (
     <div className="relative rounded-2xl border border-dashed border-[var(--border)]/70 bg-[var(--card)]/40 p-6 text-center overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.07),transparent_60%)] pointer-events-none" />
-      <div className="relative mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/10 ring-1 ring-[var(--primary)]/10">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_60%)] pointer-events-none" />
+      <div className="relative mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--primary)]/10 ring-1 ring-[var(--primary)]/10">
         <SparkleIcon className="w-5 h-5 text-[var(--primary)]" />
       </div>
       <div className="relative text-[13.5px] font-medium text-[var(--foreground)] mb-1">

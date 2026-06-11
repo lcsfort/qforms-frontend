@@ -517,7 +517,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div className="min-w-0">
-                  <h1 className="text-[28px] sm:text-[30px] leading-[1.15] font-semibold tracking-tight text-[var(--foreground)] mb-1.5">
+                  <h1 className="font-display text-[28px] sm:text-[30px] leading-[1.15] font-semibold tracking-tight text-[var(--foreground)] mb-1.5">
                     {t("welcome", { name: user.name || "empty" })}
                   </h1>
                   <p className="text-[14px] text-[var(--muted)]">{t("subtitle")}</p>

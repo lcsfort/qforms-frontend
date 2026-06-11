@@ -19,12 +19,12 @@ export interface FieldProps {
 }
 
 export const DEFAULT_LABEL_CLASS =
-  "block text-sm font-medium text-[var(--qf-label,#1f2937)] mb-1.5";
+  "block text-sm font-medium text-[var(--qf-label,#23201B)] mb-1.5";
 
 export const DEFAULT_INPUT_CLASS =
-  "w-full px-4 py-2.5 rounded-[var(--qf-radius,12px)] border border-[color:color-mix(in_srgb,var(--qf-text,#111827)_20%,white)] bg-[var(--qf-surface,#ffffff)] text-[var(--qf-text,#111827)] focus:ring-2 focus:ring-[var(--qf-accent,#7c3aed)] focus:border-transparent outline-none transition-shadow text-sm placeholder:text-[var(--qf-muted,#6b7280)]";
+  "w-full px-4 py-2.5 rounded-[var(--qf-radius,12px)] border border-[color:color-mix(in_srgb,var(--qf-text,#23201B)_20%,white)] bg-[var(--qf-surface,#FFFDF8)] text-[var(--qf-text,#23201B)] focus:ring-2 focus:ring-[var(--qf-accent,#1F6F66)] focus:border-transparent outline-none transition-shadow text-sm placeholder:text-[var(--qf-muted,#6B6358)]";
 
-export const DEFAULT_ERROR_CLASS = "text-[var(--qf-danger,#dc2626)] text-xs mt-1";
+export const DEFAULT_ERROR_CLASS = "text-[var(--qf-danger,#C0473A)] text-xs mt-1";
 
 export const DEFAULT_HELP_CLASS =
-  "text-[var(--qf-muted,#6b7280)] text-xs mt-1";
+  "text-[var(--qf-muted,#6B6358)] text-xs mt-1";

@@ -38,7 +38,7 @@ export function ErrorBanner({ error, canRetry, retryDisabled, onRetry, onDismiss
               type="button"
               onClick={onRetry}
               disabled={retryDisabled}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--primary)] text-white px-4 py-2 text-[13px] font-medium transition-all hover:bg-[var(--primary-dark)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)] disabled:cursor-not-allowed shadow-[0_8px_22px_-10px_rgba(139,92,246,0.55)]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--primary)] text-white px-4 py-2 text-[13px] font-medium transition-all hover:bg-[var(--primary-dark)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)] disabled:cursor-not-allowed shadow-[0_8px_22px_-10px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />

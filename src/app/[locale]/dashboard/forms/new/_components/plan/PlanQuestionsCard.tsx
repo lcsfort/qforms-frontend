@@ -64,7 +64,7 @@ export function PlanQuestionsCard({
             type="button"
             onClick={onSubmit}
             disabled={submitDisabled}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--primary)] text-white px-4 py-2 text-[13px] font-medium transition-all hover:bg-[var(--primary-dark)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)] disabled:cursor-not-allowed shadow-[0_8px_22px_-10px_rgba(139,92,246,0.55)] disabled:shadow-none"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--primary)] text-white px-4 py-2 text-[13px] font-medium transition-all hover:bg-[var(--primary-dark)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)] disabled:cursor-not-allowed shadow-[0_8px_22px_-10px_color-mix(in_srgb,var(--primary)_40%,transparent)] disabled:shadow-none"
           >
             {submitting ? (
               <>

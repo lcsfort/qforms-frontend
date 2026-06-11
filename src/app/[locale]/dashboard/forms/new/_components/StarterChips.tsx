@@ -22,7 +22,7 @@ export function StarterChips({ onPick }: Props) {
             key={s.id}
             type="button"
             onClick={() => onPick(s.label)}
-            className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)]/70 bg-[var(--card)]/60 px-3.5 py-1.5 text-[13px] text-[var(--foreground)] transition-all hover:border-[var(--primary)]/40 hover:bg-[var(--card)] hover:shadow-[0_4px_16px_-8px_rgba(139,92,246,0.4)]"
+            className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)]/70 bg-[var(--card)]/60 px-3.5 py-1.5 text-[13px] text-[var(--foreground)] transition-all hover:border-[var(--primary)]/40 hover:bg-[var(--card)] hover:shadow-[0_4px_16px_-8px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
           >
             <SparkleIcon className="w-3 h-3 text-[var(--primary)] opacity-70 group-hover:opacity-100" />
             {s.label}

@@ -176,7 +176,7 @@ export default function FormPreviewPage() {
       >
         <div className={`${widthClass} mx-auto w-full`}>
           <div
-            className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-white" : ""}`}
+            className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-card" : ""}`}
             style={formBg ? { backgroundColor: formBg } : undefined}
           >
             {headerUrl && (

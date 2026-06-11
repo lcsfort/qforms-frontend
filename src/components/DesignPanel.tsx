@@ -47,7 +47,7 @@ function FontFamilyDropdown({
         id={id}
         onClick={() => !disabled && setOpen((o) => !o)}
         disabled={disabled}
-        className="w-full h-8 pl-2.5 pr-8 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs outline-none cursor-pointer disabled:opacity-50 text-left flex items-center truncate"
+        className="w-full h-8 pl-2.5 pr-8 rounded-lg border border-gray-200 dark:border-gray-600 bg-card dark:bg-gray-700 text-xs outline-none cursor-pointer disabled:opacity-50 text-left flex items-center truncate"
       >
         <span
           className="truncate"
@@ -62,7 +62,7 @@ function FontFamilyDropdown({
         </svg>
       </div>
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-0.5 z-50 max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-lg py-1">
+        <div className="absolute left-0 right-0 top-full mt-0.5 z-50 max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-card dark:bg-gray-700 shadow-lg py-1">
           {options.map((name, idx) => {
             const isDefaultOption = idx === 0;
             const selected = (isDefaultOption && isDefault) || (!isDefaultOption && value === name);
@@ -189,7 +189,7 @@ function ColorPicker({
           />
         ))}
       </div>
-      <div className="flex items-center gap-0 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 overflow-hidden h-8">
+      <div className="flex items-center gap-0 rounded-lg border border-gray-200 dark:border-gray-600 bg-card dark:bg-gray-700 overflow-hidden h-8">
         <span className="pl-2.5 pr-1 text-xs text-[var(--muted)] font-mono select-none">#</span>
         <input
           type="text"
@@ -388,7 +388,7 @@ export function DesignPanel({
       {/* Min height */}
       <div className="py-4">
         <span className="block text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wide mb-2">{t("minHeight")}</span>
-        <div className="flex items-center gap-0 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 overflow-hidden h-8">
+        <div className="flex items-center gap-0 rounded-lg border border-gray-200 dark:border-gray-600 bg-card dark:bg-gray-700 overflow-hidden h-8">
           <input
             type="number"
             min={0}
@@ -426,7 +426,7 @@ export function DesignPanel({
               <select
                 value={row.size !== undefined ? row.size : ""}
                 onChange={(e) => { const v = e.target.value; row.setSize(v === "" ? undefined : parseInt(v, 10)); }}
-                className="w-16 h-8 pl-2 pr-6 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs outline-none appearance-none cursor-pointer"
+                className="w-16 h-8 pl-2 pr-6 rounded-lg border border-gray-200 dark:border-gray-600 bg-card dark:bg-gray-700 text-xs outline-none appearance-none cursor-pointer"
               >
                 <option value="">—</option>
                 {FONT_SIZE_OPTIONS.map((n) => (

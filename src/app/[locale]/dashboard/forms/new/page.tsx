@@ -107,7 +107,7 @@ export default function NewFormPage() {
     >
       <section className="flex-1 flex flex-col min-w-0 h-full relative">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[900px] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.08),transparent_65%)]" />
+          <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[900px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--primary)_8%,transparent),transparent_65%)]" />
         </div>
 
         <div

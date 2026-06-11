@@ -4,13 +4,13 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[var(--background)] px-4">
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--surface)]/50 via-[var(--background)] to-[var(--surface)]/30" />
-      <div className="absolute top-1/4 left-1/4 w-[320px] h-[320px] bg-[var(--primary)]/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/3 right-1/4 w-[280px] h-[280px] bg-[var(--accent)]/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 w-[320px] h-[320px] bg-[var(--primary)]/8 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/3 right-1/4 w-[280px] h-[280px] bg-[var(--primary)]/5 rounded-full blur-3xl" />
 
       <div className="relative z-10 w-full max-w-lg text-center">
         <div className="mb-2">
           <span
-            className="text-[clamp(6rem,18vw,10rem)] font-bold leading-none tracking-tighter bg-gradient-to-b from-[var(--primary)] to-[var(--primary-dark)] bg-clip-text text-transparent"
+            className="font-display text-[clamp(6rem,18vw,10rem)] font-bold leading-none tracking-tighter bg-gradient-to-b from-[var(--primary)] to-[var(--primary-dark)] bg-clip-text text-transparent"
             style={{ lineHeight: 0.9 }}
           >
             404

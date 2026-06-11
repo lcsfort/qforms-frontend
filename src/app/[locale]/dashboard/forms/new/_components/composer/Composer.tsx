@@ -82,10 +82,10 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             e.preventDefault();
             onSubmit();
           }}
-          className={`group relative rounded-[26px] border bg-[var(--card)]/95 backdrop-blur-xl shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_18px_44px_-28px_rgba(16,13,28,0.45)] transition-all ${
+          className={`group relative rounded-[26px] border bg-[var(--card)]/95 backdrop-blur-xl shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_18px_44px_-28px_color-mix(in_srgb,var(--foreground)_28%,transparent)] transition-all ${
             disabled
               ? "border-[var(--border)]/40 opacity-70"
-              : "border-[var(--border)]/70 focus-within:border-[var(--primary)]/40 focus-within:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_24px_60px_-30px_rgba(139,92,246,0.35)]"
+              : "border-[var(--border)]/70 focus-within:border-[var(--primary)]/40 focus-within:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_24px_60px_-30px_color-mix(in_srgb,var(--primary)_35%,transparent)]"
           }`}
         >
           <textarea
@@ -104,7 +104,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
               type="submit"
               disabled={primaryDisabled}
               aria-label={t("composer.send")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-all hover:bg-[var(--primary-dark)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)] disabled:cursor-not-allowed shadow-[0_6px_18px_-6px_rgba(139,92,246,0.5)] disabled:shadow-none"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-all hover:bg-[var(--primary-dark)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)] disabled:cursor-not-allowed shadow-[0_6px_18px_-6px_color-mix(in_srgb,var(--primary)_40%,transparent)] disabled:shadow-none"
             >
               {isBusy ? (
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">

@@ -17,7 +17,7 @@ export function ReadyPlanActions({ finalizing, onFinalize, onAddMore, onStartOve
         type="button"
         onClick={onFinalize}
         disabled={finalizing}
-        className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] text-white px-5 py-2.5 text-[13.5px] font-medium transition-all hover:bg-[var(--primary-dark)] disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_10px_26px_-10px_rgba(139,92,246,0.55)]"
+        className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] text-white px-5 py-2.5 text-[13.5px] font-medium transition-all hover:bg-[var(--primary-dark)] disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_10px_26px_-10px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
       >
         {finalizing ? (
           <>

@@ -95,7 +95,7 @@ export default function WorkspaceSettingsPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] mb-2">
             {t("title")}
           </p>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--foreground)]">
             {active?.name ?? t("untitled")}
           </h1>
           <p className="text-sm text-[var(--muted)] mt-2">{active?.slug}</p>
