@@ -27,6 +27,9 @@ interface FormsState {
   responsesThisMonth: number | null;
   /** Best completion % across all owned forms with analytics; null if none. */
   bestWorkspaceCompletionRate: number | null;
+  /** Snapshot of the last unfiltered "recent" list — keeps workspace insights stable while searching/filtering. */
+  insightForms: Form[];
+  insightTotalCount: number;
   activeQueryKey: string | null;
   selectedBuildMode: FormBuildMode;
   planningSessionId: string | null;
@@ -48,6 +51,8 @@ const initialState: FormsState = {
   totalCount: 0,
   responsesThisMonth: null,
   bestWorkspaceCompletionRate: null,
+  insightForms: [],
+  insightTotalCount: 0,
   activeQueryKey: null,
   selectedBuildMode: "planning",
   planningSessionId: null,
@@ -73,6 +78,21 @@ function withPreservedListStats(prev: Form | undefined, next: Form): Form {
     ...next,
     listStats: next.listStats ?? prev?.listStats,
   };
+}
+
+function syncListRow(state: FormsState, next: Form): void {
+  const idx = state.forms.findIndex((f) => f.id === next.id);
+  if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], next);
+  const insightIdx = state.insightForms.findIndex((f) => f.id === next.id);
+  if (insightIdx >= 0) {
+    state.insightForms[insightIdx] = withPreservedListStats(state.insightForms[insightIdx], next);
+  }
+}
+
+/** The insight snapshot only tracks the default view, so filters never rewrite workspace-level numbers. */
+function isUnfilteredRecentFetch(arg: FetchFormsArgs | undefined): boolean {
+  if (!arg) return true;
+  return !arg.query && (arg.status ?? "all") === "all" && (arg.sort ?? "recent") === "recent";
 }
 
 type FetchFormsArgs = ListFormsParams & {
@@ -402,13 +422,23 @@ const formsSlice = createSlice({
         if (action.payload.queryKey !== state.activeQueryKey) {
           return;
         }
+        const unfiltered = isUnfilteredRecentFetch(action.meta.arg);
         if (action.payload.append) {
           const existingIds = new Set(state.forms.map((f) => f.id));
           const incoming = action.payload.items.filter((f) => !existingIds.has(f.id));
           state.forms = [...state.forms, ...incoming];
+          if (unfiltered) {
+            const insightIds = new Set(state.insightForms.map((f) => f.id));
+            state.insightForms = [
+              ...state.insightForms,
+              ...action.payload.items.filter((f) => !insightIds.has(f.id)),
+            ];
+          }
         } else {
           state.forms = action.payload.items;
+          if (unfiltered) state.insightForms = action.payload.items;
         }
+        if (unfiltered) state.insightTotalCount = action.payload.totalCount;
         state.nextCursor = action.payload.nextCursor;
         state.hasMore = action.payload.hasMore;
         state.totalCount = action.payload.totalCount;
@@ -437,11 +467,14 @@ const formsSlice = createSlice({
       })
       .addCase(createForm.fulfilled, (state, action) => {
         const form = action.payload;
-        state.forms.unshift({
+        const normalized = {
           ...form,
           listStats: form.listStats ?? defaultFormListStats(),
-        });
+        };
+        state.forms.unshift(normalized);
+        state.insightForms.unshift(normalized);
         state.totalCount += 1;
+        state.insightTotalCount += 1;
         state.currentForm = action.payload;
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
@@ -452,8 +485,7 @@ const formsSlice = createSlice({
       })
       .addCase(updateForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
-        const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
+        syncListRow(state, action.payload);
         state.autosaveStatus = "saved";
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
@@ -469,38 +501,39 @@ const formsSlice = createSlice({
         if (state.forms.length < prevLength) {
           state.totalCount = Math.max(0, state.totalCount - 1);
         }
+        const prevInsightLength = state.insightForms.length;
+        state.insightForms = state.insightForms.filter((f) => f.id !== action.payload);
+        if (state.insightForms.length < prevInsightLength) {
+          state.insightTotalCount = Math.max(0, state.insightTotalCount - 1);
+        }
         if (state.currentForm?.id === action.payload) {
           state.currentForm = null;
         }
       })
       .addCase(publishForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
-        const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
+        syncListRow(state, action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;
       })
       .addCase(unpublishForm.fulfilled, (state, action) => {
         state.currentForm = action.payload;
-        const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
+        syncListRow(state, action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;
       })
       .addCase(stepFormVersionBack.fulfilled, (state, action) => {
         state.currentForm = action.payload;
-        const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
+        syncListRow(state, action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;
       })
       .addCase(stepFormVersionForward.fulfilled, (state, action) => {
         state.currentForm = action.payload;
-        const idx = state.forms.findIndex((f) => f.id === action.payload.id);
-        if (idx >= 0) state.forms[idx] = withPreservedListStats(state.forms[idx], action.payload);
+        syncListRow(state, action.payload);
         const meta = getVersionMeta(action.payload);
         state.versionCursor = meta.versionCursor;
         state.versionCount = meta.versionCount;

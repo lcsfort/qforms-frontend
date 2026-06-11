@@ -1,19 +1,24 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, useRef, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import Image from "next/image";
-import { usePathname, useRouter as useNextRouter } from "next/navigation";
-import { Link, useRouter as useIntlRouter } from "@/i18n/navigation";
-import { useTheme } from "@/lib/theme";
+import { type ComponentType, type ReactNode, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
+import { Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { logout } from "@/lib/redux/authSlice";
+import { fetchWorkspaces, hydrateWorkspace } from "@/lib/redux/workspaceSlice";
 import { AppMenu } from "@/components/AppMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
-import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
-
-const flags: Record<string, string> = { en: "🇺🇸", pt: "🇧🇷" };
-const langLabels: Record<string, string> = { en: "English", pt: "Português" };
+import {
+  House,
+  LayoutTemplate,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  Settings,
+  Users,
+  X,
+} from "lucide-react";
 
 type DashboardShellProps = {
   children: ReactNode;
@@ -30,6 +35,53 @@ type DashboardShellProps = {
   headerRight?: ReactNode;
 };
 
+type NavKey = "navHome" | "navTemplates" | "navWorkspace" | "navSettings";
+
+type NavEntry = {
+  key: NavKey;
+  href: string;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  isActive: (path: string) => boolean;
+};
+
+const NAV_ENTRIES: NavEntry[] = [
+  {
+    key: "navHome",
+    href: "/dashboard",
+    icon: House,
+    isActive: (path) => path === "/dashboard",
+  },
+  {
+    key: "navTemplates",
+    href: "/dashboard#templates",
+    icon: LayoutTemplate,
+    isActive: () => false,
+  },
+  {
+    key: "navWorkspace",
+    href: "/dashboard/workspace",
+    icon: Users,
+    isActive: (path) => path === "/dashboard/workspace" || path.startsWith("/dashboard/workspace/"),
+  },
+  {
+    key: "navSettings",
+    href: "/profile",
+    icon: Settings,
+    isActive: (path) => path === "/profile" || path.startsWith("/profile/"),
+  },
+];
+
+function BrandWordmark() {
+  return (
+    <span className="inline-flex items-center rounded-2xl border border-[var(--border)]/60 bg-[var(--surface)]/50 px-2.5 py-1">
+      <span className="font-semibold text-[17px] tracking-tight">
+        <span className="text-[var(--primary)]">Q</span>
+        <span className="text-[var(--foreground)]">Forms</span>
+      </span>
+    </span>
+  );
+}
+
 export function DashboardShell({
   children,
   contentContainerClassName = "max-w-5xl mx-auto",
@@ -45,25 +97,72 @@ export function DashboardShell({
   headerRight,
 }: DashboardShellProps) {
   const tDashboard = useTranslations("dashboard");
-  const tMenu = useTranslations("appMenu");
-  const { theme, setTheme } = useTheme();
+  const tShell = useTranslations("shell");
+  const tWorkspace = useTranslations("workspace");
   const dispatch = useAppDispatch();
-  const intlRouter = useIntlRouter();
-  const nextRouter = useNextRouter();
   const pathname = usePathname();
-  const locale = useLocale();
-  const { user } = useAppSelector((state) => state.auth);
+  const { token, hydrated } = useAppSelector((state) => state.auth);
+  const { items: workspaces, activeWorkspaceId } = useAppSelector((state) => state.workspace);
 
   const [isContentScrolled, setIsContentScrolled] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [localSearchFocused, setLocalSearchFocused] = useState(false);
   const localSearchInputRef = useRef<HTMLInputElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
+  const mobileNavTriggerRef = useRef<HTMLButtonElement>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
+  const drawerWasOpenRef = useRef(false);
 
   const resolvedQuery = searchQuery ?? localSearchQuery;
   const resolvedFocused = isSearchFocused ?? localSearchFocused;
   const resolvedSearchRef = searchInputRef ?? localSearchInputRef;
+
+  // Path without the locale prefix, e.g. /en/dashboard -> /dashboard
+  const pathWithoutLocale = `/${pathname.split("/").slice(2).join("/")}`;
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+
+  useEffect(() => {
+    dispatch(hydrateWorkspace());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!hydrated || !token) return;
+    dispatch(fetchWorkspaces());
+  }, [dispatch, hydrated, token]);
+
+  useEffect(() => {
+    if (!isMobileNavOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMobileNavOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isMobileNavOpen]);
+
+  // Move focus into the drawer when it opens; hand it back to the trigger when it closes.
+  useEffect(() => {
+    if (isMobileNavOpen) {
+      drawerWasOpenRef.current = true;
+      drawerCloseRef.current?.focus();
+    } else if (drawerWasOpenRef.current) {
+      drawerWasOpenRef.current = false;
+      mobileNavTriggerRef.current?.focus();
+    }
+  }, [isMobileNavOpen]);
+
+  useEffect(() => {
+    if (!showSearch) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        resolvedSearchRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showSearch, resolvedSearchRef]);
 
   const setQuery = (value: string) => {
     if (onSearchQueryChange) {
@@ -93,38 +192,71 @@ export function DashboardShell({
     setIsContentScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
   };
 
-  const switchLocale = (newLocale: string) => {
-    const segments = pathname.split("/");
-    segments[1] = newLocale;
-    nextRouter.push(segments.join("/"));
-  };
-
-  const handleSignOut = () => {
-    dispatch(logout());
-    intlRouter.push("/");
-  };
-
-  const avatarUrl = user ? getUserAvatarUrl(user) : null;
-  const initials = user ? getUserInitials(user) : "";
   const shouldShowHeader = !hideHeader || isSidebarCollapsed;
-  const isDarkTheme = theme === "dark";
-  const headerGlassStyle: CSSProperties = {
-    backgroundColor: isDarkTheme
-      ? (isContentScrolled ? "rgba(26, 23, 20, 0.9)" : "rgba(26, 23, 20, 0.96)")
-      : (isContentScrolled ? "rgba(255, 253, 248, 0.86)" : "rgba(255, 253, 248, 0.94)"),
-    backdropFilter: isContentScrolled
-      ? "blur(96px) saturate(1.35) brightness(0.72) contrast(0.9)"
-      : "blur(56px) saturate(1.25) brightness(0.8) contrast(0.92)",
-    WebkitBackdropFilter: isContentScrolled
-      ? "blur(96px) saturate(1.35) brightness(0.72) contrast(0.9)"
-      : "blur(56px) saturate(1.25) brightness(0.8) contrast(0.92)",
-  };
+
+  const createCta = (
+    <Link
+      href="/dashboard/forms/new"
+      onClick={() => setIsMobileNavOpen(false)}
+      className="cta-gradient inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13.5px] font-semibold text-white"
+    >
+      <Plus className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+      {tShell("createForm")}
+    </Link>
+  );
+
+  const navList = (
+    <nav aria-label={tShell("navLabel")} className="flex flex-col gap-1">
+      {NAV_ENTRIES.map((entry) => {
+        const Icon = entry.icon;
+        const active = entry.isActive(pathWithoutLocale);
+        return (
+          <Link
+            key={entry.key}
+            href={entry.href}
+            onClick={() => setIsMobileNavOpen(false)}
+            aria-current={active ? "page" : undefined}
+            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[13px] transition-colors duration-150 ${
+              active
+                ? "border-[var(--border)]/80 bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
+                : "border-transparent text-[var(--muted)] hover:bg-[var(--surface)]/60 hover:text-[var(--foreground)]"
+            }`}
+          >
+            <Icon
+              className={`h-4 w-4 shrink-0 ${active ? "text-[var(--primary)]" : ""}`}
+              strokeWidth={1.8}
+            />
+            {tShell(entry.key)}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
+  const workspaceCard = activeWorkspace ? (
+    <div className="rounded-xl border border-[var(--border)]/70 bg-[var(--card)]/70 px-3 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+        {tShell("workspaceLabel")}
+      </p>
+      <p className="mt-1.5 truncate text-[13px] font-semibold text-[var(--foreground)]" title={activeWorkspace.name}>
+        {activeWorkspace.name}
+      </p>
+      <p className="truncate text-[11px] text-[var(--muted)]">{tWorkspace(`role.${activeWorkspace.role}`)}</p>
+      <Link
+        href="/dashboard/workspace"
+        className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-[var(--primary)] transition-colors hover:text-[var(--primary-dark)]"
+      >
+        {tShell("manageWorkspace")}
+      </Link>
+    </div>
+  ) : null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)]">
       <aside
+        inert={isSidebarCollapsed}
         className={`hidden lg:block shrink-0 h-screen sticky top-0 overflow-hidden bg-[var(--background)] ${
-          isSidebarCollapsed ? "w-0" : "w-[288px]"
+          isSidebarCollapsed ? "w-0" : "w-[264px]"
         }`}
         style={{
           transitionProperty: "width",
@@ -134,10 +266,8 @@ export function DashboardShell({
         }}
       >
         <div
-          className={`w-[288px] h-full pl-3 pr-1.5 py-3 ${
-            isSidebarCollapsed
-              ? "opacity-0 -translate-x-2"
-              : "opacity-100 translate-x-0"
+          className={`flex h-full w-[264px] flex-col px-4 pb-4 pt-5 ${
+            isSidebarCollapsed ? "opacity-0 -translate-x-2" : "opacity-100 translate-x-0"
           }`}
           style={{
             transitionProperty: "opacity, transform",
@@ -146,193 +276,78 @@ export function DashboardShell({
             willChange: "opacity, transform",
           }}
         >
-          <div className="h-full rounded-2xl border border-[var(--border)]/70 bg-[var(--card)]/80 backdrop-blur-sm p-3 flex flex-col overflow-hidden">
-          <div className="mb-3 flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center min-w-0 shrink-0 px-2.5 py-1 rounded-2xl bg-[var(--surface)]/50 border border-[var(--border)]/60">
-              <span className="font-semibold text-[17px] tracking-tight">
-                <span className="text-[var(--primary)]">Q</span>
-                <span className="text-[var(--foreground)]">Forms</span>
-              </span>
+          <div className="mb-5 flex items-center justify-between pl-1">
+            <Link href="/dashboard" className="flex min-w-0 items-center">
+              <BrandWordmark />
             </Link>
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(true)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)]/60 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
-              aria-label="Collapse sidebar"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] cursor-pointer"
+              aria-label={tShell("collapseSidebar")}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                <rect x="3.75" y="4.5" width="16.5" height="15" rx="2.5" />
-                <path strokeLinecap="round" d="M12 6.75v10.5" />
-              </svg>
+              <PanelLeftClose className="h-4 w-4" strokeWidth={1.8} />
             </button>
           </div>
-          <div className="mb-4 rounded-xl border border-[var(--border)]/60 bg-[var(--surface)]/45 px-3 py-3">
-            <div className="flex items-center gap-3">
-              <div className="relative w-11 h-11 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--card)] flex items-center justify-center shrink-0">
-                {avatarUrl ? (
-                  <Image src={avatarUrl} alt={user?.name || user?.email || "User"} fill className="object-cover" unoptimized />
-                ) : (
-                  <span className="text-sm font-semibold text-[var(--foreground)]">{initials}</span>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-[var(--foreground)] truncate" title={user?.name || user?.email || ""}>
-                  {user?.name || user?.email || ""}
-                </p>
-                {user?.name && (
-                  <p className="text-[11px] leading-snug text-[var(--muted)] mt-0.5 whitespace-normal break-all" title={user.email}>
-                    {user.email}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
 
-          <WorkspaceSwitcher />
+          <div className="mb-6">{createCta}</div>
 
-          <nav className="flex flex-col gap-0.5 mb-auto">
-            <Link
-              href="/profile"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors"
-            >
-              <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-              </svg>
-              {tMenu("profile")}
-            </Link>
-            <button
-              type="button"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors text-left cursor-pointer"
-            >
-              <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-              </svg>
-              {tMenu("help")}
-            </button>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left cursor-pointer"
-            >
-              <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-              </svg>
-              {tMenu("signOut")}
-            </button>
-          </nav>
+          {navList}
 
-          <div className="mt-4 pt-4 border-t border-[var(--border)]/70">
-            <div className="rounded-xl border border-[var(--border)]/60 bg-[var(--surface)]/30 px-2 py-2">
-              <span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider px-1">{tMenu("theme")}</span>
-              <div className="flex flex-col gap-0.5 mt-1.5">
-                <button
-                  type="button"
-                  onClick={() => setTheme("light")}
-                  className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors cursor-pointer ${
-                    theme === "light" ? "text-[var(--foreground)] font-medium bg-[var(--card)]" : "text-[var(--muted)]"
-                  }`}
-                >
-                  {theme === "light" ? (
-                    <svg className="w-3.5 h-3.5 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  ) : (
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-[var(--border)]" />
-                  )}
-                  Light
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme("dark")}
-                  className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors cursor-pointer ${
-                    theme === "dark" ? "text-[var(--foreground)] font-medium bg-[var(--card)]" : "text-[var(--muted)]"
-                  }`}
-                >
-                  {theme === "dark" ? (
-                    <svg className="w-3.5 h-3.5 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  ) : (
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-[var(--border)]" />
-                  )}
-                  Dark
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[var(--border)]/60 bg-[var(--surface)]/30 px-2 py-2 mt-2">
-              <span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider px-1">{tMenu("language")}</span>
-              <div className="flex flex-col gap-0.5 mt-1.5">
-                {(["en", "pt"] as const).map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => switchLocale(loc)}
-                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors cursor-pointer ${
-                      locale === loc ? "text-[var(--foreground)] font-medium bg-[var(--card)]" : "text-[var(--muted)]"
-                    }`}
-                  >
-                    {locale === loc ? (
-                      <svg className="w-3.5 h-3.5 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                    ) : (
-                      <span className="w-3.5 h-3.5 rounded-full border-2 border-[var(--border)]" />
-                    )}
-                    <span className="text-sm leading-none">{flags[loc]}</span>
-                    {langLabels[loc]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          </div>
+          <div className="mt-auto flex flex-col gap-2 pt-6">{workspaceCard}</div>
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 pl-1.5 pr-3 py-3">
+      <div className="flex-1 min-w-0 p-3 lg:pl-1.5">
         <div className="relative h-full rounded-2xl border border-[var(--border)]/70 bg-[var(--card)]/80 backdrop-blur-sm overflow-hidden flex flex-col">
           {shouldShowHeader && (
             <header
               className={`absolute top-0 left-0 right-0 z-50 border-b transition-all duration-200 ${
                 isContentScrolled ? "header-glass-scrolled shadow-sm" : "header-glass-top"
               }`}
-              style={headerGlassStyle}
             >
-              <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
-                <div className="lg:hidden">
-                  <AppMenu />
-                </div>
-
-                <div className="hidden lg:flex">
-                  {isSidebarCollapsed && (
-                    <button
-                      type="button"
-                      onClick={() => setIsSidebarCollapsed(false)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)]/60 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
-                      aria-label="Expand sidebar"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                        <rect x="3.75" y="4.5" width="16.5" height="15" rx="2.5" />
-                        <path strokeLinecap="round" d="M12 6.75v10.5" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-
-                <Link href="/dashboard" className="lg:hidden flex items-center min-w-0 shrink-0 px-2.5 py-1 rounded-2xl bg-[var(--surface)]/50 border border-[var(--border)]/60">
-                  <span className="font-semibold text-[17px] tracking-tight">
-                    <span className="text-[var(--primary)]">Q</span>
-                    <span className="text-[var(--foreground)]">Forms</span>
-                  </span>
-                </Link>
+              <div className="flex h-14 items-center gap-2.5 px-4 sm:px-6">
+                <button
+                  ref={mobileNavTriggerRef}
+                  type="button"
+                  onClick={() => setIsMobileNavOpen(true)}
+                  className="lg:hidden inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] cursor-pointer"
+                  aria-label={tShell("openNav")}
+                  aria-expanded={isMobileNavOpen}
+                >
+                  <Menu className="h-4 w-4" strokeWidth={1.8} />
+                </button>
 
                 {isSidebarCollapsed && (
-                  <Link href="/dashboard" className="hidden lg:flex items-center min-w-0 shrink-0 px-2.5 py-1 rounded-2xl bg-[var(--surface)]/50 border border-[var(--border)]/60">
-                    <span className="font-semibold text-[17px] tracking-tight">
-                      <span className="text-[var(--primary)]">Q</span>
-                      <span className="text-[var(--foreground)]">Forms</span>
-                    </span>
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setIsSidebarCollapsed(false)}
+                    className="hidden lg:inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] cursor-pointer"
+                    aria-label={tShell("expandSidebar")}
+                  >
+                    <PanelLeftOpen className="h-4 w-4" strokeWidth={1.8} />
+                  </button>
                 )}
 
+                {/* On the narrowest screens the search field needs the room more than the wordmark does */}
+                <Link
+                  href="/dashboard"
+                  className={`${
+                    isSidebarCollapsed
+                      ? showSearch
+                        ? "hidden sm:flex"
+                        : "flex"
+                      : showSearch
+                        ? "hidden sm:flex lg:hidden"
+                        : "flex lg:hidden"
+                  } min-w-0 shrink-0 items-center`}
+                >
+                  <BrandWordmark />
+                </Link>
+
                 {showSearch ? (
-                  <div className="flex-1 flex justify-center px-4">
-                    <div className="relative w-full max-w-2xl">
+                  <div className="flex min-w-0 flex-1 justify-center px-1 sm:px-4">
+                    <div className="relative w-full max-w-xl">
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
                       </svg>
@@ -344,7 +359,7 @@ export function DashboardShell({
                         onFocus={handleSearchFocus}
                         onBlur={handleSearchBlur}
                         placeholder={tDashboard("searchPlaceholder")}
-                        className={`w-full h-10 rounded-2xl border border-[var(--border)] bg-[var(--background)] pl-9 text-sm outline-none transition-all duration-200 focus:ring-1 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/40 ${
+                        className={`w-full h-9 rounded-xl border border-[var(--border)] bg-[var(--background)]/80 pl-9 text-sm outline-none transition-all duration-200 focus:ring-1 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/40 ${
                           resolvedQuery || resolvedFocused ? "pr-8" : "pr-16"
                         }`}
                       />
@@ -355,9 +370,7 @@ export function DashboardShell({
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
                           aria-label={tDashboard("clearSearch")}
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          <X className="h-3.5 w-3.5" strokeWidth={2} />
                         </button>
                       )}
                       {!resolvedQuery && !resolvedFocused && (
@@ -371,7 +384,13 @@ export function DashboardShell({
                   <div className="flex-1" />
                 )}
 
-                {headerRight}
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="hidden md:block">
+                    <WorkspaceSwitcher />
+                  </div>
+                  {headerRight}
+                  <AppMenu />
+                </div>
               </div>
             </header>
           )}
@@ -389,6 +408,46 @@ export function DashboardShell({
           </main>
         </div>
       </div>
+
+      {isMobileNavOpen && (
+        <div className="fixed inset-0 z-[120] lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label={tShell("closeNav")}
+            onClick={() => setIsMobileNavOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={tShell("navLabel")}
+            className="drawer-enter relative flex h-full w-[296px] max-w-[85vw] flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--background)] px-4 pb-6 pt-5 shadow-2xl"
+          >
+            <div className="mb-5 flex items-center justify-between pl-1">
+              <Link href="/dashboard" onClick={() => setIsMobileNavOpen(false)} className="flex min-w-0 items-center">
+                <BrandWordmark />
+              </Link>
+              <button
+                ref={drawerCloseRef}
+                type="button"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] cursor-pointer"
+                aria-label={tShell("closeNav")}
+              >
+                <X className="h-4 w-4" strokeWidth={1.8} />
+              </button>
+            </div>
+
+            <div className="mb-6">{createCta}</div>
+
+            {navList}
+
+            <div className="mt-6 border-t border-[var(--border)]/70 pt-5">
+              <WorkspaceSwitcher variant="panel" onNavigate={() => setIsMobileNavOpen(false)} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
