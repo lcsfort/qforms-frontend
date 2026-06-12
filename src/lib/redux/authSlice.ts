@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
+import { resetPreferences } from "@/lib/preferences";
 import { api } from "../api";
 
 export interface User {
@@ -10,6 +11,7 @@ export interface User {
   authProvider?: "local" | "google";
   avatarUrl?: string | null;
   googleAvatarUrl?: string | null;
+  pendingEmail?: string | null;
 }
 
 interface AuthState {
@@ -93,6 +95,7 @@ const authSlice = createSlice({
       state.signupSuccess = false;
       if (typeof window !== "undefined") {
         localStorage.removeItem("token");
+        resetPreferences();
       }
     },
     clearError(state) {
@@ -168,6 +171,7 @@ const authSlice = createSlice({
         state.token = null;
         if (typeof window !== "undefined") {
           localStorage.removeItem("token");
+        resetPreferences();
         }
       });
   },

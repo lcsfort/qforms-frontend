@@ -570,6 +570,8 @@ export function usePlanConversation() {
         setCapturedDetails(answered);
         setPendingQuestions(unanswered);
         if (unanswered.length > 0) {
+          // Pending questions only come from planning flows; the stored default mode must not hide them.
+          dispatch(setSelectedBuildMode("planning"));
           resetAnswers(unanswered);
         } else {
           clearAnswers();

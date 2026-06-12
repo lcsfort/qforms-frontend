@@ -1,60 +1,33 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type DragEvent,
-  type ReactNode,
-} from "react";
+import { Suspense, useEffect, useMemo, type ComponentType } from "react";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
+import { Bell, Lock, Palette, Sparkles, User as UserIcon, Users } from "lucide-react";
+import { fetchProfile } from "@/lib/redux/authSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { fetchProfile, setUser } from "@/lib/redux/authSlice";
-import { api } from "@/lib/api";
 import { DashboardShell } from "@/components/DashboardShell";
-import {
-  getUpdateNameSchema,
-  getChangePasswordSchema,
-  type ChangePasswordValidationMessages,
-  type UpdateNameValidationMessages,
-} from "@/lib/validation";
-import { ValidationError } from "yup";
-import { Link } from "@/i18n/navigation";
-import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
+import { DangerSection } from "./_components/DangerSection";
+import { AccountSection } from "./_components/AccountSection";
+import { CreationSection } from "./_components/CreationSection";
+import { InsightsSection } from "./_components/InsightsSection";
+import { PreferencesSection } from "./_components/PreferencesSection";
+import { SecuritySection } from "./_components/SecuritySection";
+import { WorkspaceSection } from "./_components/WorkspaceSection";
 
-function ProfileSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="space-y-3">
-      <header>
-        <h2 className="text-lg font-semibold text-[var(--foreground)] tracking-tight">
-          {title}
-        </h2>
-        {description ? (
-          <p className="text-sm text-[var(--muted)] mt-1 max-w-xl">{description}</p>
-        ) : null}
-      </header>
-      {children}
-    </section>
-  );
-}
+type SectionId = "account" | "security" | "preferences" | "insights" | "creation" | "workspace";
 
-export default function ProfilePage() {
+type SectionEntry = {
+  id: SectionId;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+};
+
+function SettingsPageInner() {
   const t = useTranslations("profile");
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, token, hydrated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
@@ -68,683 +41,105 @@ export default function ProfilePage() {
     }
   }, [hydrated, token, user, dispatch, router]);
 
+  const sections = useMemo<SectionEntry[]>(() => {
+    const entries: SectionEntry[] = [{ id: "account", icon: UserIcon }];
+    if (user?.authProvider !== "google") {
+      entries.push({ id: "security", icon: Lock });
+    }
+    entries.push(
+      { id: "preferences", icon: Palette },
+      { id: "insights", icon: Bell },
+      { id: "creation", icon: Sparkles },
+      { id: "workspace", icon: Users },
+    );
+    return entries;
+  }, [user?.authProvider]);
+
   if (!hydrated || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" role="status" aria-label={t("loading")}>
+        <div
+          aria-hidden="true"
+          className="w-10 h-10 border-[3px] border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin"
+        />
       </div>
     );
   }
 
+  // The tab lives in the URL so settings sections are linkable and survive reloads.
+  // Invalid values (or "security" on a Google account) fall back to "account".
+  const tabParam = searchParams.get("tab");
+  const resolvedSection: SectionId = sections.some((s) => s.id === tabParam)
+    ? (tabParam as SectionId)
+    : "account";
+
+  const selectSection = (id: SectionId) => {
+    router.replace(id === "account" ? "/profile" : `/profile?tab=${id}`);
+  };
+
   return (
-    <DashboardShell contentContainerClassName="max-w-2xl mx-auto" showSearch={false}>
-      <main className="px-6 pt-2 pb-12">
-        <div className="mb-6">
-          <Link
-            href="/dashboard"
-            className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1.5"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-            {t("backToDashboard")}
-          </Link>
-        </div>
+    <DashboardShell
+      showSearch={false}
+      contentContainerClassName="w-full"
+      mainClassName="dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 lg:px-10 pt-[88px] pb-16 bg-[var(--background)]/70"
+    >
+      <div className="mb-8">
+        <h1 className="font-display text-[26px] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[28px]">
+          {t("title")}
+        </h1>
+        <p className="mt-1.5 text-[14px] text-[var(--muted)]">{t("subtitle")}</p>
+      </div>
 
-        <h1 className="text-3xl font-bold mb-8">{t("title")}</h1>
+      <div className="flex flex-col gap-8 md:flex-row md:gap-10">
+        <nav
+          aria-label={t("title")}
+          className="flex shrink-0 gap-1 overflow-x-auto pb-1 md:w-52 md:flex-col md:self-start md:overflow-visible md:pb-0 md:sticky md:top-[76px]"
+        >
+          {sections.map((section) => {
+            const Icon = section.icon;
+            const active = section.id === resolvedSection;
+            return (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => selectSection(section.id)}
+                aria-current={active ? "true" : undefined}
+                className={`flex shrink-0 items-center gap-2.5 rounded-lg border px-3 py-2 text-[13px] whitespace-nowrap transition-colors duration-150 cursor-pointer ${
+                  active
+                    ? "border-[var(--border)]/80 bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
+                    : "border-transparent text-[var(--muted)] hover:bg-[var(--surface)]/60 hover:text-[var(--foreground)]"
+                }`}
+              >
+                <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[var(--primary)]" : ""}`} strokeWidth={1.8} />
+                {t(`nav.${section.id}`)}
+              </button>
+            );
+          })}
+        </nav>
 
-        <div className="space-y-10">
-          <ProfileSection title={t("personalInfo")}>
-            <NameCard user={user} token={token!} />
-          </ProfileSection>
-
-          {user.authProvider !== "google" && (
-            <ProfileSection title={t("sectionSecurity")}>
-              <PasswordCard token={token!} />
-            </ProfileSection>
+        <div className="min-w-0 max-w-[920px] flex-1 pb-4">
+          {resolvedSection === "account" && (
+            <div className="space-y-10">
+              <AccountSection user={user} token={token!} />
+              <DangerSection user={user} token={token!} />
+            </div>
           )}
-
-          <ProfileSection
-            title={t("sectionAi")}
-            description={t("sectionAiDescription")}
-          >
-            <AiSettingsCard token={token!} />
-          </ProfileSection>
+          {resolvedSection === "security" && <SecuritySection token={token!} />}
+          {resolvedSection === "preferences" && <PreferencesSection />}
+          {resolvedSection === "insights" && <InsightsSection />}
+          {resolvedSection === "creation" && <CreationSection />}
+          {resolvedSection === "workspace" && <WorkspaceSection />}
         </div>
-      </main>
+      </div>
     </DashboardShell>
   );
 }
 
-function NameCard({
-  user,
-  token,
-}: {
-  user: {
-    id: string;
-    email: string;
-    name: string | null;
-    isEmailVerified: boolean;
-    createdAt?: string;
-    authProvider?: "local" | "google";
-    avatarUrl?: string | null;
-    googleAvatarUrl?: string | null;
-  };
-  token: string;
-}) {
-  const t = useTranslations("profile");
-  const dispatch = useAppDispatch();
-
-  const [name, setName] = useState(user.name ?? "");
-  const [saving, setSaving] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  const validationMessages: UpdateNameValidationMessages = useMemo(
-    () => ({ nameRequired: t("validation.nameRequired") }),
-    [t],
-  );
-
-  const handleSaveName = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFieldErrors({});
-    setApiError(null);
-    setSuccess(false);
-
-    try {
-      await getUpdateNameSchema(validationMessages).validate(
-        { name },
-        { abortEarly: false },
-      );
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        const errs: Record<string, string> = {};
-        err.inner.forEach((e) => {
-          if (e.path) errs[e.path] = e.message;
-        });
-        setFieldErrors(errs);
-      }
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const updated = await api.updateName(token, { name });
-      dispatch(setUser(updated));
-      setSuccess(true);
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      setApiError(error.message ?? "Something went wrong");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const uploadAvatarFile = useCallback(
-    async (file: File) => {
-      setAvatarError(null);
-      setApiError(null);
-      setSuccess(false);
-      if (!file.type.startsWith("image/")) {
-        setAvatarError(t("avatarInvalidType"));
-        return;
-      }
-      setUploadingAvatar(true);
-      try {
-        const { url } = await api.uploadFile(token, file, "avatar");
-        const updated = await api.updateAvatar(token, { avatarUrl: url });
-        dispatch(setUser(updated));
-      } catch {
-        setAvatarError(t("avatarUploadError"));
-      } finally {
-        setUploadingAvatar(false);
-      }
-    },
-    [token, dispatch, t],
-  );
-
-  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) uploadAvatarFile(file);
-    e.target.value = "";
-  };
-
-  const onAvatarDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) uploadAvatarFile(file);
-  };
-
-  const avatarUrl = getUserAvatarUrl(user);
-  const initials = getUserInitials(user);
-  const displayName = user.name?.trim() || user.email.split("@")[0] || user.email;
-
+export default function SettingsPage() {
+  // useSearchParams requires a Suspense boundary during prerendering.
   return (
-    <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-      <div className="mb-6 flex flex-col items-center text-center">
-        <div className="w-[96px] h-[96px] rounded-full overflow-hidden border-2 border-white dark:border-gray-800 shadow bg-[var(--surface)] flex items-center justify-center shrink-0">
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={displayName}
-              width={96}
-              height={96}
-              className="w-full h-full object-cover"
-              unoptimized
-            />
-          ) : (
-            <span className="text-2xl font-semibold text-[var(--muted)]">{initials}</span>
-          )}
-        </div>
-        <p className="mt-3 text-3xl font-semibold tracking-tight text-[var(--foreground)]">{displayName}</p>
-        <p className="mt-1 text-base text-[var(--muted)]">{user.email}</p>
-      </div>
-
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">
-          {t("profilePicture")}
-        </label>
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={onAvatarDrop}
-          onClick={() => avatarInputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              avatarInputRef.current?.click();
-            }
-          }}
-          className={`flex flex-col items-center justify-center gap-1.5 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
-            dragOver
-              ? "border-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 dark:border-indigo-500"
-              : "border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
-          }`}
-        >
-          {uploadingAvatar ? (
-            <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          ) : (
-            <>
-              <svg className="w-8 h-8 text-gray-300 dark:text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-              </svg>
-              <span className="text-sm text-[var(--muted)]">{t("clickOrDragToUpload")}</span>
-            </>
-          )}
-        </div>
-        <input
-          ref={avatarInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleAvatarChange}
-        />
-        {avatarError && (
-          <p className="text-red-500 text-sm mt-2">{avatarError}</p>
-        )}
-      </div>
-
-      <div className="border-t border-[var(--border)] pt-6 mt-6">
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">
-          {t("emailLabel")}
-        </label>
-        <div className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--muted)]">
-          {user.email}
-        </div>
-      </div>
-
-      <form onSubmit={handleSaveName} noValidate>
-        <label htmlFor="profile-name" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-          {t("nameLabel")}
-        </label>
-        <input
-          id="profile-name"
-          type="text"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setFieldErrors({});
-            setSuccess(false);
-          }}
-          placeholder={t("namePlaceholder")}
-          className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-        />
-        {fieldErrors.name && (
-          <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>
-        )}
-
-        {apiError && (
-          <p className="text-red-500 text-sm mt-3">{apiError}</p>
-        )}
-        {success && (
-          <p className="text-green-600 dark:text-green-400 text-sm mt-3">{t("nameSaved")}</p>
-        )}
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="mt-4 bg-[var(--primary)] hover:opacity-90 text-white font-semibold px-5 py-2.5 rounded-lg transition-opacity text-sm disabled:opacity-50 cursor-pointer"
-        >
-          {saving ? t("saving") : t("saveBtn")}
-        </button>
-      </form>
-      </div>
-    </div>
-  );
-}
-
-function PasswordCard({ token }: { token: string }) {
-  const t = useTranslations("profile");
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  const validationMessages: ChangePasswordValidationMessages = useMemo(
-    () => ({
-      currentPasswordRequired: t("validation.currentPasswordRequired"),
-      newPasswordRequired: t("validation.newPasswordRequired"),
-      newPasswordMin: t("validation.newPasswordMin"),
-      newPasswordPattern: t("validation.newPasswordPattern"),
-      confirmPasswordRequired: t("validation.confirmPasswordRequired"),
-      confirmPasswordMatch: t("validation.confirmPasswordMatch"),
-    }),
-    [t],
-  );
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFieldErrors({});
-    setApiError(null);
-    setSuccess(false);
-
-    try {
-      await getChangePasswordSchema(validationMessages).validate(
-        { currentPassword, newPassword, confirmNewPassword },
-        { abortEarly: false },
-      );
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        const errs: Record<string, string> = {};
-        err.inner.forEach((e) => {
-          if (e.path) errs[e.path] = e.message;
-        });
-        setFieldErrors(errs);
-      }
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await api.changePassword(token, { currentPassword, newPassword });
-      setSuccess(true);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      setApiError(error.message ?? "Something went wrong");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const clearState = () => {
-    setFieldErrors({});
-    setSuccess(false);
-    setApiError(null);
-  };
-
-  return (
-    <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-      <form onSubmit={handleChangePassword} noValidate aria-label={t("changePassword")}>
-        <div className="mb-4">
-          <label htmlFor="current-password" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-            {t("currentPasswordLabel")}
-          </label>
-          <input
-            id="current-password"
-            type="password"
-            value={currentPassword}
-            onChange={(e) => { setCurrentPassword(e.target.value); clearState(); }}
-            placeholder={t("currentPasswordPlaceholder")}
-            className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-          />
-          {fieldErrors.currentPassword && (
-            <p className="text-red-500 text-xs mt-1">{fieldErrors.currentPassword}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="new-password" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-            {t("newPasswordLabel")}
-          </label>
-          <input
-            id="new-password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => { setNewPassword(e.target.value); clearState(); }}
-            placeholder={t("newPasswordPlaceholder")}
-            className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-          />
-          {fieldErrors.newPassword && (
-            <p className="text-red-500 text-xs mt-1">{fieldErrors.newPassword}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="confirm-new-password" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-            {t("confirmPasswordLabel")}
-          </label>
-          <input
-            id="confirm-new-password"
-            type="password"
-            value={confirmNewPassword}
-            onChange={(e) => { setConfirmNewPassword(e.target.value); clearState(); }}
-            placeholder={t("confirmPasswordPlaceholder")}
-            className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-          />
-          {fieldErrors.confirmNewPassword && (
-            <p className="text-red-500 text-xs mt-1">{fieldErrors.confirmNewPassword}</p>
-          )}
-        </div>
-
-        {apiError && (
-          <p className="text-red-500 text-sm mt-1 mb-3">{apiError}</p>
-        )}
-        {success && (
-          <p className="text-green-600 dark:text-green-400 text-sm mt-1 mb-3">{t("passwordChanged")}</p>
-        )}
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="bg-[var(--primary)] hover:opacity-90 text-white font-semibold px-5 py-2.5 rounded-lg transition-opacity text-sm disabled:opacity-50 cursor-pointer"
-        >
-          {saving ? t("changingPassword") : t("changePasswordBtn")}
-        </button>
-      </form>
-    </div>
-  );
-}
-
-const MODELS_BY_PROVIDER: Record<string, { id: string; label: string }[]> = {
-  gemini: [
-    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-    { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-  ],
-  openai: [
-    { id: "gpt-4.1", label: "GPT-4.1" },
-    { id: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
-    { id: "gpt-4o", label: "GPT-4o" },
-    { id: "gpt-4o-mini", label: "GPT-4o Mini" },
-    { id: "o3-mini", label: "o3-mini" },
-  ],
-  claude: [
-    { id: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
-    { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
-  ],
-};
-
-function AiSettingsCard({ token }: { token: string }) {
-  const t = useTranslations("profile.aiSettings");
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [provider, setProvider] = useState<string | null>(null);
-  const [model, setModel] = useState<string | null>(null);
-  const [customModel, setCustomModel] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
-
-  const isCustomModel = useMemo(() => {
-    if (!provider || !model) return false;
-    const known = MODELS_BY_PROVIDER[provider] ?? [];
-    return !known.some((m) => m.id === model);
-  }, [provider, model]);
-
-  const loadSettings = useCallback(async () => {
-    try {
-      const data = await api.getAiSettings(token);
-      setProvider(data.provider);
-      setHasApiKey(data.hasApiKey);
-      if (data.model) {
-        const known = MODELS_BY_PROVIDER[data.provider ?? ""] ?? [];
-        if (known.some((m) => m.id === data.model)) {
-          setModel(data.model);
-          setCustomModel("");
-        } else {
-          setModel("__custom__");
-          setCustomModel(data.model);
-        }
-      } else {
-        setModel(null);
-        setCustomModel("");
-      }
-    } catch {
-      /* ignore load errors */
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
-
-  const clearMessages = () => {
-    setSuccess(null);
-    setApiError(null);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    clearMessages();
-    setSaving(true);
-
-    const resolvedModel = model === "__custom__" ? customModel : model;
-
-    try {
-      const data = await api.updateAiSettings(token, {
-        provider,
-        model: resolvedModel,
-        apiKey: apiKey || undefined,
-      });
-      setProvider(data.provider);
-      setHasApiKey(data.hasApiKey);
-      setApiKey("");
-      if (data.model) {
-        const known = MODELS_BY_PROVIDER[data.provider ?? ""] ?? [];
-        if (known.some((m) => m.id === data.model)) {
-          setModel(data.model);
-          setCustomModel("");
-        } else {
-          setModel("__custom__");
-          setCustomModel(data.model);
-        }
-      }
-      setSuccess(t("saved"));
-    } catch {
-      setApiError(t("error"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleClear = async () => {
-    clearMessages();
-    setSaving(true);
-    try {
-      await api.updateAiSettings(token, {
-        provider: null,
-        model: null,
-        apiKey: null,
-      });
-      setProvider(null);
-      setModel(null);
-      setCustomModel("");
-      setApiKey("");
-      setHasApiKey(false);
-      setSuccess(t("cleared"));
-    } catch {
-      setApiError(t("error"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleProviderChange = (newProvider: string) => {
-    clearMessages();
-    setProvider(newProvider || null);
-    setModel(null);
-    setCustomModel("");
-    setApiKey("");
-    setHasApiKey(false);
-  };
-
-  if (loading) {
-    return (
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-        <div className="animate-pulse h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-4" />
-        <div className="animate-pulse h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
-        <div className="animate-pulse h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg" />
-      </div>
-    );
-  }
-
-  const providerModels = provider ? (MODELS_BY_PROVIDER[provider] ?? []) : [];
-
-  return (
-    <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
-      <p className="text-sm text-[var(--muted)] mb-5">{t("description")}</p>
-
-      <form onSubmit={handleSave} noValidate>
-        <div className="mb-4">
-          <label htmlFor="ai-provider" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-            {t("providerLabel")}
-          </label>
-          <select
-            id="ai-provider"
-            value={provider ?? ""}
-            onChange={(e) => handleProviderChange(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-          >
-            <option value="">{t("providerNone")}</option>
-            <option value="gemini">{t("providerGemini")}</option>
-            <option value="openai">{t("providerOpenai")}</option>
-            <option value="claude">{t("providerClaude")}</option>
-          </select>
-        </div>
-
-        {provider && (
-          <div className="border-t border-[var(--border)] pt-5 mt-6 space-y-4">
-            <h3 className="text-sm font-semibold text-[var(--foreground)]">
-              {t("connectionDetails")}
-            </h3>
-            <div>
-              <label htmlFor="ai-model" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                {t("modelLabel")}
-              </label>
-              <select
-                id="ai-model"
-                value={isCustomModel ? "__custom__" : (model ?? "")}
-                onChange={(e) => {
-                  clearMessages();
-                  const val = e.target.value;
-                  setModel(val || null);
-                  if (val !== "__custom__") setCustomModel("");
-                }}
-                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-              >
-                <option value="">—</option>
-                {providerModels.map((m) => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
-                ))}
-                <option value="__custom__">{t("modelCustom")}</option>
-              </select>
-
-              {(model === "__custom__" || isCustomModel) && (
-                <input
-                  type="text"
-                  value={customModel}
-                  onChange={(e) => { setCustomModel(e.target.value); clearMessages(); }}
-                  placeholder={t("modelPlaceholder")}
-                  className="mt-2 w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-                />
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="ai-api-key" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                {t("apiKeyLabel")}
-                {hasApiKey && !apiKey && (
-                  <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
-                    ({t("apiKeySet")})
-                  </span>
-                )}
-              </label>
-              <input
-                id="ai-api-key"
-                type="password"
-                value={apiKey}
-                onChange={(e) => { setApiKey(e.target.value); clearMessages(); }}
-                placeholder={hasApiKey ? "••••••••••••" : t("apiKeyPlaceholder")}
-                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition-shadow text-sm"
-              />
-              <p className="text-xs text-[var(--muted)] mt-1">{t("apiKeyHint")}</p>
-            </div>
-          </div>
-        )}
-
-        {apiError && (
-          <p className="text-red-500 text-sm mt-1 mb-3">{apiError}</p>
-        )}
-        {success && (
-          <p className="text-green-600 dark:text-green-400 text-sm mt-1 mb-3">{success}</p>
-        )}
-
-        <div className="flex items-center gap-3">
-          {provider && (
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-[var(--primary)] hover:opacity-90 text-white font-semibold px-5 py-2.5 rounded-lg transition-opacity text-sm disabled:opacity-50 cursor-pointer"
-            >
-              {saving ? t("saving") : t("save")}
-            </button>
-          )}
-
-          {provider && (
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleClear}
-              className="text-sm text-[var(--muted)] hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {t("clear")}
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
+    <Suspense fallback={null}>
+      <SettingsPageInner />
+    </Suspense>
   );
 }

@@ -69,8 +69,19 @@ export interface ResponsesDashboardData {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function toDateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
+function toDateOnly(date: Date, timeZone = "UTC"): string {
+  if (timeZone === "UTC") return date.toISOString().slice(0, 10);
+  try {
+    // en-CA renders as YYYY-MM-DD, matching the ISO day-key shape.
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
 }
 
 function parseResponseDate(value: string): Date | null {
@@ -96,11 +107,11 @@ function getNumericValue(value: unknown): number | null {
   return null;
 }
 
-function inDateRange(date: Date, from: string, to: string): boolean {
-  const ts = date.getTime();
-  const min = from ? new Date(`${from}T00:00:00`).getTime() : -Infinity;
-  const max = to ? new Date(`${to}T23:59:59`).getTime() : Infinity;
-  return ts >= min && ts <= max;
+function inDateRange(date: Date, from: string, to: string, timeZone = "UTC"): boolean {
+  const dayKey = toDateOnly(date, timeZone);
+  if (from && dayKey < from) return false;
+  if (to && dayKey > to) return false;
+  return true;
 }
 
 function getCategoricalDistribution(
@@ -119,12 +130,12 @@ function getCategoricalDistribution(
     .sort((a, b) => b.count - a.count);
 }
 
-function computeTrend(responses: FormResponse[]): TrendPoint[] {
+function computeTrend(responses: FormResponse[], timeZone = "UTC"): TrendPoint[] {
   const map = new Map<string, number>();
   for (const response of responses) {
     const date = parseResponseDate(response.submittedAt);
     if (!date) continue;
-    const key = toDateOnly(date);
+    const key = toDateOnly(date, timeZone);
     map.set(key, (map.get(key) ?? 0) + 1);
   }
   return Array.from(map.entries())
@@ -236,6 +247,7 @@ export function buildResponsesDashboardData(
   form: Form | null,
   responses: FormResponse[],
   filters: ResponsesFilters,
+  timeZone = "UTC",
 ): ResponsesDashboardData {
   const fields = Array.isArray(form?.schema)
     ? ([...form.schema] as FormField[]).sort(
@@ -245,7 +257,7 @@ export function buildResponsesDashboardData(
 
   const filteredResponses = responses.filter((response) => {
     const date = parseResponseDate(response.submittedAt);
-    if (!date || !inDateRange(date, filters.dateFrom, filters.dateTo)) {
+    if (!date || !inDateRange(date, filters.dateFrom, filters.dateTo, timeZone)) {
       return false;
     }
     if (filters.segmentFieldId && filters.segmentValue) {
@@ -274,7 +286,7 @@ export function buildResponsesDashboardData(
       ? 0
       : answeredCells / filteredResponses.length;
 
-  const trend = computeTrend(filteredResponses);
+  const trend = computeTrend(filteredResponses, timeZone);
   const anomalies = computeAnomalies(trend);
 
   const visibleFieldSet =

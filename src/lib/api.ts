@@ -604,6 +604,69 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  requestEmailChange: (
+    token: string,
+    data: { newEmail: string; currentPassword: string },
+  ) =>
+    request<{ message: string; pendingEmail: string }>(
+      "/auth/profile/email-change",
+      {
+        method: "POST",
+        headers: bearer(token),
+        body: JSON.stringify(data),
+      },
+    ),
+
+  confirmEmailChange: (token: string) =>
+    request<{ message: string; email: string }>(
+      `/auth/confirm-email-change?token=${encodeURIComponent(token)}`,
+    ),
+
+  cancelEmailChange: (token: string) =>
+    request<{ message: string }>("/auth/profile/email-change", {
+      method: "DELETE",
+      headers: bearer(token),
+    }),
+
+  requestAccountDeletion: (
+    token: string,
+    data: { currentPassword?: string; confirmEmail?: string },
+  ) =>
+    request<{ message: string; expiresInMinutes: number; retentionDays: number }>(
+      "/auth/profile/delete-account",
+      {
+        method: "POST",
+        headers: bearer(token),
+        body: JSON.stringify(data),
+      },
+    ),
+
+  confirmAccountDeletion: (token: string, data: { code: string }) =>
+    request<{ message: string; purgeAt: string; retentionDays: number }>(
+      "/auth/profile/delete-account/confirm",
+      {
+        method: "POST",
+        headers: bearer(token),
+        body: JSON.stringify(data),
+      },
+    ),
+
+  getPreferences: (token: string) =>
+    request<{ preferences: Record<string, unknown> | null }>(
+      "/auth/profile/preferences",
+      { headers: bearer(token) },
+    ),
+
+  updatePreferences: (token: string, preferences: Record<string, unknown>) =>
+    request<{ preferences: Record<string, unknown> | null }>(
+      "/auth/profile/preferences",
+      {
+        method: "PUT",
+        headers: bearer(token),
+        body: JSON.stringify({ preferences }),
+      },
+    ),
+
   getAiSettings: (token: string) =>
     request<{
       provider: string | null;

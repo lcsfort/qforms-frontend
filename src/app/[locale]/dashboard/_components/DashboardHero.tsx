@@ -34,10 +34,6 @@ export function DashboardHero({ name, creatingBlank, blankError, onStartBlank }:
     }
   };
 
-  const scrollToTemplates = () => {
-    document.getElementById("templates")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   const quickStarts = [
     {
       key: "scratch",
@@ -52,7 +48,7 @@ export function DashboardHero({ name, creatingBlank, blankError, onStartBlank }:
       label: t("quickStartTemplate"),
       description: t("quickStartTemplateDesc"),
       icon: LayoutTemplate,
-      onClick: scrollToTemplates,
+      onClick: () => router.push("/dashboard/templates"),
       busy: false,
     },
     {

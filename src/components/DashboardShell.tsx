@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchWorkspaces, hydrateWorkspace } from "@/lib/redux/workspaceSlice";
+import { setSelectedBuildMode } from "@/lib/redux/formsSlice";
+import { getPreferences, hydratePreferencesFromServer } from "@/lib/preferences";
 import { AppMenu } from "@/components/AppMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import {
@@ -53,9 +55,9 @@ const NAV_ENTRIES: NavEntry[] = [
   },
   {
     key: "navTemplates",
-    href: "/dashboard#templates",
+    href: "/dashboard/templates",
     icon: LayoutTemplate,
-    isActive: () => false,
+    isActive: (path) => path === "/dashboard/templates" || path.startsWith("/dashboard/templates/"),
   },
   {
     key: "navWorkspace",
@@ -70,6 +72,10 @@ const NAV_ENTRIES: NavEntry[] = [
     isActive: (path) => path === "/profile" || path.startsWith("/profile/"),
   },
 ];
+
+/* The stored default build mode is applied once per app load (the user can
+   still toggle modes freely inside the creation flow afterwards). */
+let hasAppliedDefaultBuildMode = false;
 
 function BrandWordmark() {
   return (
@@ -130,6 +136,17 @@ export function DashboardShell({
   useEffect(() => {
     if (!hydrated || !token) return;
     dispatch(fetchWorkspaces());
+    // Pull the account's preferences, then apply the stored default build mode once per app load.
+    void (async () => {
+      await hydratePreferencesFromServer(token);
+      if (!hasAppliedDefaultBuildMode) {
+        hasAppliedDefaultBuildMode = true;
+        const mode = getPreferences().defaultBuildMode;
+        if (mode !== "planning") {
+          dispatch(setSelectedBuildMode(mode));
+        }
+      }
+    })();
   }, [dispatch, hydrated, token]);
 
   useEffect(() => {

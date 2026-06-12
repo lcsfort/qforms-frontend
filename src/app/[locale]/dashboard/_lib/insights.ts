@@ -1,4 +1,5 @@
 import type { Form } from "@/lib/types";
+import { DEFAULT_PREFERENCES, type AttentionPreferences } from "@/lib/preferences";
 
 export type AttentionKind = "lowCompletion" | "noResponses" | "draftIdle";
 
@@ -13,11 +14,6 @@ export interface LatestResponseItem {
   responseCount: number;
 }
 
-const LOW_COMPLETION_THRESHOLD = 40;
-const MIN_SESSIONS_FOR_COMPLETION = 5;
-const MIN_VIEWS_FOR_NO_RESPONSES = 5;
-const DRAFT_IDLE_DAYS = 7;
-
 const ATTENTION_PRIORITY: Record<AttentionKind, number> = {
   lowCompletion: 0,
   noResponses: 1,
@@ -26,9 +22,15 @@ const ATTENTION_PRIORITY: Record<AttentionKind, number> = {
 
 /**
  * Derives "needs attention" signals from the loaded forms list.
- * Only uses real aggregates returned by the forms list endpoint.
+ * Only uses real aggregates returned by the forms list endpoint;
+ * the rules and thresholds come from the user's preferences.
  */
-export function getAttentionItems(forms: Form[], now: Date, limit = 3): AttentionItem[] {
+export function getAttentionItems(
+  forms: Form[],
+  now: Date,
+  config: AttentionPreferences = DEFAULT_PREFERENCES.attention,
+  limit = 3,
+): AttentionItem[] {
   const items: AttentionItem[] = [];
 
   for (const form of forms) {
@@ -36,27 +38,29 @@ export function getAttentionItems(forms: Form[], now: Date, limit = 3): Attentio
     const responseCount = form._count?.responses ?? 0;
 
     if (
+      config.lowCompletionEnabled &&
       form.status === "published" &&
       stats?.completionRate != null &&
-      stats.startedSessions >= MIN_SESSIONS_FOR_COMPLETION &&
-      stats.completionRate < LOW_COMPLETION_THRESHOLD
+      stats.startedSessions >= config.minSessions &&
+      stats.completionRate < config.lowCompletionThreshold
     ) {
       items.push({ form, kind: "lowCompletion" });
       continue;
     }
 
     if (
+      config.noResponsesEnabled &&
       form.status === "published" &&
-      (stats?.viewCount ?? 0) >= MIN_VIEWS_FOR_NO_RESPONSES &&
+      (stats?.viewCount ?? 0) >= config.minViews &&
       responseCount === 0
     ) {
       items.push({ form, kind: "noResponses" });
       continue;
     }
 
-    if (form.status === "draft") {
+    if (config.draftIdleEnabled && form.status === "draft") {
       const idleMs = now.getTime() - new Date(form.updatedAt).getTime();
-      if (idleMs > DRAFT_IDLE_DAYS * 24 * 60 * 60 * 1000) {
+      if (idleMs > config.draftIdleDays * 24 * 60 * 60 * 1000) {
         items.push({ form, kind: "draftIdle" });
       }
     }

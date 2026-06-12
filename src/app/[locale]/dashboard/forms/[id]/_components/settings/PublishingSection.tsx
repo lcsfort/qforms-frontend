@@ -3,12 +3,12 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { isValid, parse } from "date-fns";
 import type { FormPublishingSettings, FormSettings } from "@/lib/types";
+import { usePreferences } from "@/lib/preferences";
 import { SectionCard, CollapseReveal } from "./SectionCard";
 import { RadioRow } from "./primitives/RadioRow";
 import { DatePicker } from "./primitives/DatePicker";
-import { TimePicker, roundToNextFiveMinutes } from "./primitives/TimePicker";
+import { TimePicker } from "./primitives/TimePicker";
 
 type PublishT = (
   key: string,
@@ -33,40 +33,92 @@ function detectTimezone(): string {
   }
 }
 
-function toLocalDateAndTime(iso: string | null | undefined): {
-  date: string;
-  time: string;
-} {
+/* All wall-clock math below runs in the user's effective timezone, so the
+   entered time, the timezone label, and the stored instant always agree. */
+
+function wallClockFormatter(timeZone: string): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function tzOffsetMs(timeZone: string, atInstant: Date): number {
+  const parts = wallClockFormatter(timeZone).formatToParts(atInstant);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
+  const asUTC = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+  );
+  return asUTC - atInstant.getTime();
+}
+
+/** "What the clock on the wall in `timeZone` shows" for an absolute instant. */
+function isoToWallTime(
+  iso: string | null | undefined,
+  timeZone: string,
+): { date: string; time: string } {
   if (!iso) return { date: "", time: "" };
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return { date: "", time: "" };
+  const parts = wallClockFormatter(timeZone).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return {
+    date: `${get("year")}-${get("month")}-${get("day")}`,
+    time: `${get("hour")}:${get("minute")}`,
+  };
+}
+
+/** The absolute instant at which `timeZone`'s wall clock shows the given date+time. */
+function wallTimeToInstant(date: string, time: string, timeZone: string): Date | null {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(time);
+  if (!dateMatch || !timeMatch) return null;
+  const [, y, mo, d] = dateMatch.map(Number);
+  const [, hh, mm] = timeMatch.map(Number);
+  const naive = Date.UTC(y, mo - 1, d, hh, mm);
+  const probe = new Date(naive);
+  if (
+    Number.isNaN(naive) ||
+    probe.getUTCFullYear() !== y ||
+    probe.getUTCMonth() !== mo - 1 ||
+    probe.getUTCDate() !== d ||
+    hh > 23 ||
+    mm > 59
+  ) {
+    return null;
+  }
+  // Two passes refine the offset across DST transitions.
+  let offset = tzOffsetMs(timeZone, new Date(naive));
+  let instant = naive - offset;
+  offset = tzOffsetMs(timeZone, new Date(instant));
+  instant = naive - offset;
+  return new Date(instant);
+}
+
+function todayInTZ(timeZone: string): string {
+  return isoToWallTime(new Date().toISOString(), timeZone).date;
+}
+
+/** The next 5-minute mark on `timeZone`'s clock (lower bound for "today" schedules). */
+function nextFiveMinuteWallTime(timeZone: string): string {
+  const { time } = isoToWallTime(new Date(Date.now() + 5 * 60_000).toISOString(), timeZone);
+  const [hh, mm] = time.split(":").map(Number);
+  const rounded = Math.ceil(mm / 5) * 5;
+  const finalH = rounded >= 60 ? (hh + 1) % 24 : hh;
+  const finalM = rounded >= 60 ? 0 : rounded;
   const pad = (n: number) => String(n).padStart(2, "0");
-  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  return { date, time };
-}
-
-function localDateYMD(d = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function combineToISO(date: string, time: string): string | null {
-  if (!date || !time) return null;
-  const combined = parse(`${date} ${time}`, "yyyy-MM-dd HH:mm", new Date());
-  if (!isValid(combined)) return null;
-  return combined.toISOString();
-}
-
-function toLocalDate(date: string, time: string): Date | null {
-  const combined = parse(`${date} ${time}`, "yyyy-MM-dd HH:mm", new Date());
-  if (!isValid(combined)) return null;
-  return combined;
-}
-
-function isTodayDateString(value: string): boolean {
-  if (!value) return false;
-  return value === localDateYMD(new Date());
+  return `${pad(finalH)}:${pad(finalM)}`;
 }
 
 function formatCountdown(
@@ -134,7 +186,11 @@ export function PublishingSection({
   const [now, setNow] = useState(() => Date.now());
   void now;
 
-  const timezone = useMemo(detectTimezone, []);
+  const preferences = usePreferences();
+  const timezone = useMemo(
+    () => preferences.timezone ?? detectTimezone(),
+    [preferences.timezone],
+  );
   const mode = publishing.mode ?? "now";
 
   /** Date/time for scheduled mode — only written to `settings` when "Schedule publish" is clicked. */
@@ -152,25 +208,30 @@ export function PublishingSection({
     const at = publishing.scheduledPublishAt ?? null;
     if (lastSyncedCommitIso.current === at) return;
     lastSyncedCommitIso.current = at;
-    const { date: d, time: tm } = toLocalDateAndTime(at);
+    const { date: d, time: tm } = isoToWallTime(at, timezone);
     setDraftDate(d);
     setDraftTime(tm);
-  }, [mode, publishing.scheduledPublishAt]);
+  }, [mode, publishing.scheduledPublishAt, timezone]);
 
   const setPublishing = (next: FormPublishingSettings) => {
     setSettings((prev) => ({ ...prev, publishing: next }));
   };
 
   const handleModeChange = (newMode: "now" | "scheduled") => {
+    // The stored timezone documents the zone a schedule was saved in;
+    // it is only (re)written when a schedule is actually saved.
     if (newMode === "now") {
-      setPublishing({ mode: "now", timezone });
+      setSettings((prev) => ({
+        ...prev,
+        publishing: { mode: "now", timezone: prev.publishing?.timezone },
+      }));
     } else {
       setSettings((prev) => ({
         ...prev,
         publishing: {
           mode: "scheduled",
           scheduledPublishAt: prev.publishing?.scheduledPublishAt ?? null,
-          timezone,
+          timezone: prev.publishing?.timezone,
         },
       }));
     }
@@ -185,19 +246,14 @@ export function PublishingSection({
   };
 
   const draftScheduleIso = useMemo(() => {
-    if (mode !== "scheduled") return null;
-    return combineToISO(draftDate, draftTime || "09:00");
-  }, [mode, draftDate, draftTime]);
-
-  const draftScheduleLocal = useMemo(() => {
-    if (mode !== "scheduled") return null;
-    return toLocalDate(draftDate, draftTime || "09:00");
-  }, [mode, draftDate, draftTime]);
+    if (mode !== "scheduled" || !draftDate) return null;
+    return wallTimeToInstant(draftDate, draftTime || "09:00", timezone)?.toISOString() ?? null;
+  }, [mode, draftDate, draftTime, timezone]);
 
   const isDraftInFuture = useMemo(() => {
-    if (!draftScheduleLocal) return false;
-    return draftScheduleLocal.getTime() > Date.now();
-  }, [draftScheduleLocal]);
+    if (!draftScheduleIso) return false;
+    return new Date(draftScheduleIso).getTime() > Date.now();
+  }, [draftScheduleIso]);
 
   useEffect(() => {
     const active =
@@ -285,15 +341,15 @@ export function PublishingSection({
   // First-time scheduling should keep the button visible while editing draft date/time.
   const showSchedulePublishAction = isScheduledMode && !hasCommittedSchedule;
 
-  const todayStr = useMemo(() => localDateYMD(new Date()), []);
+  const todayStr = useMemo(() => todayInTZ(timezone), [timezone]);
   const disableTodayInDatePicker = useMemo(() => {
     if (!isScheduledMode || !draftTime || draftDate) return false;
-    const probe = toLocalDate(todayStr, draftTime);
+    const probe = wallTimeToInstant(todayStr, draftTime, timezone);
     return !!probe && probe.getTime() <= Date.now();
-  }, [isScheduledMode, draftTime, draftDate, todayStr]);
+  }, [isScheduledMode, draftTime, draftDate, todayStr, timezone]);
   const minTimeForSelectedDate =
-    isScheduledMode && isTodayDateString(draftDate)
-      ? roundToNextFiveMinutes()
+    isScheduledMode && !!draftDate && draftDate === todayStr
+      ? nextFiveMinuteWallTime(timezone)
       : undefined;
 
   return (

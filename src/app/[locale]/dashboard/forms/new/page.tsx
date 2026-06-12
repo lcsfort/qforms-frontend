@@ -86,7 +86,8 @@ export default function NewFormPage() {
     };
   }, [firstUserPrompt, isBusy, capturedDetails, readySchema, finalizing]);
 
-  const showQuestions = mode === "planning" && hasPendingQuestions && !readySchema;
+  // Pending questions disable the composer, so they must stay visible regardless of the selected mode.
+  const showQuestions = hasPendingQuestions && !readySchema;
 
   const [chatScrolled, setChatScrolled] = useState(false);
   useEffect(() => {

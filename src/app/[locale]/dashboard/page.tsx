@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { createForm, deleteForm, fetchForms } from "@/lib/redux/formsSlice";
 import { fetchProfile } from "@/lib/redux/authSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { savePreferences, usePreferences } from "@/lib/preferences";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DashboardShell } from "@/components/DashboardShell";
 import { SparkleIcon } from "@/components/icons/SparkleIcon";
@@ -47,7 +48,8 @@ export default function DashboardPage() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<FormListSort>("recent");
   const [statusFilter, setStatusFilter] = useState<FormListStatus>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const preferences = usePreferences();
+  const viewMode = preferences.formsView;
   const [openToolbarMenu, setOpenToolbarMenu] = useState<"sort" | "filter" | null>(null);
   const [creatingBlankForm, setCreatingBlankForm] = useState(false);
   const [blankFormError, setBlankFormError] = useState<string | null>(null);
@@ -117,16 +119,6 @@ export default function DashboardPage() {
     }
     prevHadFiltersRef.current = hasActiveFilters;
   }, [hasActiveFilters]);
-
-  // Hash navigation to #templates lands before the forms grid above it has laid out; re-anchor once loaded.
-  const reAnchoredRef = useRef(false);
-  useEffect(() => {
-    if (formsLoading || reAnchoredRef.current) return;
-    if (window.location.hash === "#templates") {
-      reAnchoredRef.current = true;
-      document.getElementById("templates")?.scrollIntoView({ block: "start" });
-    }
-  }, [formsLoading]);
 
   const handleDeleteClick = useCallback(
     (id: string, rawTitle: string) => {
@@ -228,7 +220,10 @@ export default function DashboardPage() {
   ]);
 
   // Insights derive from the unfiltered snapshot, not the searched/filtered list.
-  const attentionItems = useMemo(() => getAttentionItems(insightForms, now), [insightForms, now]);
+  const attentionItems = useMemo(
+    () => getAttentionItems(insightForms, now, preferences.attention),
+    [insightForms, now, preferences.attention],
+  );
   const latestResponses = useMemo(() => getLatestResponseItems(insightForms), [insightForms]);
 
   // Distinguish "never fetched" (activeQueryKey null) from "loaded empty" to avoid an empty-state flash.
@@ -429,7 +424,7 @@ export default function DashboardPage() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setViewMode((prev) => (prev === "grid" ? "list" : "grid"))}
+                    onClick={() => savePreferences({ formsView: viewMode === "grid" ? "list" : "grid" })}
                     aria-label={viewMode === "grid" ? t("gridView") : t("listView")}
                     className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] transition-colors hover:bg-[var(--surface)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/40"
                   >

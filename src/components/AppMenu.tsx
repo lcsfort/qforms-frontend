@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, LifeBuoy, LogOut, Moon, Sun, User } from "lucide-react";
 import { useRouter as useIntlRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -33,6 +33,7 @@ export function AppMenu() {
   const t = useTranslations("appMenu");
   const locale = useLocale();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const nextRouter = useRouter();
   const intlRouter = useIntlRouter();
   const dispatch = useAppDispatch();
@@ -61,7 +62,9 @@ export function AppMenu() {
   const switchLocale = (newLocale: string) => {
     const segments = pathname.split("/");
     segments[1] = newLocale;
-    nextRouter.push(segments.join("/"));
+    // Keep the query string (tabs, chat session ids) so page state survives the locale change.
+    const query = searchParams.toString();
+    nextRouter.push(segments.join("/") + (query ? `?${query}` : ""));
   };
 
   const handleSignOut = () => {

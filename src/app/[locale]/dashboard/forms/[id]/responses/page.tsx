@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useAppSelector } from "@/lib/redux/hooks";
+import { getEffectiveTimezone, usePreferences } from "@/lib/preferences";
 import { api } from "@/lib/api";
 import type { Form, FormBehaviorAnalytics, FormResponse } from "@/lib/types";
 import {
@@ -25,6 +26,8 @@ export default function ResponsesPage() {
   const formId = params.id as string;
   const { token, hydrated } = useAppSelector((state) => state.auth);
   const activeWorkspaceId = useAppSelector((s) => s.workspace.activeWorkspaceId);
+  const preferences = usePreferences();
+  const effectiveTimezone = getEffectiveTimezone(preferences);
 
   const [form, setForm] = useState<Form | null>(null);
   const [responses, setResponses] = useState<FormResponse[]>([]);
@@ -62,8 +65,8 @@ export default function ResponsesPage() {
   }, [hydrated, token, formId, router, activeWorkspaceId]);
 
   const dashboard = useMemo(
-    () => buildResponsesDashboardData(form, responses, filters),
-    [form, responses, filters],
+    () => buildResponsesDashboardData(form, responses, filters, effectiveTimezone),
+    [form, responses, filters, effectiveTimezone],
   );
 
   const segmentField = useMemo(
@@ -583,7 +586,7 @@ export default function ResponsesPage() {
                       {dashboard.filteredResponses.map((response) => (
                         <tr key={response.id} className="border-b border-[var(--border)] last:border-b-0">
                           <td className="px-3 py-2 whitespace-nowrap">
-                            {new Date(response.submittedAt).toLocaleString()}
+                            {new Date(response.submittedAt).toLocaleString(undefined, { timeZone: effectiveTimezone })}
                           </td>
                           {dashboard.fields.map((field) => (
                             <td key={field.id} className="px-3 py-2 max-w-[220px] truncate">
