@@ -644,8 +644,9 @@
   "profile": {
     "title": "Configurações",
     "personalInfo": "Informações pessoais",
-    "profilePicture": "Foto de perfil",
-    "clickOrDragToUpload": "Clique ou arraste para enviar",
+    "changePhoto": "Alterar foto de perfil",
+    "photoHint": "Clique na foto ou arraste uma imagem sobre ela.",
+    "photoUpdated": "Foto de perfil atualizada.",
     "avatarInvalidType": "Selecione um arquivo de imagem válido.",
     "avatarUploadError": "Falha ao enviar foto de perfil.",
     "emailLabel": "Email",
