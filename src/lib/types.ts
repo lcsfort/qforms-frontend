@@ -384,6 +384,46 @@ export interface WorkspaceInvite {
   createdAt: string;
 }
 
+export type AuditAction =
+  | "WORKSPACE_CREATED"
+  | "MEMBER_ROLE_UPDATED"
+  | "MEMBER_REMOVED"
+  | "INVITE_CREATED"
+  | "INVITE_CANCELLED"
+  | "INVITE_ACCEPTED"
+  | "FORM_CREATED"
+  | "FORM_UPDATED"
+  | "FORM_PUBLISHED"
+  | "FORM_UNPUBLISHED"
+  | "FORM_DELETED";
+
+export interface AuditLogActor {
+  id: string;
+  name: string | null;
+  email: string;
+  avatarUrl?: string | null;
+  googleAvatarUrl?: string | null;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  workspaceId: string;
+  actorId: string | null;
+  action: AuditAction | string;
+  targetType: string | null;
+  targetId: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  actor: AuditLogActor | null;
+}
+
+export interface AuditLogResponse {
+  items: AuditLogEntry[];
+  nextCursor: number | null;
+  hasMore: boolean;
+  totalCount: number;
+}
+
 export interface PipelineStage {
   id: string;
   formPipelineId: string;

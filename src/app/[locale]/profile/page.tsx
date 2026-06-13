@@ -78,22 +78,21 @@ function SettingsPageInner() {
   };
 
   return (
-    <DashboardShell
-      contentContainerClassName="w-full"
-      mainClassName="dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 lg:px-10 pt-[88px] pb-16 bg-[var(--background)]/70"
-    >
-      <div className="mb-8">
-        <h1 className="font-display text-[26px] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[28px]">
-          {t("title")}
-        </h1>
-        <p className="mt-1.5 text-[14px] text-[var(--muted)]">{t("subtitle")}</p>
-      </div>
+    <DashboardShell contentContainerClassName="max-w-5xl mx-auto">
+      <div className="flex flex-col gap-8">
+        {/* ── Page title ── */}
+        <div>
+          <h1 className="font-display text-[26px] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[28px]">
+            {t("title")}
+          </h1>
+          <p className="mt-1.5 text-[14px] text-[var(--muted)]">{t("subtitle")}</p>
+        </div>
 
-      <div className="flex flex-col gap-8 md:flex-row md:gap-10">
-        <nav
-          aria-label={t("title")}
-          className="flex shrink-0 gap-1 overflow-x-auto pb-1 md:w-52 md:flex-col md:self-start md:overflow-visible md:pb-0 md:sticky md:top-[76px]"
-        >
+        <div className="flex flex-col gap-8 md:flex-row md:gap-10">
+          <nav
+            aria-label={t("title")}
+            className="flex shrink-0 gap-1 overflow-x-auto pb-1 md:w-48 md:flex-col md:self-start md:overflow-visible md:pb-0 md:sticky md:top-[76px]"
+          >
           {sections.map((section) => {
             const Icon = section.icon;
             const active = section.id === resolvedSection;
@@ -116,18 +115,19 @@ function SettingsPageInner() {
           })}
         </nav>
 
-        <div className="min-w-0 max-w-[920px] flex-1 pb-4">
-          {resolvedSection === "account" && (
-            <div className="space-y-10">
-              <AccountSection user={user} token={token!} />
-              <DangerSection user={user} token={token!} />
-            </div>
-          )}
-          {resolvedSection === "security" && <SecuritySection token={token!} />}
-          {resolvedSection === "preferences" && <PreferencesSection />}
-          {resolvedSection === "insights" && <InsightsSection />}
-          {resolvedSection === "creation" && <CreationSection />}
-          {resolvedSection === "workspace" && <WorkspaceSection />}
+          <div className="min-w-0 flex-1">
+            {resolvedSection === "account" && (
+              <div className="space-y-10">
+                <AccountSection user={user} token={token!} />
+                <DangerSection user={user} token={token!} />
+              </div>
+            )}
+            {resolvedSection === "security" && <SecuritySection token={token!} />}
+            {resolvedSection === "preferences" && <PreferencesSection />}
+            {resolvedSection === "insights" && <InsightsSection />}
+            {resolvedSection === "creation" && <CreationSection />}
+            {resolvedSection === "workspace" && <WorkspaceSection />}
+          </div>
         </div>
       </div>
     </DashboardShell>

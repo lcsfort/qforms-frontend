@@ -1252,6 +1252,11 @@
   "workspace": {
     "title": "Workspace",
     "untitled": "Workspace sem nome",
+    "tab": {
+      "members": "Membros",
+      "invitations": "Convites",
+      "activity": "Atividade"
+    },
     "members": "Membros",
     "membersHint": "Gerencie a função e nível de acesso de cada membro.",
     "invite": "Convidar pessoas",
@@ -1260,10 +1265,20 @@
     "sendInvite": "Enviar convite",
     "cancel": "Revogar",
     "acceptHelp": "Convites pendentes aparecem abaixo. Os membros podem aceitar pelo link do email ou usando o token.",
+    "memberCount": "{count, plural, =0 {Nenhum membro} one {# membro} other {# membros}}",
+    "you": "(Você)",
+    "roleLabel": "Função",
+    "changeRole": "Alterar função",
+    "expires": "Expira {date}",
     "role": {
       "owner": "Proprietário",
       "admin": "Administrador",
       "member": "Membro"
+    },
+    "roleDesc": {
+      "owner": "Controle total — gerencia membros, funções e configurações.",
+      "admin": "Convida e gerencia membros; não pode definir proprietários.",
+      "member": "Cria e edita formulários; não gerencia membros."
     },
     "removeMember": "Remover",
     "noInvites": "Sem convites pendentes.",
@@ -1274,6 +1289,49 @@
     "memberRoleUpdated": "Função do membro atualizada.",
     "memberRemoved": "Membro removido.",
     "loadFailed": "Não foi possível carregar dados do workspace.",
-    "saveFailed": "Não foi possível salvar alterações do workspace."
+    "saveFailed": "Não foi possível salvar alterações do workspace.",
+    "activity": {
+      "title": "Registro de atividades",
+      "subtitle": "Ações recentes feitas por você e pelos membros.",
+      "empty": "Nenhuma atividade ainda.",
+      "emptyFiltered": "Nenhuma atividade corresponde a esses filtros.",
+      "loadFailed": "Não foi possível carregar o registro de atividades.",
+      "loadMore": "Carregar mais",
+      "loading": "Carregando…",
+      "someone": "Alguém",
+      "untitledForm": "Formulário sem título",
+      "filterActionLabel": "Filtrar por ação",
+      "filterActorLabel": "Filtrar por membro",
+      "filterAction": {
+        "all": "Toda atividade",
+        "FORM_CREATED": "Formulários criados",
+        "FORM_UPDATED": "Formulários editados",
+        "FORM_PUBLISHED": "Formulários publicados",
+        "FORM_UNPUBLISHED": "Formulários despublicados",
+        "FORM_DELETED": "Formulários excluídos",
+        "MEMBER_ROLE_UPDATED": "Alterações de função",
+        "MEMBER_REMOVED": "Membros removidos",
+        "INVITE_ACCEPTED": "Membros que entraram",
+        "INVITE_CREATED": "Convites enviados",
+        "INVITE_CANCELLED": "Convites revogados"
+      },
+      "filterActor": {
+        "anyone": "Qualquer pessoa"
+      },
+      "action": {
+        "WORKSPACE_CREATED": "{actor} criou o workspace",
+        "FORM_CREATED": "{actor} criou o formulário “{name}”",
+        "FORM_UPDATED": "{actor} editou o formulário “{name}”",
+        "FORM_PUBLISHED": "{actor} publicou o formulário “{name}”",
+        "FORM_UNPUBLISHED": "{actor} despublicou o formulário “{name}”",
+        "FORM_DELETED": "{actor} excluiu o formulário “{name}”",
+        "MEMBER_ROLE_UPDATED": "{actor} alterou a função de {target} para {role}",
+        "MEMBER_REMOVED": "{actor} removeu {target}",
+        "INVITE_CREATED": "{actor} convidou {email} como {role}",
+        "INVITE_CANCELLED": "{actor} revogou o convite de {email}",
+        "INVITE_ACCEPTED": "{actor} entrou no workspace",
+        "generic": "{actor} · {action}"
+      }
+    }
   }
 }

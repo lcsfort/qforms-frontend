@@ -14,6 +14,7 @@ import type {
   PipelineBoardPayload,
   StoredPlanSession,
   UpdatePlanSessionPayload,
+  AuditLogResponse,
   WorkspaceInvite,
   WorkspaceMemberRow,
   WorkspaceSummary,
@@ -463,6 +464,23 @@ export const api = {
       headers: bearer(token),
       body: JSON.stringify({ token: inviteToken }),
     }),
+
+  listWorkspaceAuditLog: (
+    token: string,
+    workspaceId: string,
+    params?: { cursor?: number; limit?: number; action?: string; actorId?: string },
+  ) => {
+    const sp = new URLSearchParams();
+    if (typeof params?.cursor === "number") sp.set("cursor", String(params.cursor));
+    if (typeof params?.limit === "number") sp.set("limit", String(params.limit));
+    if (params?.action) sp.set("action", params.action);
+    if (params?.actorId) sp.set("actorId", params.actorId);
+    const q = sp.toString();
+    return request<AuditLogResponse>(
+      `/workspaces/${workspaceId}/audit${q ? `?${q}` : ""}`,
+      { headers: bearer(token) },
+    );
+  },
 
   // --- Response pipeline ---
 

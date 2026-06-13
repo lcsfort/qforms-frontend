@@ -1252,6 +1252,11 @@
   "workspace": {
     "title": "Workspace",
     "untitled": "Untitled workspace",
+    "tab": {
+      "members": "Members",
+      "invitations": "Invitations",
+      "activity": "Activity"
+    },
     "members": "Members",
     "membersHint": "Manage each member's role and access level.",
     "invite": "Invite people",
@@ -1260,10 +1265,20 @@
     "sendInvite": "Send invite",
     "cancel": "Revoke",
     "acceptHelp": "Pending invites appear below. Members can accept from the email link or using the invite token.",
+    "memberCount": "{count, plural, =0 {No members} one {# member} other {# members}}",
+    "you": "(You)",
+    "roleLabel": "Role",
+    "changeRole": "Change role",
+    "expires": "Expires {date}",
     "role": {
       "owner": "Owner",
       "admin": "Admin",
       "member": "Member"
+    },
+    "roleDesc": {
+      "owner": "Full control — manage members, roles, and workspace settings.",
+      "admin": "Invite and manage members; can't assign owners.",
+      "member": "Create and edit forms; can't manage members."
     },
     "removeMember": "Remove",
     "noInvites": "No pending invites.",
@@ -1274,6 +1289,49 @@
     "memberRoleUpdated": "Member role updated.",
     "memberRemoved": "Member removed.",
     "loadFailed": "Could not load workspace data.",
-    "saveFailed": "Could not save workspace changes."
+    "saveFailed": "Could not save workspace changes.",
+    "activity": {
+      "title": "Activity log",
+      "subtitle": "Recent actions taken by you and your members.",
+      "empty": "No activity yet.",
+      "emptyFiltered": "No activity matches these filters.",
+      "loadFailed": "Could not load the activity log.",
+      "loadMore": "Load more",
+      "loading": "Loading…",
+      "someone": "Someone",
+      "untitledForm": "Untitled form",
+      "filterActionLabel": "Filter by action",
+      "filterActorLabel": "Filter by member",
+      "filterAction": {
+        "all": "All activity",
+        "FORM_CREATED": "Forms created",
+        "FORM_UPDATED": "Forms edited",
+        "FORM_PUBLISHED": "Forms published",
+        "FORM_UNPUBLISHED": "Forms unpublished",
+        "FORM_DELETED": "Forms deleted",
+        "MEMBER_ROLE_UPDATED": "Role changes",
+        "MEMBER_REMOVED": "Members removed",
+        "INVITE_ACCEPTED": "Members joined",
+        "INVITE_CREATED": "Invites sent",
+        "INVITE_CANCELLED": "Invites revoked"
+      },
+      "filterActor": {
+        "anyone": "Anyone"
+      },
+      "action": {
+        "WORKSPACE_CREATED": "{actor} created the workspace",
+        "FORM_CREATED": "{actor} created the form “{name}”",
+        "FORM_UPDATED": "{actor} edited the form “{name}”",
+        "FORM_PUBLISHED": "{actor} published the form “{name}”",
+        "FORM_UNPUBLISHED": "{actor} unpublished the form “{name}”",
+        "FORM_DELETED": "{actor} deleted the form “{name}”",
+        "MEMBER_ROLE_UPDATED": "{actor} changed {target}’s role to {role}",
+        "MEMBER_REMOVED": "{actor} removed {target}",
+        "INVITE_CREATED": "{actor} invited {email} as {role}",
+        "INVITE_CANCELLED": "{actor} revoked the invite for {email}",
+        "INVITE_ACCEPTED": "{actor} joined the workspace",
+        "generic": "{actor} · {action}"
+      }
+    }
   }
 }
