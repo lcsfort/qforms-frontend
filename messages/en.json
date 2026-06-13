@@ -165,6 +165,12 @@
     "railAttentionLowCompletion": "Low completion rate",
     "railAttentionNoResponses": "Getting views, no responses yet",
     "railAttentionDraftIdle": "Draft — not published yet",
+    "railAttentionLoading": "Loading…",
+    "railAttentionViewAll": "View all",
+    "railAttentionMetricCompletion": "{rate}% completion",
+    "railAttentionMetricViews": "{count, plural, one {# view} other {# views}}",
+    "railAttentionMetricIdle": "{count, plural, one {# day idle} other {# days idle}}",
+    "attentionAllTitle": "Forms that need attention",
     "railLatestTitle": "Latest responses",
     "railLatestEmpty": "No responses yet. Publish and share a form to start collecting.",
     "templates": {

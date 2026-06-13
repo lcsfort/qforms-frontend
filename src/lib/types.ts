@@ -169,6 +169,51 @@ export interface FormResponse {
   submittedAt: string;
 }
 
+// --- Dashboard insights (needs attention + latest responses, computed across all forms) ---
+
+export type AttentionKind = "lowCompletion" | "noResponses" | "draftIdle";
+
+/** Slim form projection returned with the dashboard rails. */
+export interface DashboardFormRef {
+  id: string;
+  title: string;
+  slug: string;
+  status: "draft" | "published";
+}
+
+export interface DashboardAttentionApiItem {
+  form: DashboardFormRef;
+  kind: AttentionKind;
+  /** lowCompletion → completion %, noResponses → view count, draftIdle → idle days. */
+  metric: number | null;
+}
+
+export interface DashboardLatestApiItem {
+  form: Omit<DashboardFormRef, "status">;
+  lastResponseAt: string;
+}
+
+export interface DashboardInsightsResponse {
+  attention: {
+    items: DashboardAttentionApiItem[];
+    totalCount: number;
+  };
+  latest: DashboardLatestApiItem[];
+}
+
+/** Attention thresholds + paging passed to GET /forms/dashboard-insights. */
+export interface DashboardInsightsParams {
+  lowCompletionEnabled: boolean;
+  lowCompletionThreshold: number;
+  minSessions: number;
+  noResponsesEnabled: boolean;
+  minViews: number;
+  draftIdleEnabled: boolean;
+  draftIdleDays: number;
+  attentionLimit?: number;
+  full?: boolean;
+}
+
 export interface GeneratedFormSchema {
   title: string;
   description: string;

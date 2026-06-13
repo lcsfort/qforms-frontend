@@ -1,4 +1,6 @@
 import type {
+  DashboardInsightsParams,
+  DashboardInsightsResponse,
   FormBehaviorAnalytics,
   Form,
   FormPipelineConfig,
@@ -197,6 +199,26 @@ export const api = {
     return request<ListFormsResponse>(`/forms${query ? `?${query}` : ""}`, {
       headers: bearer(token),
     });
+  },
+
+  getDashboardInsights: (token: string, params: DashboardInsightsParams) => {
+    const searchParams = new URLSearchParams();
+    // Booleans must be explicit "true"/"false" strings — the backend coerces them per value.
+    searchParams.set("lowCompletionEnabled", String(params.lowCompletionEnabled));
+    searchParams.set("lowCompletionThreshold", String(params.lowCompletionThreshold));
+    searchParams.set("minSessions", String(params.minSessions));
+    searchParams.set("noResponsesEnabled", String(params.noResponsesEnabled));
+    searchParams.set("minViews", String(params.minViews));
+    searchParams.set("draftIdleEnabled", String(params.draftIdleEnabled));
+    searchParams.set("draftIdleDays", String(params.draftIdleDays));
+    if (typeof params.attentionLimit === "number") {
+      searchParams.set("attentionLimit", String(params.attentionLimit));
+    }
+    if (params.full) searchParams.set("full", "true");
+    return request<DashboardInsightsResponse>(
+      `/forms/dashboard-insights?${searchParams.toString()}`,
+      { headers: bearer(token) },
+    );
   },
 
   getForm: (token: string, id: string) =>

@@ -165,6 +165,12 @@
     "railAttentionLowCompletion": "Taxa de conclusão baixa",
     "railAttentionNoResponses": "Recebendo visitas, sem respostas ainda",
     "railAttentionDraftIdle": "Rascunho — ainda não publicado",
+    "railAttentionLoading": "Carregando…",
+    "railAttentionViewAll": "Ver todos",
+    "railAttentionMetricCompletion": "{rate}% de conclusão",
+    "railAttentionMetricViews": "{count, plural, one {# visita} other {# visitas}}",
+    "railAttentionMetricIdle": "{count, plural, one {# dia parado} other {# dias parado}}",
+    "attentionAllTitle": "Formulários que precisam de atenção",
     "railLatestTitle": "Últimas respostas",
     "railLatestEmpty": "Nenhuma resposta ainda. Publique e compartilhe um formulário para começar a coletar.",
     "templates": {

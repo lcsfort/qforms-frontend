@@ -3,19 +3,25 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { AlertCircle, BarChart3, Bell } from "lucide-react";
-import {
-  attentionHref,
-  type AttentionItem,
-  type LatestResponseItem,
-} from "../_lib/insights";
+import { BarChart3, Bell, ChevronRight } from "lucide-react";
+import { type AttentionItem, type LatestResponseItem } from "../_lib/insights";
+import { AttentionRow } from "./AttentionRow";
 
 type ActivityMenuProps = {
   attention: AttentionItem[];
+  attentionTotalCount: number;
   latest: LatestResponseItem[];
+  loading: boolean;
+  onViewAll: () => void;
 };
 
-export function ActivityMenu({ attention, latest }: ActivityMenuProps) {
+export function ActivityMenu({
+  attention,
+  attentionTotalCount,
+  latest,
+  loading,
+  onViewAll,
+}: ActivityMenuProps) {
   const t = useTranslations("dashboard");
   const format = useFormatter();
   const now = useNow();
@@ -38,11 +44,7 @@ export function ActivityMenu({ attention, latest }: ActivityMenuProps) {
     };
   }, [open]);
 
-  const attentionLabel: Record<AttentionItem["kind"], string> = {
-    lowCompletion: t("railAttentionLowCompletion"),
-    noResponses: t("railAttentionNoResponses"),
-    draftIdle: t("railAttentionDraftIdle"),
-  };
+  const hasMoreAttention = attentionTotalCount > attention.length;
 
   return (
     <div ref={rootRef} className="relative">
@@ -54,7 +56,7 @@ export function ActivityMenu({ attention, latest }: ActivityMenuProps) {
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)]/80 bg-[var(--card)] text-[var(--muted)] transition-colors duration-100 hover:bg-[var(--surface)]/70 hover:text-[var(--foreground)] cursor-pointer"
       >
         <Bell className="h-4 w-4" strokeWidth={1.8} />
-        {attention.length > 0 && (
+        {attentionTotalCount > 0 && (
           <span
             aria-hidden="true"
             className="absolute right-[7px] top-[7px] h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400"
@@ -67,26 +69,33 @@ export function ActivityMenu({ attention, latest }: ActivityMenuProps) {
           <p className="px-4 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
             {t("railAttentionTitle")}
           </p>
-          {attention.length === 0 ? (
+          {loading ? (
+            <p className="px-4 pb-2 text-[12.5px] text-[var(--muted)]">{t("railAttentionLoading")}</p>
+          ) : attentionTotalCount === 0 ? (
             <p className="px-4 pb-2 text-[12.5px] text-[var(--muted)]">{t("railAttentionEmpty")}</p>
           ) : (
             <div className="flex flex-col px-1.5 pb-1">
               {attention.map((item) => (
-                <Link
+                <AttentionRow
                   key={`${item.form.id}-${item.kind}`}
-                  href={attentionHref(item)}
-                  onClick={() => setOpen(false)}
-                  className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-[var(--surface)]/70"
-                >
-                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={1.8} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[12.5px] font-medium text-[var(--foreground)]">
-                      {item.form.title}
-                    </span>
-                    <span className="block text-[11px] text-[var(--muted)]">{attentionLabel[item.kind]}</span>
-                  </span>
-                </Link>
+                  item={item}
+                  onNavigate={() => setOpen(false)}
+                  className="group flex items-start gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-[var(--surface)]/70"
+                />
               ))}
+              {hasMoreAttention && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onViewAll();
+                  }}
+                  className="mt-0.5 inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-[var(--primary)] transition-colors hover:bg-[var(--surface)]/70"
+                >
+                  {t("railAttentionViewAll")}
+                  <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
+                </button>
+              )}
             </div>
           )}
 
@@ -95,7 +104,9 @@ export function ActivityMenu({ attention, latest }: ActivityMenuProps) {
           <p className="px-4 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
             {t("railLatestTitle")}
           </p>
-          {latest.length === 0 ? (
+          {loading ? (
+            <p className="px-4 pb-1.5 text-[12.5px] text-[var(--muted)]">{t("railAttentionLoading")}</p>
+          ) : latest.length === 0 ? (
             <p className="px-4 pb-1.5 text-[12.5px] text-[var(--muted)]">{t("railLatestEmpty")}</p>
           ) : (
             <div className="flex flex-col px-1.5">

@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNow, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createForm, deleteForm, fetchForms } from "@/lib/redux/formsSlice";
+import { fetchDashboardInsights } from "@/lib/redux/dashboardInsightsSlice";
 import { fetchProfile } from "@/lib/redux/authSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { savePreferences, usePreferences } from "@/lib/preferences";
@@ -13,18 +14,19 @@ import { SparkleIcon } from "@/components/icons/SparkleIcon";
 import { type FormListSort, type FormListStatus } from "@/lib/types";
 import { ArrowDownWideNarrow, LayoutGrid, ListFilter, Rows3, Search, X } from "lucide-react";
 import { ActivityMenu } from "./_components/ActivityMenu";
+import { AttentionAllModal } from "./_components/AttentionAllModal";
 import { DashboardHero } from "./_components/DashboardHero";
 import { FormCard } from "./_components/FormCard";
 import { TemplateShortcuts } from "./_components/TemplateShortcuts";
 import { WorkspaceActivityPanel } from "./_components/WorkspaceActivityPanel";
-import { getAttentionItems, getLatestResponseItems } from "./_lib/insights";
 
 const PAGE_SIZE = 12;
+/** How many attention items the rail/bell show inline before "View all". */
+const ATTENTION_RAIL_LIMIT = 3;
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const tf = useTranslations("forms");
-  const now = useNow();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user, token, hydrated } = useAppSelector((state) => state.auth);
@@ -37,19 +39,28 @@ export default function DashboardPage() {
     totalCount,
     responsesThisMonth,
     bestWorkspaceCompletionRate,
-    insightForms,
     insightTotalCount,
     activeQueryKey,
   } = useAppSelector((state) => state.forms);
+  const {
+    attention: attentionItems,
+    attentionTotalCount,
+    latest: latestResponses,
+    loading: insightsLoading,
+    activeInsightsQueryKey,
+  } = useAppSelector((state) => state.dashboardInsights);
   const activeWorkspaceId = useAppSelector((state) => state.workspace.activeWorkspaceId);
 
   const [pendingDelete, setPendingDelete] = useState<{ id: string; matchTitle: string } | null>(null);
+  const [attentionModalOpen, setAttentionModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<FormListSort>("recent");
   const [statusFilter, setStatusFilter] = useState<FormListStatus>("all");
   const preferences = usePreferences();
   const viewMode = preferences.formsView;
+  // Debounced so dragging a threshold in settings doesn't fire a request per keystroke.
+  const [debouncedAttention, setDebouncedAttention] = useState(preferences.attention);
   const [openToolbarMenu, setOpenToolbarMenu] = useState<"sort" | "filter" | null>(null);
   const [creatingBlankForm, setCreatingBlankForm] = useState(false);
   const [blankFormError, setBlankFormError] = useState<string | null>(null);
@@ -81,10 +92,28 @@ export default function DashboardPage() {
     return () => window.clearTimeout(timeout);
   }, [searchQuery]);
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedAttention(preferences.attention);
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [preferences.attention]);
+
   // activeWorkspaceId is part of the key so switching workspaces in the top bar refetches the list.
   const queryKey = useMemo(
     () => `${activeWorkspaceId ?? ""}|${sortBy}|${statusFilter}|${debouncedSearchQuery.toLowerCase()}`,
     [activeWorkspaceId, sortBy, statusFilter, debouncedSearchQuery],
+  );
+
+  // Needs-attention / latest-responses come from the backend (all forms), keyed by
+  // workspace + settled thresholds so it refetches on either change and drops stale responses.
+  const insightsParams = useMemo(
+    () => ({ ...debouncedAttention, attentionLimit: ATTENTION_RAIL_LIMIT }),
+    [debouncedAttention],
+  );
+  const insightsQueryKey = useMemo(
+    () => `${activeWorkspaceId ?? ""}|${JSON.stringify(debouncedAttention)}`,
+    [activeWorkspaceId, debouncedAttention],
   );
   const hasActiveFilters = Boolean(debouncedSearchQuery || statusFilter !== "all");
   const sortOptions: Array<{ value: FormListSort; label: string }> = [
@@ -112,6 +141,11 @@ export default function DashboardPage() {
     );
   }, [token, user?.isEmailVerified, dispatch, sortBy, statusFilter, debouncedSearchQuery, queryKey]);
 
+  useEffect(() => {
+    if (!token || !user?.isEmailVerified) return;
+    dispatch(fetchDashboardInsights({ params: insightsParams, queryKey: insightsQueryKey }));
+  }, [token, user?.isEmailVerified, dispatch, insightsParams, insightsQueryKey]);
+
   // Searching from the top bar should reveal the results without manual scrolling.
   useEffect(() => {
     if (hasActiveFilters && !prevHadFiltersRef.current) {
@@ -128,10 +162,14 @@ export default function DashboardPage() {
     [tf],
   );
 
-  const handleDeleteConfirm = () => {
-    if (pendingDelete) {
-      dispatch(deleteForm(pendingDelete.id));
-      setPendingDelete(null);
+  const handleDeleteConfirm = async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    setPendingDelete(null);
+    await dispatch(deleteForm(id));
+    // Deleting a form changes what needs attention — recompute from the backend.
+    if (token && user?.isEmailVerified) {
+      dispatch(fetchDashboardInsights({ params: insightsParams, queryKey: insightsQueryKey }));
     }
   };
 
@@ -219,15 +257,10 @@ export default function DashboardPage() {
     queryKey,
   ]);
 
-  // Insights derive from the unfiltered snapshot, not the searched/filtered list.
-  const attentionItems = useMemo(
-    () => getAttentionItems(insightForms, now, preferences.attention),
-    [insightForms, now, preferences.attention],
-  );
-  const latestResponses = useMemo(() => getLatestResponseItems(insightForms), [insightForms]);
-
   // Distinguish "never fetched" (activeQueryKey null) from "loaded empty" to avoid an empty-state flash.
   const showFormsLoading = formsLoading || activeQueryKey === null;
+  // Same "never fetched vs. loaded empty" distinction for the attention/latest rails.
+  const showInsightsLoading = insightsLoading || activeInsightsQueryKey === null;
 
   if (!hydrated || !user) {
     return (
@@ -242,7 +275,15 @@ export default function DashboardPage() {
       showSearch
       searchQuery={searchQuery}
       onSearchQueryChange={setSearchQuery}
-      headerRight={<ActivityMenu attention={attentionItems} latest={latestResponses} />}
+      headerRight={
+        <ActivityMenu
+          attention={attentionItems}
+          attentionTotalCount={attentionTotalCount}
+          latest={latestResponses}
+          loading={showInsightsLoading}
+          onViewAll={() => setAttentionModalOpen(true)}
+        />
+      }
       contentContainerClassName="w-full"
       mainClassName="dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 lg:px-10 pt-[88px] pb-16 bg-[var(--background)]/70"
     >
@@ -529,11 +570,21 @@ export default function DashboardPage() {
               responsesThisMonth={responsesThisMonth}
               bestCompletionRate={bestWorkspaceCompletionRate}
               attention={attentionItems}
+              attentionTotalCount={attentionTotalCount}
               latest={latestResponses}
+              loading={showInsightsLoading}
+              onViewAll={() => setAttentionModalOpen(true)}
             />
           </div>
         </aside>
       </div>
+
+      <AttentionAllModal
+        open={attentionModalOpen}
+        onClose={() => setAttentionModalOpen(false)}
+        params={insightsParams}
+        totalCount={attentionTotalCount}
+      />
 
       <ConfirmDialog
         open={pendingDelete !== null}
