@@ -83,7 +83,7 @@ export function DashboardHero({ name, creatingBlank, blankError, onStartBlank }:
           }}
           className="mt-6"
         >
-          <div className="ai-prompt-glow rounded-2xl border border-[var(--border)]/85 bg-[var(--card)] shadow-[0_1px_2px_rgba(35,32,27,0.04),0_10px_30px_-18px_rgba(35,32,27,0.18)] transition-colors">
+          <div className="ai-prompt-glow soft-card transition-colors">
             <label htmlFor="dashboard-create-prompt" className="sr-only">
               {t("promptLabel")}
             </label>
@@ -126,9 +126,9 @@ export function DashboardHero({ name, creatingBlank, blankError, onStartBlank }:
                 type="button"
                 onClick={action.onClick}
                 disabled={action.busy}
-                className="group flex items-center gap-3 rounded-xl border border-[var(--border)]/80 bg-[var(--card)]/70 px-3.5 py-3 text-left transition-all duration-150 hover:-translate-y-px hover:border-[var(--primary)]/30 hover:bg-[var(--card)] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3.5 py-3 text-left shadow-[0_1px_2px_rgba(35,32,27,0.025),0_2px_7px_-6px_rgba(35,32,27,0.07)] transition-all duration-150 hover:-translate-y-px hover:border-[var(--primary)]/25 hover:shadow-[0_2px_6px_-4px_rgba(35,32,27,0.06),0_8px_16px_-12px_rgba(35,32,27,0.11)] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 bg-[var(--surface)]/60 text-[var(--primary)]/80 transition-colors group-hover:text-[var(--primary)]">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface)]/70 text-[var(--primary)]/80 transition-colors group-hover:text-[var(--primary)]">
                   {action.busy ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--primary)]/25 border-t-[var(--primary)]" />
                   ) : (

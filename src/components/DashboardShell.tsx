@@ -235,7 +235,7 @@ export function DashboardShell({
             aria-current={active ? "page" : undefined}
             className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[13px] transition-colors duration-150 ${
               active
-                ? "border-[var(--border)]/80 bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
+                ? "border-transparent bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
                 : "border-transparent text-[var(--muted)] hover:bg-[var(--surface)]/60 hover:text-[var(--foreground)]"
             }`}
           >
@@ -251,7 +251,7 @@ export function DashboardShell({
   );
 
   const workspaceCard = activeWorkspace ? (
-    <div className="rounded-xl border border-[var(--border)]/70 bg-[var(--card)]/70 px-3 py-3">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)]/70 px-3 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
         {tShell("workspaceLabel")}
       </p>

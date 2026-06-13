@@ -14,7 +14,7 @@
   --background: #F7F4ED;   /* warm ivory paper */
   --foreground: #23201B;   /* warm espresso ink */
   --card: #FFFDF8;         /* warm off-white surface */
-  --border: #E6E0D4;       /* soft warm-sand border */
+  --border: #EFEAE0;       /* whisper-thin warm-sand hairline */
   --muted: #6B6358;        /* warm taupe-gray (secondary text) */
   --primary: #1F6F66;      /* deep teal accent */
   --primary-dark: #154A45; /* deeper teal (hover / active) */
@@ -27,7 +27,7 @@
   --background: #1A1714;   /* warm near-black */
   --foreground: #F2EDE3;   /* warm off-white */
   --card: #232019;         /* warm dark surface */
-  --border: #38322A;       /* warm dark border */
+  --border: #2E2A22;       /* whisper-thin warm dark hairline */
   --muted: #A89E8C;        /* warm gray */
   --primary: #2F9082;      /* teal that reads on dark + carries white text */
   --primary-dark: #246F64;
@@ -108,6 +108,17 @@ body {
   font-feature-settings: "cv01", "ss01";
 }
 
+/* Standard-DPI displays (most external monitors, e.g. a 1080p/1440p Samsung):
+   the light grayscale smoothing above looks crisp on a Retina panel but renders
+   thin and soft where there are far fewer pixels. Hand text back to the OS's
+   normal (heavier, sharper) rendering there. Retina/HiDPI keeps the look above. */
+@media (max-resolution: 1.5dppx), (-webkit-max-device-pixel-ratio: 1.5) {
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: auto;
+  }
+}
+
 /* Editorial display face for hero / large headings (opt-in via .font-display) */
 .font-display {
   font-family: var(--font-display), Georgia, "Times New Roman", serif;
@@ -161,7 +172,7 @@ input[type="number"] {
   --background: #F7F4ED;
   --foreground: #23201B;
   --card: #FFFDF8;
-  --border: #E6E0D4;
+  --border: #EFEAE0;
   --muted: #6B6358;
   --primary: #1F6F66;
   --primary-dark: #154A45;
@@ -187,26 +198,26 @@ input[type="number"] {
 
 /* ── Dashboard header — warm, mostly-solid paper (calm, low gloss) ── */
 .header-glass-top {
-  border-color: rgba(230, 224, 212, 0.85);
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
   background: rgba(247, 244, 237, 0.92);
   backdrop-filter: blur(14px) saturate(1.04);
   -webkit-backdrop-filter: blur(14px) saturate(1.04);
 }
 
 .header-glass-scrolled {
-  border-color: rgba(230, 224, 212, 0.7);
+  border-color: color-mix(in srgb, var(--border) 45%, transparent);
   background: rgba(247, 244, 237, 0.82);
   backdrop-filter: blur(22px) saturate(1.06);
   -webkit-backdrop-filter: blur(22px) saturate(1.06);
 }
 
 .dark .header-glass-top {
-  border-color: rgba(56, 50, 42, 0.85);
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
   background: rgba(26, 23, 20, 0.92);
 }
 
 .dark .header-glass-scrolled {
-  border-color: rgba(56, 50, 42, 0.7);
+  border-color: color-mix(in srgb, var(--border) 45%, transparent);
   background: rgba(26, 23, 20, 0.82);
 }
 
@@ -456,11 +467,12 @@ input[type="number"] {
       var(--card) 48%,
       color-mix(in srgb, var(--card) 98%, var(--border) 2%) 100%
     );
-  border: 1px solid color-mix(in srgb, var(--border) 85%, var(--foreground) 4%);
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
   box-shadow:
-    0 1px 0 color-mix(in srgb, #ffffff 38%, transparent) inset,
-    0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent),
-    0 4px 14px -6px color-mix(in srgb, var(--foreground) 8%, transparent);
+    0 1px 0 color-mix(in srgb, #ffffff 35%, transparent) inset,
+    0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 4px 10px -4px color-mix(in srgb, var(--foreground) 6%, transparent),
+    0 10px 22px -12px color-mix(in srgb, var(--foreground) 8%, transparent);
   transition:
     transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 220ms ease,
@@ -508,12 +520,13 @@ input[type="number"] {
 }
 .premium-card:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--border) 72%, var(--primary) 14%);
+  border-color: color-mix(in srgb, var(--border) 74%, var(--primary) 14%);
   box-shadow:
-    0 1px 0 color-mix(in srgb, #ffffff 45%, transparent) inset,
-    0 2px 4px color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 8px 20px -8px color-mix(in srgb, var(--foreground) 10%, transparent),
-    0 4px 12px -6px color-mix(in srgb, var(--primary) 6%, transparent);
+    0 1px 0 color-mix(in srgb, #ffffff 40%, transparent) inset,
+    0 2px 4px color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 6px 14px -6px color-mix(in srgb, var(--foreground) 7%, transparent),
+    0 16px 32px -16px color-mix(in srgb, var(--foreground) 10%, transparent),
+    0 4px 12px -8px color-mix(in srgb, var(--primary) 6%, transparent);
 }
 .premium-card:hover::before {
   opacity: 0.58;
@@ -531,11 +544,12 @@ input[type="number"] {
       var(--card) 45%,
       color-mix(in srgb, var(--card) 96%, var(--background) 4%) 100%
     );
-  border-color: color-mix(in srgb, var(--border) 90%, #ffffff 6%);
+  border-color: color-mix(in srgb, var(--border) 85%, transparent);
   box-shadow:
     0 1px 0 color-mix(in srgb, #ffffff 6%, transparent) inset,
-    0 1px 2px rgba(0, 0, 0, 0.28),
-    0 6px 18px -8px rgba(0, 0, 0, 0.38);
+    0 2px 4px rgba(0, 0, 0, 0.22),
+    0 5px 13px -8px rgba(0, 0, 0, 0.3),
+    0 12px 26px -14px rgba(0, 0, 0, 0.36);
 }
 .dark .premium-card::before {
   background:
@@ -552,15 +566,37 @@ input[type="number"] {
   opacity: 0.38;
 }
 .dark .premium-card:hover {
-  border-color: color-mix(in srgb, var(--border) 82%, var(--primary) 16%);
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary) 18%);
   box-shadow:
     0 1px 0 color-mix(in srgb, #ffffff 8%, transparent) inset,
-    0 2px 4px rgba(0, 0, 0, 0.32),
-    0 10px 24px -10px rgba(0, 0, 0, 0.45),
-    0 4px 14px -8px color-mix(in srgb, var(--primary) 5%, transparent);
+    0 2px 4px rgba(0, 0, 0, 0.26),
+    0 8px 18px -8px rgba(0, 0, 0, 0.36),
+    0 18px 36px -16px rgba(0, 0, 0, 0.42),
+    0 4px 12px -8px color-mix(in srgb, var(--primary) 6%, transparent);
 }
 .dark .premium-card:hover::before {
   opacity: 0.5;
+}
+
+/* Soft panel — a whisper hairline + clear soft elevation (not flat, not heavily outlined).
+   Used for the dashboard rail cards and the AI prompt box. */
+.soft-card {
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #ffffff 30%, transparent) inset,
+    0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 4px 10px -4px color-mix(in srgb, var(--foreground) 6%, transparent),
+    0 10px 22px -16px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+.dark .soft-card {
+  background: color-mix(in srgb, var(--card) 92%, #ffffff 4%);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #ffffff 5%, transparent) inset,
+    0 2px 4px rgba(0, 0, 0, 0.22),
+    0 10px 24px -14px rgba(0, 0, 0, 0.36);
 }
 
 /* Soft divider inside cards */

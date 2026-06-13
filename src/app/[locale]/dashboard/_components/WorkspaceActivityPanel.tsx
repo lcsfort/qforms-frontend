@@ -19,7 +19,7 @@ type WorkspaceActivityPanelProps = {
 
 function RailCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)]/80 bg-[var(--card)]/75 p-4">
+    <section className="soft-card p-4">
       <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">{title}</h3>
       {children}
     </section>
@@ -88,7 +88,7 @@ export function WorkspaceActivityPanel({
             const Icon = row.icon;
             return (
               <li key={row.key} className="flex items-center gap-2.5">
-                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 bg-[var(--surface)]/60 text-[var(--primary)]/75">
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--surface)]/70 text-[var(--primary)]/75">
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[12.5px] text-[var(--muted)]">{row.label}</span>
