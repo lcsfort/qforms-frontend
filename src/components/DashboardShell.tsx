@@ -122,11 +122,9 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const tShell = useTranslations("shell");
   const tPalette = useTranslations("commandPalette");
-  const tWorkspace = useTranslations("workspace");
   const dispatch = useAppDispatch();
   const pathname = usePathname();
   const { token, hydrated } = useAppSelector((state) => state.auth);
-  const { items: workspaces, activeWorkspaceId } = useAppSelector((state) => state.workspace);
 
   const [isContentScrolled, setIsContentScrolled] = useState(false);
   // Persisted (localStorage + account sync) so the collapsed rail survives a refresh.
@@ -143,7 +141,6 @@ export function DashboardShell({
 
   // Path without the locale prefix, e.g. /en/dashboard -> /dashboard
   const pathWithoutLocale = `/${pathname.split("/").slice(2).join("/")}`;
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
   useEffect(() => {
     dispatch(hydrateWorkspace());
@@ -270,24 +267,6 @@ export function DashboardShell({
     </nav>
   );
 
-  const workspaceCard = activeWorkspace ? (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)]/70 px-3 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-        {tShell("workspaceLabel")}
-      </p>
-      <p className="mt-1.5 truncate text-[13px] font-semibold text-[var(--foreground)]" title={activeWorkspace.name}>
-        {activeWorkspace.name}
-      </p>
-      <p className="truncate text-[11px] text-[var(--muted)]">{tWorkspace(`role.${activeWorkspace.role}`)}</p>
-      <Link
-        href="/dashboard/workspace"
-        className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-[var(--primary)] transition-colors hover:text-[var(--primary-dark)]"
-      >
-        {tShell("manageWorkspace")}
-      </Link>
-    </div>
-  ) : null;
-
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--surface)] dark:bg-[var(--background)]">
       <aside
@@ -333,10 +312,6 @@ export function DashboardShell({
           <div className="mb-6">{renderCreateCta(isSidebarCollapsed)}</div>
 
           {renderNavList(isSidebarCollapsed)}
-
-          {!isSidebarCollapsed && (
-            <div className="mt-auto flex flex-col gap-2 pt-6">{workspaceCard}</div>
-          )}
         </div>
       </aside>
 
