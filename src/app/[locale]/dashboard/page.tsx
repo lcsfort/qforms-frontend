@@ -94,7 +94,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setDebouncedAttention(preferences.attention);
+      // savePreferences() rebuilds `attention` into a fresh object on every write (even unrelated
+      // ones like collapsing the sidebar). Only adopt a new reference when the values truly changed,
+      // so the insights fetch — and the rail's loading skeleton — don't flicker on each toggle.
+      setDebouncedAttention((prev) =>
+        JSON.stringify(prev) === JSON.stringify(preferences.attention) ? prev : preferences.attention,
+      );
     }, 350);
     return () => window.clearTimeout(timeout);
   }, [preferences.attention]);
@@ -285,7 +290,7 @@ export default function DashboardPage() {
         />
       }
       contentContainerClassName="w-full"
-      mainClassName="dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 lg:px-10 pt-[88px] pb-16 bg-[var(--background)]/70"
+      mainClassName="dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 lg:px-10 pt-[88px] pb-16 bg-transparent"
     >
       {!user.isEmailVerified && (
         <div className="mb-6 px-4 py-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 text-yellow-700 dark:text-yellow-400 text-sm">

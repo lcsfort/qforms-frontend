@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchWorkspaces, hydrateWorkspace } from "@/lib/redux/workspaceSlice";
 import { setSelectedBuildMode } from "@/lib/redux/formsSlice";
-import { getPreferences, hydratePreferencesFromServer } from "@/lib/preferences";
+import { getPreferences, hydratePreferencesFromServer, savePreferences, usePreferences } from "@/lib/preferences";
 import { AppMenu } from "@/components/AppMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import {
@@ -77,12 +77,20 @@ const NAV_ENTRIES: NavEntry[] = [
    still toggle modes freely inside the creation flow afterwards). */
 let hasAppliedDefaultBuildMode = false;
 
-function BrandWordmark() {
+function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="inline-flex items-center rounded-2xl border border-[var(--border)]/60 bg-[var(--surface)]/50 px-2.5 py-1">
-      <span className="font-semibold text-[17px] tracking-tight">
+    <span className="inline-flex items-center rounded-2xl border border-[var(--border)] bg-[var(--background)] dark:bg-[var(--card)] px-2.5 py-1">
+      <span className="inline-flex items-baseline font-semibold text-[17px] tracking-tight">
         <span className="text-[var(--primary)]">Q</span>
-        <span className="text-[var(--foreground)]">Forms</span>
+        <span className="text-[var(--foreground)]">F</span>
+        {/* "orms" collapses its own width (grid 1fr→0fr) + fades, in lockstep with the sidebar width. */}
+        <span
+          className={`grid text-[var(--foreground)] transition-[grid-template-columns,opacity] duration-[360ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            compact ? "grid-cols-[0fr] opacity-0" : "grid-cols-[1fr] opacity-100"
+          }`}
+        >
+          <span className="min-w-0 overflow-hidden">orms</span>
+        </span>
       </span>
     </span>
   );
@@ -111,7 +119,10 @@ export function DashboardShell({
   const { items: workspaces, activeWorkspaceId } = useAppSelector((state) => state.workspace);
 
   const [isContentScrolled, setIsContentScrolled] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  // Persisted (localStorage + account sync) so the collapsed rail survives a refresh.
+  const isSidebarCollapsed = usePreferences().sidebarCollapsed;
+  // Sidebar clips content while animating width; once settled it goes overflow-visible so rail tooltips can escape.
+  const [isSidebarAnimating, setIsSidebarAnimating] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [localSearchFocused, setLocalSearchFocused] = useState(false);
@@ -209,21 +220,40 @@ export function DashboardShell({
     setIsContentScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
   };
 
+  const toggleSidebar = (collapsed: boolean) => {
+    setIsSidebarAnimating(true);
+    savePreferences({ sidebarCollapsed: collapsed });
+  };
+
+  // Hover label shown beside an icon in the collapsed rail.
+  const railTip = (label: string) => (
+    <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-[11px] font-medium text-[var(--foreground)] opacity-0 shadow-md transition-opacity duration-100 group-hover:opacity-100">
+      {label}
+    </span>
+  );
+
   const shouldShowHeader = !hideHeader || isSidebarCollapsed;
 
-  const createCta = (
+  const renderCreateCta = (collapsed: boolean) => (
     <Link
       href="/dashboard/forms/new"
       onClick={() => setIsMobileNavOpen(false)}
-      className="cta-gradient inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13.5px] font-semibold text-white"
+      aria-label={collapsed ? tShell("createForm") : undefined}
+      className={`cta-gradient inline-flex h-10 items-center justify-center gap-2 rounded-xl text-[13.5px] font-semibold text-white whitespace-nowrap ${
+        collapsed ? "group relative w-10 px-0" : "w-full px-4"
+      }`}
     >
       <Plus className="h-4 w-4 shrink-0" strokeWidth={2.2} />
-      {tShell("createForm")}
+      {!collapsed && tShell("createForm")}
+      {collapsed && railTip(tShell("createForm"))}
     </Link>
   );
 
-  const navList = (
-    <nav aria-label={tShell("navLabel")} className="flex flex-col gap-1">
+  const renderNavList = (collapsed: boolean) => (
+    <nav
+      aria-label={tShell("navLabel")}
+      className={`flex flex-col gap-1 ${collapsed ? "items-center" : ""}`}
+    >
       {NAV_ENTRIES.map((entry) => {
         const Icon = entry.icon;
         const active = entry.isActive(pathWithoutLocale);
@@ -233,17 +263,23 @@ export function DashboardShell({
             href={entry.href}
             onClick={() => setIsMobileNavOpen(false)}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[13px] transition-colors duration-150 ${
+            aria-label={collapsed ? tShell(entry.key) : undefined}
+            className={`flex items-center rounded-lg border text-[13px] transition-colors duration-150 whitespace-nowrap ${
+              collapsed ? "group relative h-10 w-10 justify-center" : "gap-2.5 px-3 py-2"
+            } ${
               active
-                ? "border-transparent bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
-                : "border-transparent text-[var(--muted)] hover:bg-[var(--surface)]/60 hover:text-[var(--foreground)]"
+                ? collapsed
+                  ? "border-[var(--primary)]/25 bg-[var(--primary)]/12 text-[var(--primary)]"
+                  : "border-transparent bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
+                : "border-transparent text-[var(--muted)] hover:bg-[var(--card)]/70 hover:text-[var(--foreground)]"
             }`}
           >
             <Icon
               className={`h-4 w-4 shrink-0 ${active ? "text-[var(--primary)]" : ""}`}
               strokeWidth={1.8}
             />
-            {tShell(entry.key)}
+            {!collapsed && tShell(entry.key)}
+            {collapsed && railTip(tShell(entry.key))}
           </Link>
         );
       })}
@@ -269,12 +305,14 @@ export function DashboardShell({
   ) : null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--background)]">
+    <div className="flex h-screen overflow-hidden bg-[var(--surface)] dark:bg-[var(--background)]">
       <aside
-        inert={isSidebarCollapsed}
-        className={`hidden lg:block shrink-0 h-screen sticky top-0 overflow-hidden bg-[var(--background)] ${
-          isSidebarCollapsed ? "w-0" : "w-[264px]"
-        }`}
+        onTransitionEnd={(e) => {
+          if (e.propertyName === "width") setIsSidebarAnimating(false);
+        }}
+        className={`hidden lg:block shrink-0 h-screen sticky top-0 z-30 bg-[var(--surface)] dark:bg-[var(--background)] ${
+          isSidebarAnimating ? "overflow-hidden" : "overflow-visible"
+        } ${isSidebarCollapsed ? "w-[76px]" : "w-[264px]"}`}
         style={{
           transitionProperty: "width",
           transitionDuration: "360ms",
@@ -283,40 +321,43 @@ export function DashboardShell({
         }}
       >
         <div
-          className={`flex h-full w-[264px] flex-col px-4 pb-4 pt-5 ${
-            isSidebarCollapsed ? "opacity-0 -translate-x-2" : "opacity-100 translate-x-0"
+          className={`flex h-full w-full flex-col pb-4 pt-5 ${
+            isSidebarCollapsed ? "items-center px-2.5" : "px-4"
           }`}
-          style={{
-            transitionProperty: "opacity, transform",
-            transitionDuration: "320ms",
-            transitionTimingFunction: "cubic-bezier(0.32, 0.72, 0, 1)",
-            willChange: "opacity, transform",
-          }}
         >
-          <div className="mb-5 flex items-center justify-between pl-1">
-            <Link href="/dashboard" className="flex min-w-0 items-center">
-              <BrandWordmark />
-            </Link>
-            <button
-              type="button"
-              onClick={() => setIsSidebarCollapsed(true)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] cursor-pointer"
-              aria-label={tShell("collapseSidebar")}
+          <div className={`mb-5 flex items-center ${isSidebarCollapsed ? "justify-center" : "justify-between pl-1"}`}>
+            <Link
+              href="/dashboard"
+              className="flex min-w-0 items-center"
+              aria-label={isSidebarCollapsed ? "QForms" : undefined}
+              title={isSidebarCollapsed ? "QForms" : undefined}
             >
-              <PanelLeftClose className="h-4 w-4" strokeWidth={1.8} />
-            </button>
+              <BrandWordmark compact={isSidebarCollapsed} />
+            </Link>
+            {!isSidebarCollapsed && (
+              <button
+                type="button"
+                onClick={() => toggleSidebar(true)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--card)]/70 hover:text-[var(--foreground)] cursor-pointer"
+                aria-label={tShell("collapseSidebar")}
+              >
+                <PanelLeftClose className="h-4 w-4" strokeWidth={1.8} />
+              </button>
+            )}
           </div>
 
-          <div className="mb-6">{createCta}</div>
+          <div className="mb-6">{renderCreateCta(isSidebarCollapsed)}</div>
 
-          {navList}
+          {renderNavList(isSidebarCollapsed)}
 
-          <div className="mt-auto flex flex-col gap-2 pt-6">{workspaceCard}</div>
+          {!isSidebarCollapsed && (
+            <div className="mt-auto flex flex-col gap-2 pt-6">{workspaceCard}</div>
+          )}
         </div>
       </aside>
 
       <div className="flex-1 min-w-0 p-3 lg:pl-1.5">
-        <div className="relative h-full rounded-2xl border border-[var(--border)]/70 bg-[var(--card)]/80 backdrop-blur-sm overflow-hidden flex flex-col">
+        <div className="relative h-full rounded-2xl border border-[var(--border)] bg-[var(--background)] overflow-hidden flex flex-col shadow-[0_1px_3px_rgba(35,32,27,0.04),0_10px_30px_-22px_rgba(35,32,27,0.16)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3),0_12px_32px_-22px_rgba(0,0,0,0.5)]">
           {shouldShowHeader && (
             <header
               className={`absolute top-0 left-0 right-0 z-50 border-b transition-all duration-200 ${
@@ -338,9 +379,10 @@ export function DashboardShell({
                 {isSidebarCollapsed && (
                   <button
                     type="button"
-                    onClick={() => setIsSidebarCollapsed(false)}
+                    onClick={() => toggleSidebar(false)}
                     className="hidden lg:inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] cursor-pointer"
                     aria-label={tShell("expandSidebar")}
+                    title={tShell("expandSidebar")}
                   >
                     <PanelLeftOpen className="h-4 w-4" strokeWidth={1.8} />
                   </button>
@@ -350,13 +392,7 @@ export function DashboardShell({
                 <Link
                   href="/dashboard"
                   className={`${
-                    isSidebarCollapsed
-                      ? showSearch
-                        ? "hidden sm:flex"
-                        : "flex"
-                      : showSearch
-                        ? "hidden sm:flex lg:hidden"
-                        : "flex lg:hidden"
+                    showSearch ? "hidden sm:flex lg:hidden" : "flex lg:hidden"
                   } min-w-0 shrink-0 items-center`}
                 >
                   <BrandWordmark />
@@ -438,7 +474,7 @@ export function DashboardShell({
             role="dialog"
             aria-modal="true"
             aria-label={tShell("navLabel")}
-            className="drawer-enter relative flex h-full w-[296px] max-w-[85vw] flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--background)] px-4 pb-6 pt-5 shadow-2xl"
+            className="drawer-enter relative flex h-full w-[296px] max-w-[85vw] flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface)] dark:bg-[var(--background)] px-4 pb-6 pt-5 shadow-2xl"
           >
             <div className="mb-5 flex items-center justify-between pl-1">
               <Link href="/dashboard" onClick={() => setIsMobileNavOpen(false)} className="flex min-w-0 items-center">
@@ -448,16 +484,16 @@ export function DashboardShell({
                 ref={drawerCloseRef}
                 type="button"
                 onClick={() => setIsMobileNavOpen(false)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] cursor-pointer"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--card)]/70 hover:text-[var(--foreground)] cursor-pointer"
                 aria-label={tShell("closeNav")}
               >
                 <X className="h-4 w-4" strokeWidth={1.8} />
               </button>
             </div>
 
-            <div className="mb-6">{createCta}</div>
+            <div className="mb-6">{renderCreateCta(false)}</div>
 
-            {navList}
+            {renderNavList(false)}
 
             <div className="mt-6 border-t border-[var(--border)]/70 pt-5">
               <WorkspaceSwitcher variant="panel" onNavigate={() => setIsMobileNavOpen(false)} />

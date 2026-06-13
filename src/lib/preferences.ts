@@ -22,6 +22,8 @@ export interface AttentionPreferences {
 export interface AppPreferences {
   /** Default layout of the dashboard forms list. */
   formsView: "grid" | "list";
+  /** Whether the desktop sidebar is collapsed to an icon rail. */
+  sidebarCollapsed: boolean;
   /** How the AI builder starts when creating a form. */
   defaultBuildMode: FormBuildMode;
   /** IANA timezone for scheduling and timestamps; null follows the device. */
@@ -31,6 +33,7 @@ export interface AppPreferences {
 
 export const DEFAULT_PREFERENCES: AppPreferences = {
   formsView: "grid",
+  sidebarCollapsed: false,
   defaultBuildMode: "planning",
   timezone: null,
   attention: {
@@ -73,6 +76,7 @@ function normalize(raw: unknown): AppPreferences {
   const attention: Partial<AttentionPreferences> = data.attention ?? {};
   return {
     formsView: data.formsView === "list" ? "list" : "grid",
+    sidebarCollapsed: typeof data.sidebarCollapsed === "boolean" ? data.sidebarCollapsed : base.sidebarCollapsed,
     defaultBuildMode: data.defaultBuildMode === "straight" ? "straight" : "planning",
     timezone: isValidTimezone(data.timezone) ? data.timezone : null,
     attention: {
