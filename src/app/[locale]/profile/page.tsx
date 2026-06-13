@@ -79,7 +79,6 @@ function SettingsPageInner() {
 
   return (
     <DashboardShell
-      showSearch={false}
       contentContainerClassName="w-full"
       mainClassName="dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 lg:px-10 pt-[88px] pb-16 bg-[var(--background)]/70"
     >

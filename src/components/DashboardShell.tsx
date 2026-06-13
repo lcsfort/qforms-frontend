@@ -1,6 +1,13 @@
 "use client";
 
-import { type ComponentType, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ComponentType,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { Link } from "@/i18n/navigation";
@@ -10,6 +17,7 @@ import { setSelectedBuildMode } from "@/lib/redux/formsSlice";
 import { getPreferences, hydratePreferencesFromServer, savePreferences, usePreferences } from "@/lib/preferences";
 import { AppMenu } from "@/components/AppMenu";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { CommandPalette } from "@/components/CommandPalette";
 import {
   House,
   LayoutTemplate,
@@ -17,6 +25,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Search,
   Settings,
   Users,
   X,
@@ -27,13 +36,8 @@ type DashboardShellProps = {
   contentContainerClassName?: string;
   mainClassName?: string;
   hideHeader?: boolean;
+  /** Show the ⌘K command-palette trigger in the header (and enable the shortcut). */
   showSearch?: boolean;
-  searchQuery?: string;
-  onSearchQueryChange?: (value: string) => void;
-  searchInputRef?: React.RefObject<HTMLInputElement | null>;
-  isSearchFocused?: boolean;
-  onSearchFocus?: () => void;
-  onSearchBlur?: () => void;
   headerRight?: ReactNode;
 };
 
@@ -77,6 +81,18 @@ const NAV_ENTRIES: NavEntry[] = [
    still toggle modes freely inside the creation flow afterwards). */
 let hasAppliedDefaultBuildMode = false;
 
+/* Platform detection for the ⌘ / Ctrl shortcut hint. Read via useSyncExternalStore
+   so the value is client-correct without an effect or a hydration mismatch. */
+const subscribeNoop = () => () => {};
+function getIsMac(): boolean {
+  const platform =
+    (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ??
+    navigator.platform ??
+    "";
+  return /mac|iphone|ipad|ipod/i.test(platform);
+}
+const getIsMacServer = () => true;
+
 function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
     <span className="inline-flex items-center rounded-2xl border border-[var(--border)] bg-[var(--background)] dark:bg-[var(--card)] px-2.5 py-1">
@@ -102,16 +118,10 @@ export function DashboardShell({
   mainClassName = "dashboard-main-scroll flex-1 overflow-y-auto px-5 sm:px-8 pt-[88px] pb-16 bg-[var(--background)]/70",
   hideHeader = false,
   showSearch = true,
-  searchQuery,
-  onSearchQueryChange,
-  searchInputRef,
-  isSearchFocused,
-  onSearchFocus,
-  onSearchBlur,
   headerRight,
 }: DashboardShellProps) {
-  const tDashboard = useTranslations("dashboard");
   const tShell = useTranslations("shell");
+  const tPalette = useTranslations("commandPalette");
   const tWorkspace = useTranslations("workspace");
   const dispatch = useAppDispatch();
   const pathname = usePathname();
@@ -124,17 +134,12 @@ export function DashboardShell({
   // Sidebar clips content while animating width; once settled it goes overflow-visible so rail tooltips can escape.
   const [isSidebarAnimating, setIsSidebarAnimating] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [localSearchQuery, setLocalSearchQuery] = useState("");
-  const [localSearchFocused, setLocalSearchFocused] = useState(false);
-  const localSearchInputRef = useRef<HTMLInputElement>(null);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const isMac = useSyncExternalStore(subscribeNoop, getIsMac, getIsMacServer);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const mobileNavTriggerRef = useRef<HTMLButtonElement>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const drawerWasOpenRef = useRef(false);
-
-  const resolvedQuery = searchQuery ?? localSearchQuery;
-  const resolvedFocused = isSearchFocused ?? localSearchFocused;
-  const resolvedSearchRef = searchInputRef ?? localSearchInputRef;
 
   // Path without the locale prefix, e.g. /en/dashboard -> /dashboard
   const pathWithoutLocale = `/${pathname.split("/").slice(2).join("/")}`;
@@ -180,39 +185,18 @@ export function DashboardShell({
     }
   }, [isMobileNavOpen]);
 
+  // ⌘K / Ctrl+K toggles the command palette from anywhere in the shell.
   useEffect(() => {
     if (!showSearch) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        resolvedSearchRef.current?.focus();
+        setIsPaletteOpen((prev) => !prev);
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [showSearch, resolvedSearchRef]);
-
-  const setQuery = (value: string) => {
-    if (onSearchQueryChange) {
-      onSearchQueryChange(value);
-    } else {
-      setLocalSearchQuery(value);
-    }
-  };
-
-  const handleSearchFocus = () => {
-    onSearchFocus?.();
-    if (isSearchFocused === undefined) {
-      setLocalSearchFocused(true);
-    }
-  };
-
-  const handleSearchBlur = () => {
-    onSearchBlur?.();
-    if (isSearchFocused === undefined) {
-      setLocalSearchFocused(false);
-    }
-  };
+  }, [showSearch]);
 
   const handleContentScroll = () => {
     const scrollTop = contentScrollRef.current?.scrollTop ?? 0;
@@ -399,40 +383,32 @@ export function DashboardShell({
                 </Link>
 
                 {showSearch ? (
-                  <div className="flex min-w-0 flex-1 justify-center px-1 sm:px-4">
-                    <div className="relative w-full max-w-xl">
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
-                      </svg>
-                      <input
-                        ref={resolvedSearchRef}
-                        type="text"
-                        value={resolvedQuery}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onFocus={handleSearchFocus}
-                        onBlur={handleSearchBlur}
-                        placeholder={tDashboard("searchPlaceholder")}
-                        className={`w-full h-9 rounded-xl border border-[var(--border)] bg-[var(--background)]/80 pl-9 text-sm outline-none transition-all duration-200 focus:ring-1 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/40 ${
-                          resolvedQuery || resolvedFocused ? "pr-8" : "pr-16"
-                        }`}
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsPaletteOpen(true)}
+                      aria-label={tPalette("open")}
+                      aria-haspopup="dialog"
+                      className="group flex h-9 min-w-0 max-w-[360px] flex-1 items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--card)]/70 pl-3 pr-2 text-left transition-colors duration-150 hover:border-[var(--primary)]/35 hover:bg-[var(--card)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/25 cursor-pointer"
+                    >
+                      <Search
+                        className="h-4 w-4 shrink-0 text-[var(--muted)] transition-colors group-hover:text-[var(--foreground)]"
+                        strokeWidth={2}
                       />
-                      {resolvedQuery && (
-                        <button
-                          type="button"
-                          onClick={() => setQuery("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-                          aria-label={tDashboard("clearSearch")}
-                        >
-                          <X className="h-3.5 w-3.5" strokeWidth={2} />
-                        </button>
-                      )}
-                      {!resolvedQuery && !resolvedFocused && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--muted)] border border-[var(--border)] rounded px-1.5 py-px hidden sm:inline pointer-events-none font-mono">
-                          {tDashboard("searchShortcut")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                      <span className="min-w-0 flex-1 truncate text-[13.5px] text-[var(--muted)]">
+                        {tPalette("placeholder")}
+                      </span>
+                      <span className="hidden shrink-0 items-center gap-0.5 sm:flex" aria-hidden suppressHydrationWarning>
+                        <kbd className="rounded border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 font-mono text-[10px] leading-none text-[var(--muted)]">
+                          {isMac ? "⌘" : "Ctrl"}
+                        </kbd>
+                        <kbd className="rounded border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 font-mono text-[10px] leading-none text-[var(--muted)]">
+                          K
+                        </kbd>
+                      </span>
+                    </button>
+                    <div className="flex-1" />
+                  </>
                 ) : (
                   <div className="flex-1" />
                 )}
@@ -500,6 +476,10 @@ export function DashboardShell({
             </div>
           </div>
         </div>
+      )}
+
+      {showSearch && (
+        <CommandPalette open={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} />
       )}
     </div>
   );

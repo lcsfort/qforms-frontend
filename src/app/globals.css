@@ -446,10 +446,68 @@ input[type="number"] {
   animation: drawer-enter 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/* ── Command palette (⌘K) — soft scrim + calm spotlight lift ── */
+@keyframes palette-scrim-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes palette-panel-enter {
+  from { opacity: 0; transform: translateY(-10px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.palette-scrim-enter {
+  animation: palette-scrim-enter 0.18s ease-out both;
+}
+.palette-panel-enter {
+  animation: palette-panel-enter 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Palette surface — warm paper, frosted, lifted clearly above the canvas */
+.palette-panel {
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #ffffff 30%, transparent) inset,
+    0 2px 8px color-mix(in srgb, var(--foreground) 6%, transparent),
+    0 24px 60px -20px color-mix(in srgb, var(--foreground) 28%, transparent),
+    0 40px 90px -50px color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+.dark .palette-panel {
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #ffffff 6%, transparent) inset,
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 28px 70px -22px rgba(0, 0, 0, 0.66),
+    0 44px 100px -50px rgba(0, 0, 0, 0.5);
+}
+
+/* Palette results scroll — thin, almost invisible until needed */
+.palette-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 24%, transparent) transparent;
+}
+.palette-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.palette-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.palette-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 22%, transparent);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+.palette-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 42%, transparent);
+  background-clip: padding-box;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-enter,
   .menu-enter,
-  .drawer-enter {
+  .drawer-enter,
+  .palette-scrim-enter,
+  .palette-panel-enter {
     animation: none;
   }
 }

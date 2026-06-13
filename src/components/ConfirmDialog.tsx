@@ -39,13 +39,13 @@ export function ConfirmDialog({
     !requiresMatch ||
     matchDraft.trim() === (confirmMatchText as string).trim();
 
-  useEffect(() => {
-    if (!open) {
-      setMatchDraft("");
-      return;
-    }
+  // Clear the typed confirmation whenever the dialog (re)opens or its target text changes.
+  const resetSignature = `${open}|${confirmMatchText ?? ""}`;
+  const [lastResetSignature, setLastResetSignature] = useState(resetSignature);
+  if (resetSignature !== lastResetSignature) {
+    setLastResetSignature(resetSignature);
     setMatchDraft("");
-  }, [open, confirmMatchText]);
+  }
 
   const handleConfirm = useCallback(() => {
     if (requiresMatch && !matchOk) return;
@@ -71,7 +71,7 @@ export function ConfirmDialog({
   const confirmClass =
     variant === "danger"
       ? "bg-red-600 hover:bg-red-700 text-white"
-      : "bg-indigo-600 hover:bg-indigo-700 text-white";
+      : "bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white";
 
   const confirmDisabled = requiresMatch && !matchOk;
 
@@ -144,7 +144,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-[var(--border)] bg-transparent px-4 py-2.5 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="rounded-lg border border-[var(--border)] bg-transparent px-4 py-2.5 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface)]"
           >
             {cancelLabel}
           </button>
@@ -153,9 +153,7 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             disabled={confirmDisabled}
             className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${confirmClass} ${
-              confirmDisabled
-                ? "cursor-not-allowed opacity-50 hover:bg-red-600"
-                : ""
+              confirmDisabled ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
             {confirmLabel}

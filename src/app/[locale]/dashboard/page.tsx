@@ -278,8 +278,6 @@ export default function DashboardPage() {
   return (
     <DashboardShell
       showSearch
-      searchQuery={searchQuery}
-      onSearchQueryChange={setSearchQuery}
       headerRight={
         <ActivityMenu
           attention={attentionItems}
@@ -323,21 +321,33 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {searchQuery.trim().length > 0 && (
-                  <span className="h-9 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 text-xs font-medium text-[var(--foreground)]">
-                    <Search className="h-3.5 w-3.5 text-[var(--muted)]" strokeWidth={2} />
-                    <span className="max-w-[140px] truncate">{searchQuery.trim()}</span>
+                <div className="relative">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted)]"
+                    strokeWidth={2}
+                  />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t("searchPlaceholder")}
+                    aria-label={t("searchPlaceholder")}
+                    className={`h-9 w-[160px] rounded-lg border bg-[var(--card)] pl-8 text-[13px] text-[var(--foreground)] outline-none transition-colors duration-150 placeholder:text-[var(--muted)] focus:border-[var(--primary)]/45 focus:ring-1 focus:ring-[var(--primary)]/25 sm:w-[220px] ${
+                      searchQuery ? "border-[var(--primary)]/40 pr-8" : "border-[var(--border)] pr-3"
+                    }`}
+                  />
+                  {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+                      className="absolute right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
                       aria-label={t("clearSearch")}
                       title={t("clearSearch")}
                     >
-                      <X className="h-3 w-3" strokeWidth={2} />
+                      <X className="h-3.5 w-3.5" strokeWidth={2} />
                     </button>
-                  </span>
-                )}
+                  )}
+                </div>
                 {sortBy !== "recent" && (
                   <span className="h-9 inline-flex items-center gap-2 rounded-full border border-[var(--primary)]/35 bg-[var(--primary)]/10 px-3 text-xs font-medium text-[var(--primary)]">
                     <ArrowDownWideNarrow className="h-3.5 w-3.5 text-[var(--primary)]/80" strokeWidth={1.8} />

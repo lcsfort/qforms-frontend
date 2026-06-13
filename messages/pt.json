@@ -590,7 +590,6 @@
     },
     "generateBtn": "Gerar com IA",
     "searchPlaceholder": "Pesquisar formulários",
-    "searchShortcut": "Ctrl/⌘ K",
     "resultsCount": "{count, plural, =0 {Nenhum formulário} one {# formulário} other {# formulários}}",
     "noSearchResults": "Nenhum formulário encontrado",
     "noSearchResultsDesc": "Tente outro termo de pesquisa ou limpe a busca.",
@@ -631,6 +630,29 @@
     "expandSidebar": "Expandir menu lateral",
     "openNav": "Abrir navegação",
     "closeNav": "Fechar navegação"
+  },
+  "commandPalette": {
+    "open": "Abrir busca",
+    "placeholder": "Pesquisar…",
+    "inputPlaceholder": "Pesquisar formulários, ações, páginas…",
+    "ariaLabel": "Paleta de comandos",
+    "clear": "Limpar busca",
+    "groupForms": "Formulários",
+    "groupRecent": "Formulários recentes",
+    "groupActions": "Ações",
+    "groupGo": "Ir para",
+    "actionCreateWithAI": "Criar formulário com IA",
+    "actionCreateWithQuery": "Criar “{query}” com IA",
+    "actionBlankForm": "Formulário em branco",
+    "actionBrowseTemplates": "Ver modelos",
+    "statusPublished": "Publicado",
+    "statusDraft": "Rascunho",
+    "searching": "Pesquisando…",
+    "creating": "Criando…",
+    "noForms": "Nenhum formulário corresponde a “{query}”",
+    "hintNavigate": "Navegar",
+    "hintOpen": "Abrir",
+    "hintClose": "Fechar"
   },
   "language": {
     "label": "Idioma",
@@ -1248,10 +1270,10 @@
     "inviteSent": "Convite enviado.",
     "inviteCancelled": "Convite cancelado.",
     "inviteAccepted": "Convite aceito.",
-    "inviteAcceptFailed": "Nao foi possivel aceitar o convite.",
-    "memberRoleUpdated": "Funcao do membro atualizada.",
+    "inviteAcceptFailed": "Não foi possível aceitar o convite.",
+    "memberRoleUpdated": "Função do membro atualizada.",
     "memberRemoved": "Membro removido.",
-    "loadFailed": "Nao foi possivel carregar dados do workspace.",
-    "saveFailed": "Nao foi possivel salvar alteracoes do workspace."
+    "loadFailed": "Não foi possível carregar dados do workspace.",
+    "saveFailed": "Não foi possível salvar alterações do workspace."
   }
 }
