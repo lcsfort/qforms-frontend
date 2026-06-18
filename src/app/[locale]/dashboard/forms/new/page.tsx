@@ -31,7 +31,7 @@ export default function NewFormPage() {
     setPrompt,
     chatMessages,
     pendingQuestions,
-    readySchema,
+    readyDocument,
     error,
     retryTask,
     capturedDetails,
@@ -70,7 +70,7 @@ export default function NewFormPage() {
   useSessionAutosave({
     sessionId: planSessionId,
     chatMessages,
-    readySchema,
+    readySchema: readyDocument,
     title: firstUserPrompt,
     paused: resuming,
   });
@@ -81,13 +81,13 @@ export default function NewFormPage() {
       kind: "active",
       prompt: firstUserPrompt,
       capturedDetails,
-      readySchema,
+      readyDocument,
       finalizing,
     };
-  }, [firstUserPrompt, isBusy, capturedDetails, readySchema, finalizing]);
+  }, [firstUserPrompt, isBusy, capturedDetails, readyDocument, finalizing]);
 
   // Pending questions disable the composer, so they must stay visible regardless of the selected mode.
-  const showQuestions = hasPendingQuestions && !readySchema;
+  const showQuestions = hasPendingQuestions && !readyDocument;
 
   const [chatScrolled, setChatScrolled] = useState(false);
   useEffect(() => {
@@ -158,12 +158,12 @@ export default function NewFormPage() {
                   />
                 )}
 
-                {readySchema && (
+                {readyDocument && (
                   <div className="flex items-start gap-4">
                     <div className="h-8 w-8 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <ReadyPlanCard
-                        schema={readySchema}
+                        document={readyDocument}
                         actions={
                           <ReadyPlanActions
                             finalizing={finalizing}
@@ -201,7 +201,7 @@ export default function NewFormPage() {
           disabled={composerDisabled}
           primaryDisabled={primaryButtonDisabled}
           isBusy={isBusy}
-          readySchemaPresent={Boolean(readySchema)}
+          readySchemaPresent={Boolean(readyDocument)}
           hasPendingQuestions={hasPendingQuestions}
           planSessionActive={Boolean(planSessionId)}
         />

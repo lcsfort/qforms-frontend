@@ -1,18 +1,35 @@
+import "@renderkit/ui-default/styles.css";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import type { GeneratedFormSchema } from "@/lib/types";
+import { SchemaRenderer } from "@renderkit/react";
+import {
+  collectFieldNodes,
+  documentUsesChat,
+  documentUsesOneQuestion,
+} from "@renderkit/core";
+import type { RenderKitDocument } from "@/lib/types";
 import { SparkleIcon } from "@/components/icons/SparkleIcon";
-import { ReadyPlanFieldList } from "./ReadyPlanCard.fields";
 
 type Props = {
-  schema: GeneratedFormSchema;
+  document: RenderKitDocument;
   variant?: "live" | "snapshot";
   actions?: ReactNode;
 };
 
-export function ReadyPlanCard({ schema, variant = "live", actions }: Props) {
+function documentMode(document: RenderKitDocument): "chat" | "one-question" | "classic" {
+  if (documentUsesChat(document)) return "chat";
+  if (documentUsesOneQuestion(document)) return "one-question";
+  return "classic";
+}
+
+export function ReadyPlanCard({ document, variant = "live", actions }: Props) {
   const t = useTranslations("forms.generate");
   const isSnapshot = variant === "snapshot";
+
+  const title = document.metadata?.name?.trim() || t("ready.title");
+  const description = document.metadata?.description?.trim() || "";
+  const fieldCount = collectFieldNodes(document).length;
+  const mode = documentMode(document);
 
   return (
     <div
@@ -37,15 +54,26 @@ export function ReadyPlanCard({ schema, variant = "live", actions }: Props) {
           {isSnapshot ? t("ready.snapshotBadge") : t("ready.badge")}
         </div>
         <div className="text-[16px] font-semibold text-[var(--foreground)] leading-snug">
-          {schema.title || t("ready.title")}
+          {title}
         </div>
-        {schema.description && (
+        {description && (
           <div className="mt-1.5 text-[13.5px] text-[var(--muted)] leading-relaxed">
-            {schema.description}
+            {description}
           </div>
         )}
 
-        <ReadyPlanFieldList schema={schema} />
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11.5px] text-[var(--muted)]">
+          <span className="inline-flex items-center rounded-full border border-[var(--border)]/60 bg-[var(--surface)]/55 px-2.5 py-1">
+            {t("ready.fieldsCount", { count: fieldCount })}
+          </span>
+          <span className="inline-flex items-center rounded-full border border-[var(--border)]/60 bg-[var(--surface)]/55 px-2.5 py-1 uppercase tracking-[0.08em]">
+            {mode}
+          </span>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-[var(--border)]/60 bg-[var(--background)]/40 overflow-hidden">
+          <SchemaRenderer schema={document} onSubmit={() => {}} />
+        </div>
 
         {!isSnapshot && (
           <div className="mt-4 text-[12.5px] text-[var(--muted)]">

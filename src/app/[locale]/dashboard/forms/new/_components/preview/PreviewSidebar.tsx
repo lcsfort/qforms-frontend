@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import type { GeneratedFormSchema } from "@/lib/types";
+import type { RenderKitDocument } from "@/lib/types";
 import type { CapturedDetail } from "../../_lib/types";
 import { PreviewEmptyState } from "./PreviewEmptyState";
 import { PreviewRequest } from "./PreviewRequest";
@@ -13,7 +13,7 @@ export type PreviewView =
       kind: "active";
       prompt: string;
       capturedDetails: CapturedDetail[];
-      readySchema: GeneratedFormSchema | null;
+      readyDocument: RenderKitDocument | null;
       finalizing: boolean;
     };
 
@@ -42,8 +42,8 @@ export function PreviewSidebar({ view }: Props) {
           <>
             {view.prompt && <PreviewRequest prompt={view.prompt} />}
             <PreviewCapturedDetails details={view.capturedDetails} />
-            {view.readySchema && !view.finalizing && (
-              <PreviewReadyCard schema={view.readySchema} />
+            {view.readyDocument && !view.finalizing && (
+              <PreviewReadyCard document={view.readyDocument} />
             )}
             {view.finalizing && view.prompt && <PreviewGeneratingCard />}
           </>

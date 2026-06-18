@@ -26,6 +26,7 @@ import {
 import { api } from "@/lib/api";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { createForm } from "@/lib/redux/formsSlice";
+import { blankFormDocument } from "@/lib/forms";
 import { SparkleIcon } from "@/components/icons/SparkleIcon";
 import type { Form } from "@/lib/types";
 
@@ -92,7 +93,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     setCreating(true);
     try {
       const form = await dispatch(
-        createForm({ title: tForms("blankFormTitle"), schema: [], settings: {} }),
+        createForm({
+          title: tForms("blankFormTitle"),
+          schema: blankFormDocument(tForms("blankFormTitle")) as unknown as Record<
+            string,
+            unknown
+          >,
+          settings: {},
+        }),
       ).unwrap();
       onClose();
       router.push(`/dashboard/forms/${form.id}`);

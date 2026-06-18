@@ -1,4 +1,6 @@
-import type { FormField, FormPlanQuestion, GeneratedFormSchema } from "@/lib/types";
+import { collectFieldNodes } from "@renderkit/core";
+import type { RenderKitNode } from "@renderkit/schema";
+import type { FormPlanQuestion, RenderKitDocument } from "@/lib/types";
 
 export function getQuestionOptions(question: FormPlanQuestion): string[] {
   const fromBackend = Array.isArray(question.options)
@@ -39,25 +41,25 @@ export const URL_PROMPT_LOCK_KEY = "qforms_url_prompt_lock";
 
 /**
  * Builds a bootstrap prompt used to seed a plan session from an existing
- * (typically direct-mode) draft schema plus a user-provided refinement.
+ * (typically direct-mode) draft document plus a user-provided refinement.
  *
  * The backend only iterates on forms through plan sessions; when the user
- * clicks "Add more details" on a direct-mode ready schema we don't have a
+ * clicks "Add more details" on a direct-mode ready document we don't have a
  * sessionId yet, so we start one with a prompt that makes the planner treat
  * the next request as an edit to the existing draft rather than a brand-new
  * form generated from just the refinement text.
  */
 export function buildRefinementBootstrapPrompt(
   originalPrompt: string,
-  schema: GeneratedFormSchema,
+  document: RenderKitDocument,
   refinement: string,
 ): string {
-  const title = schema.title?.trim() || "Untitled form";
-  const description = schema.description?.trim() ?? "";
+  const title = document.metadata?.name?.trim() || "Untitled form";
+  const description = document.metadata?.description?.trim() ?? "";
 
-  const fieldLines = [...schema.fields]
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((field, index) => describeFieldForPrompt(field as FormField, index));
+  const fieldLines = collectFieldNodes(document).map((field, index) =>
+    describeFieldForPrompt(field, index),
+  );
 
   const sections: string[] = [];
 
@@ -84,21 +86,40 @@ export function buildRefinementBootstrapPrompt(
   return sections.join("\n\n");
 }
 
-function describeFieldForPrompt(field: FormField, index: number): string {
-  const label = field.label?.trim() || `Field ${index + 1}`;
-  const required = field.required === true ? "required" : "optional";
+function describeFieldForPrompt(field: RenderKitNode, index: number): string {
+  const props = (field.props ?? {}) as Record<string, unknown>;
+  const rawLabel = typeof props.label === "string" ? props.label.trim() : "";
+  const label = rawLabel || `Field ${index + 1}`;
+  const required = props.required === true ? "required" : "optional";
   const parts = [`${index + 1}. ${label} — ${field.type}, ${required}`];
 
-  const rawOptions = Array.isArray(field.options) ? field.options : [];
+  const rawOptions = Array.isArray(props.options) ? props.options : [];
   const options = rawOptions
-    .map((opt) => (opt?.label ?? opt?.value ?? "").trim())
+    .map((opt) => {
+      if (!opt) return "";
+      if (typeof opt === "string") return opt.trim();
+      if (typeof opt === "object") {
+        const o = opt as { label?: unknown; value?: unknown };
+        const fromLabel = typeof o.label === "string" ? o.label : "";
+        const fromValue = typeof o.value === "string" ? o.value : "";
+        return (fromLabel || fromValue).trim();
+      }
+      return "";
+    })
     .filter((opt) => opt.length > 0);
 
   if (options.length > 0) {
     parts.push(`options: ${options.join(", ")}`);
   }
-  if (field.help_text && field.help_text.trim().length > 0) {
-    parts.push(`help: ${field.help_text.trim()}`);
+
+  const helpText =
+    typeof props.helpText === "string"
+      ? props.helpText
+      : typeof props.help_text === "string"
+        ? props.help_text
+        : "";
+  if (helpText.trim().length > 0) {
+    parts.push(`help: ${helpText.trim()}`);
   }
   return parts.join(" | ");
 }

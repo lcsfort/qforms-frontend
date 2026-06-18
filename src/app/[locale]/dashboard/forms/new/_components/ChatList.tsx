@@ -17,7 +17,7 @@ export function ChatList({ messages, showTyping, avatarUrl, initials, children }
     <div className="mt-8 space-y-7">
       {messages.map((message) => {
         if (message.kind === "snapshot") {
-          return <PlanSnapshotMessage key={message.id} schema={message.schema} />;
+          return <PlanSnapshotMessage key={message.id} document={message.document} />;
         }
         return (
           <ChatTextMessage

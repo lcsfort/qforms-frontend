@@ -1,4 +1,4 @@
-import type { FormBuildMode, GeneratedFormSchema } from "@/lib/types";
+import type { FormBuildMode, RenderKitDocument } from "@/lib/types";
 
 export type CapturedDetail = {
   question: string;
@@ -11,8 +11,8 @@ export type RetryTask =
   | {
       kind: "bootstrapRefine";
       text: string;
-      baseSchema: GeneratedFormSchema;
+      baseDocument: RenderKitDocument;
       originalPrompt: string;
     }
   | { kind: "continue"; answers: Record<string, string> }
-  | { kind: "finalize"; schema: GeneratedFormSchema };
+  | { kind: "finalize"; document: RenderKitDocument };

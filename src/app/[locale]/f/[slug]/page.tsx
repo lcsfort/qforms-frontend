@@ -1,22 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { SchemaRenderer } from "@renderkit/react";
+import type { RenderKitDocument } from "@renderkit/schema";
 import { api } from "@/lib/api";
-import type { FormField, FormSettings, FormMaxWidth } from "@/lib/types";
-import { QFormsRenderer } from "@/components/public-form/QFormsRenderer";
-
-const WIDTH_CLASSES: Record<FormMaxWidth, string> = {
-  mobile: "max-w-sm",
-  tablet: "max-w-xl",
-  desktop: "max-w-2xl",
-};
-
-function getWidthClass(w?: FormMaxWidth): string {
-  return WIDTH_CLASSES[w ?? "desktop"] ?? "max-w-2xl";
-}
+import type { FormSettings } from "@/lib/types";
+import { useRenderkitAnalytics } from "@/components/public-form/useRenderkitAnalytics";
 
 export default function PublicFormPage() {
   const t = useTranslations("forms.publicForm");
@@ -25,82 +17,20 @@ export default function PublicFormPage() {
   const locale = typeof params.locale === "string" ? params.locale : "en";
 
   const [form, setForm] = useState<{
-    title: string;
-    description: string | null;
-    schema: FormField[];
+    schema: RenderKitDocument;
     settings: FormSettings;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState("");
-
-  const pageOpenAt = useMemo(() => Date.now(), []);
-  const lastFieldIdRef = useRef("");
-  const hasStartedRef = useRef(false);
-
-  useEffect(() => {
-    const storageKey = `qforms_behavior_session_${slug}`;
-    const existing =
-      typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
-    const id = existing || crypto.randomUUID();
-    if (!existing && typeof window !== "undefined") {
-      window.localStorage.setItem(storageKey, id);
-    }
-    setSessionId(id);
-  }, [slug]);
-
-  const sendBehaviorEvent = async (data: {
-    eventType:
-      | "form_open"
-      | "form_start"
-      | "field_focus"
-      | "field_blur"
-      | "field_change"
-      | "submit_attempt"
-      | "submit_success"
-      | "submit_error"
-      | "form_abandon";
-    fieldId?: string;
-    payload?: Record<string, unknown>;
-  }) => {
-    if (!sessionId) return;
-    const viewport =
-      typeof window !== "undefined"
-        ? `${window.innerWidth}x${window.innerHeight}`
-        : undefined;
-    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
-    const deviceType =
-      /Mobi|Android/i.test(userAgent)
-        ? "mobile"
-        : /iPad|Tablet/i.test(userAgent)
-          ? "tablet"
-          : "desktop";
-    try {
-      await api.trackPublicFormBehavior(slug, {
-        sessionId,
-        eventType: data.eventType,
-        fieldId: data.fieldId,
-        payload: data.payload,
-        locale,
-        referer: typeof document !== "undefined" ? document.referrer : "",
-        viewport,
-        deviceType,
-      });
-    } catch {
-      // ignore telemetry failures
-    }
-  };
 
   useEffect(() => {
     api
       .getPublicForm(slug)
       .then((data) => {
         setForm({
-          title: data.title,
-          description: data.description,
-          schema: Array.isArray(data.schema) ? (data.schema as FormField[]) : [],
+          schema: data.schema as unknown as RenderKitDocument,
           settings: (data.settings as FormSettings) ?? {},
         });
       })
@@ -108,88 +38,23 @@ export default function PublicFormPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  useEffect(() => {
-    if (!sessionId) return;
-    void sendBehaviorEvent({ eventType: "form_open" });
-    const onVisibilityChange = () => {
-      if (document.visibilityState !== "hidden" || submitted) return;
-      void sendBehaviorEvent({
-        eventType: "form_abandon",
-        payload: { lastFieldId: lastFieldIdRef.current },
-      });
-    };
-    const onBeforeUnload = () => {
-      if (submitted) return;
-      void sendBehaviorEvent({
-        eventType: "form_abandon",
-        payload: { lastFieldId: lastFieldIdRef.current },
-      });
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("beforeunload", onBeforeUnload);
-    };
-  }, [sessionId, submitted]);
+  const analytics = useRenderkitAnalytics({
+    slug,
+    locale,
+    document: form?.schema ?? null,
+    enabled: !submitted,
+  });
 
-  const settings = form?.settings;
-
-  const headerStyle = useMemo(() => {
-    if (!settings) return undefined;
-    const s: React.CSSProperties = {};
-    if (settings.header_font_family) s.fontFamily = settings.header_font_family;
-    if (settings.header_font_size != null) s.fontSize = `${settings.header_font_size}px`;
-    return Object.keys(s).length ? s : undefined;
-  }, [settings?.header_font_family, settings?.header_font_size]);
-
-  const textStyle = useMemo(() => {
-    if (!settings) return undefined;
-    const s: React.CSSProperties = {};
-    if (settings.text_font_family) s.fontFamily = settings.text_font_family;
-    if (settings.text_font_size != null) s.fontSize = `${settings.text_font_size}px`;
-    return Object.keys(s).length ? s : undefined;
-  }, [settings?.text_font_family, settings?.text_font_size]);
-
-  const fontFamiliesToLoad = useMemo(() => {
-    if (!settings) return [];
-    const set = new Set<string>();
-    [settings.header_font_family, settings.question_font_family, settings.text_font_family].forEach((f) => {
-      if (f && f.trim()) set.add(f.trim());
-    });
-    return Array.from(set);
-  }, [settings?.header_font_family, settings?.question_font_family, settings?.text_font_family]);
-
-  const googleFontsHref =
-    fontFamiliesToLoad.length > 0
-      ? `https://fonts.googleapis.com/css2?${fontFamiliesToLoad.map((f) => `family=${encodeURIComponent(f)}`).join("&")}&display=swap`
-      : null;
-
-  useEffect(() => {
-    if (!googleFontsHref) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = googleFontsHref;
-    document.head.appendChild(link);
-    return () => { document.head.removeChild(link); };
-  }, [googleFontsHref]);
-
-  const handleSubmit = async (data: Record<string, unknown>) => {
+  const handleSubmit = async (state: Record<string, unknown>) => {
     setSubmitError(null);
     try {
-      await api.submitFormResponse(slug, data);
-      await sendBehaviorEvent({
-        eventType: "submit_success",
-        payload: { completionMs: Math.max(0, Date.now() - pageOpenAt) },
-      });
+      await api.submitFormResponse(slug, state);
+      analytics.onSubmitSuccess();
       setSubmitted(true);
     } catch (err: unknown) {
-      const e = err as { message?: string };
-      setSubmitError(e.message ?? "Something went wrong");
-      await sendBehaviorEvent({
-        eventType: "submit_error",
-        payload: { message: e.message ?? "Something went wrong" },
-      });
+      const message = (err as { message?: string }).message ?? "Something went wrong";
+      setSubmitError(message);
+      analytics.onSubmitError(message);
       throw err;
     }
   };
@@ -255,72 +120,35 @@ export default function PublicFormPage() {
     );
   }
 
-  const widthClass = getWidthClass(form.settings.max_width);
-  const headerUrl = form.settings.header_image_url;
-  const headerHeight = form.settings.header_height ?? 200;
+  // The RenderKit document owns the entire visual surface (theme, layout, hero,
+  // fields, and the submit button). The host only provides a full-bleed page
+  // background fallback and wires submit + analytics.
   const pageBg = form.settings.page_background_color;
-  const formBg = form.settings.form_background_color;
-  const customCss =
-    typeof (form.settings as Record<string, unknown>).custom_css === "string"
-      ? ((form.settings as Record<string, unknown>).custom_css as string)
-      : undefined;
-
   return (
     <div
-      className={`min-h-screen w-full flex flex-col justify-center py-12 px-4 ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
+      className={`min-h-screen w-full ${!pageBg ? "bg-gray-50 dark:bg-gray-900" : ""}`}
       style={pageBg ? { backgroundColor: pageBg } : undefined}
     >
-      <div className={`${widthClass} mx-auto w-full`}>
-        <div
-          className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-card dark:bg-gray-800" : ""}`}
-          style={formBg ? { backgroundColor: formBg } : undefined}
-        >
-          {headerUrl && (
-            <div
-              className="w-full bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${headerUrl})`,
-                height: `${headerHeight}px`,
-              }}
-            />
-          )}
-          <div className="p-8">
-            <h1 className="text-2xl font-bold mb-1" style={headerStyle}>{form.title}</h1>
-            {form.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6" style={textStyle}>{form.description}</p>
-            )}
-            <QFormsRenderer
-              form={{ schema: form.schema, settings: form.settings }}
-              customCss={customCss}
-              mode="public"
-              onSubmit={handleSubmit}
-              submitLabel={t("submit")}
-              onAnalyticsEvent={(event) => {
-                if (event.type === "form_start") {
-                  if (hasStartedRef.current) return;
-                  hasStartedRef.current = true;
-                }
-                if (event.fieldId) {
-                  lastFieldIdRef.current = event.fieldId;
-                }
-                void sendBehaviorEvent({
-                  eventType: event.type,
-                  fieldId: event.fieldId,
-                  payload: {
-                    ...(event.payload ?? {}),
-                    durationMs: event.durationMs,
-                  },
-                });
-              }}
-            />
-            {submitError && (
-              <div className="mt-4 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm">
-                {submitError}
-              </div>
-            )}
+      <div
+        ref={analytics.containerRef}
+        className="qf-form-surface"
+        onFocusCapture={analytics.onFocusCapture}
+        onBlurCapture={analytics.onBlurCapture}
+      >
+        <SchemaRenderer
+          schema={form.schema}
+          onChange={analytics.onChange}
+          onAction={analytics.onAction}
+          onSubmit={handleSubmit}
+        />
+      </div>
+      {submitError && (
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="mt-4 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm">
+            {submitError}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

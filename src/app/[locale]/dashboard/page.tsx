@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createForm, deleteForm, fetchForms } from "@/lib/redux/formsSlice";
+import { blankFormDocument } from "@/lib/forms";
 import { fetchDashboardInsights } from "@/lib/redux/dashboardInsightsSlice";
 import { fetchProfile } from "@/lib/redux/authSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -207,7 +208,10 @@ export default function DashboardPage() {
       const form = await dispatch(
         createForm({
           title: tf("blankFormTitle"),
-          schema: [],
+          schema: blankFormDocument(tf("blankFormTitle")) as unknown as Record<
+            string,
+            unknown
+          >,
           settings: {},
         }),
       ).unwrap();

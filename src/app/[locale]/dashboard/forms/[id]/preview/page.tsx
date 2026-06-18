@@ -1,23 +1,15 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import "@renderkit/ui-default/styles.css";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { SchemaRenderer } from "@renderkit/react";
+import type { RenderKitDocument } from "@renderkit/schema";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { api } from "@/lib/api";
-import type { FormField, FormSettings, FormMaxWidth } from "@/lib/types";
-import { QFormsRenderer } from "@/components/public-form/QFormsRenderer";
-
-const WIDTH_CLASSES: Record<FormMaxWidth, string> = {
-  mobile: "max-w-sm",
-  tablet: "max-w-xl",
-  desktop: "max-w-2xl",
-};
-
-function getWidthClass(w?: FormMaxWidth): string {
-  return WIDTH_CLASSES[w ?? "desktop"] ?? "max-w-2xl";
-}
+import type { FormSettings } from "@/lib/types";
 
 export default function FormPreviewPage() {
   const t = useTranslations("forms.publicForm");
@@ -29,13 +21,12 @@ export default function FormPreviewPage() {
   const { token, hydrated } = useAppSelector((state) => state.auth);
 
   const [form, setForm] = useState<{
-    title: string;
-    description: string | null;
-    schema: FormField[];
+    schema: RenderKitDocument;
     settings: FormSettings;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -47,12 +38,10 @@ export default function FormPreviewPage() {
     try {
       const raw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem(draftKey) : null;
       if (raw) {
-        const draft = JSON.parse(raw) as { title: string; description: string; schema: FormField[]; settings: FormSettings };
-        if (draft && typeof draft.title === "string" && Array.isArray(draft.schema) && draft.settings) {
+        const draft = JSON.parse(raw) as { schema?: unknown; settings?: FormSettings };
+        if (draft && draft.schema && typeof draft.schema === "object" && !Array.isArray(draft.schema)) {
           setForm({
-            title: draft.title,
-            description: draft.description ?? null,
-            schema: draft.schema,
+            schema: draft.schema as RenderKitDocument,
             settings: draft.settings ?? {},
           });
           setLoading(false);
@@ -66,56 +55,13 @@ export default function FormPreviewPage() {
       .getForm(token, formId)
       .then((data) => {
         setForm({
-          title: data.title,
-          description: data.description,
-          schema: Array.isArray(data.schema) ? (data.schema as FormField[]) : [],
+          schema: data.schema as unknown as RenderKitDocument,
           settings: (data.settings as FormSettings) ?? {},
         });
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [token, formId, hydrated, router, locale]);
-
-  const settings = form?.settings;
-
-  const headerStyle = useMemo(() => {
-    if (!settings) return undefined;
-    const s: React.CSSProperties = {};
-    if (settings.header_font_family) s.fontFamily = settings.header_font_family;
-    if (settings.header_font_size != null) s.fontSize = `${settings.header_font_size}px`;
-    return Object.keys(s).length ? s : undefined;
-  }, [settings?.header_font_family, settings?.header_font_size]);
-
-  const textStyle = useMemo(() => {
-    if (!settings) return undefined;
-    const s: React.CSSProperties = {};
-    if (settings.text_font_family) s.fontFamily = settings.text_font_family;
-    if (settings.text_font_size != null) s.fontSize = `${settings.text_font_size}px`;
-    return Object.keys(s).length ? s : undefined;
-  }, [settings?.text_font_family, settings?.text_font_size]);
-
-  const fontFamiliesToLoad = useMemo(() => {
-    if (!settings) return [];
-    const set = new Set<string>();
-    [settings.header_font_family, settings.question_font_family, settings.text_font_family].forEach((f) => {
-      if (f && f.trim()) set.add(f.trim());
-    });
-    return Array.from(set);
-  }, [settings?.header_font_family, settings?.question_font_family, settings?.text_font_family]);
-
-  const googleFontsHref =
-    fontFamiliesToLoad.length > 0
-      ? `https://fonts.googleapis.com/css2?${fontFamiliesToLoad.map((f) => `family=${encodeURIComponent(f)}`).join("&")}&display=swap`
-      : null;
-
-  useEffect(() => {
-    if (!googleFontsHref) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = googleFontsHref;
-    document.head.appendChild(link);
-    return () => { document.head.removeChild(link); };
-  }, [googleFontsHref]);
 
   if (loading) {
     return (
@@ -142,15 +88,7 @@ export default function FormPreviewPage() {
     );
   }
 
-  const widthClass = getWidthClass(form.settings.max_width);
-  const headerUrl = form.settings.header_image_url;
-  const headerHeight = form.settings.header_height ?? 200;
   const pageBg = form.settings.page_background_color;
-  const formBg = form.settings.form_background_color;
-  const customCss =
-    typeof (form.settings as Record<string, unknown>).custom_css === "string"
-      ? ((form.settings as Record<string, unknown>).custom_css as string)
-      : undefined;
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-[var(--background)]">
@@ -171,39 +109,17 @@ export default function FormPreviewPage() {
         </div>
       </div>
       <div
-        className={`force-light-theme flex-1 flex flex-col justify-center py-12 px-4 ${!pageBg ? "bg-gray-50" : ""}`}
+        className={`force-light-theme qf-preview-surface flex-1 ${!pageBg ? "bg-gray-50" : ""}`}
         style={pageBg ? { backgroundColor: pageBg } : undefined}
       >
-        <div className={`${widthClass} mx-auto w-full`}>
-          <div
-            className={`rounded-2xl shadow-lg overflow-hidden ${!formBg ? "bg-card" : ""}`}
-            style={formBg ? { backgroundColor: formBg } : undefined}
-          >
-            {headerUrl && (
-              <div
-                className="w-full bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${headerUrl})`,
-                  height: `${headerHeight}px`,
-                }}
-              />
-            )}
-            <div className="p-8">
-              <h1 className="text-2xl font-bold mb-1" style={headerStyle}>{form.title}</h1>
-              {form.description && (
-                <p className="text-sm text-gray-500 mb-6" style={textStyle}>{form.description}</p>
-              )}
-              <QFormsRenderer
-                form={{ schema: form.schema, settings: form.settings }}
-                customCss={customCss}
-                onSubmit={() => {}}
-                disabled
-                mode="preview"
-                submitLabel={tEditor("preview")}
-              />
+        {notice && (
+          <div className="max-w-2xl mx-auto w-full px-4 pt-4">
+            <div className="rounded-lg border border-amber-300 bg-amber-50 text-amber-700 text-xs px-3 py-2">
+              {notice}
             </div>
           </div>
-        </div>
+        )}
+        <SchemaRenderer schema={form.schema} onSubmit={() => setNotice(tEditor("preview"))} />
       </div>
     </div>
   );

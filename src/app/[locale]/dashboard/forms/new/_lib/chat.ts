@@ -1,4 +1,4 @@
-import type { GeneratedFormSchema, StoredChatMessage } from "@/lib/types";
+import type { RenderKitDocument, StoredChatMessage } from "@/lib/types";
 
 export type ChatMessage =
   | {
@@ -11,7 +11,7 @@ export type ChatMessage =
       id: string;
       role: "assistant";
       kind: "snapshot";
-      schema: GeneratedFormSchema;
+      document: RenderKitDocument;
     };
 
 export function textMessage(
@@ -26,12 +26,12 @@ export function textMessage(
   };
 }
 
-export function snapshotMessage(schema: GeneratedFormSchema): ChatMessage {
+export function snapshotMessage(document: RenderKitDocument): ChatMessage {
   return {
     id: crypto.randomUUID(),
     role: "assistant",
     kind: "snapshot",
-    schema,
+    document,
   };
 }
 
@@ -50,12 +50,12 @@ export function hydrateChatMessages(stored: unknown): ChatMessage[] {
     if (!raw || typeof raw !== "object") continue;
     const id = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : randomId();
     if (raw.kind === "snapshot") {
-      if (!raw.schema || typeof raw.schema !== "object") continue;
+      if (!raw.document || typeof raw.document !== "object") continue;
       out.push({
         id,
         role: "assistant",
         kind: "snapshot",
-        schema: raw.schema,
+        document: raw.document,
       });
       continue;
     }

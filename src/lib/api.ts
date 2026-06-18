@@ -230,9 +230,9 @@ export const api = {
   createForm: (
     token: string,
     data: {
-      title: string;
+      title?: string;
       description?: string;
-      schema: unknown[];
+      schema: Record<string, unknown>;
       settings?: Record<string, unknown>;
       planSessionId?: string;
     },
@@ -249,7 +249,7 @@ export const api = {
     data: {
       title?: string;
       description?: string;
-      schema?: unknown[];
+      schema?: Record<string, unknown>;
       settings?: Record<string, unknown>;
       planSessionId?: string;
     },
@@ -367,7 +367,7 @@ export const api = {
       title: string;
       description: string | null;
       slug: string;
-      schema: unknown[];
+      schema: Record<string, unknown>;
       settings: Record<string, unknown>;
     }>(`/forms/public/${slug}`),
 

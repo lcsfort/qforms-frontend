@@ -1,13 +1,13 @@
 import { useTranslations } from "next-intl";
-import type { GeneratedFormSchema } from "@/lib/types";
+import type { RenderKitDocument } from "@/lib/types";
 import { AssistantAvatar } from "./icons/AssistantAvatar";
 import { ReadyPlanCard } from "./plan/ReadyPlanCard";
 
 type Props = {
-  schema: GeneratedFormSchema;
+  document: RenderKitDocument;
 };
 
-export function PlanSnapshotMessage({ schema }: Props) {
+export function PlanSnapshotMessage({ document }: Props) {
   const t = useTranslations("forms.generate");
 
   return (
@@ -17,7 +17,7 @@ export function PlanSnapshotMessage({ schema }: Props) {
         <div className="text-[12px] font-medium text-[var(--muted)] mb-1.5">
           {t("conversation.assistant")}
         </div>
-        <ReadyPlanCard schema={schema} variant="snapshot" />
+        <ReadyPlanCard document={document} variant="snapshot" />
       </div>
     </div>
   );

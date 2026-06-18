@@ -144,7 +144,7 @@ export const createForm = createAsyncThunk(
     data: {
       title: string;
       description?: string;
-      schema: unknown[];
+      schema: Record<string, unknown>;
       settings?: Record<string, unknown>;
       planSessionId?: string;
     },
@@ -171,7 +171,7 @@ export const updateForm = createAsyncThunk(
       id: string;
       title?: string;
       description?: string;
-      schema?: unknown[];
+      schema?: Record<string, unknown>;
       settings?: Record<string, unknown>;
       planSessionId?: string;
     },

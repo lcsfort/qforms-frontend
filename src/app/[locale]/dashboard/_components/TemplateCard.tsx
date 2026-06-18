@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { FormPreview } from "./FormPreview";
-import { buildTemplateSchema, TEMPLATE_SETTINGS, type TemplateId } from "../_lib/templates";
+import { buildTemplateSchema, templateFieldCount, TEMPLATE_SETTINGS, type TemplateId } from "../_lib/templates";
 import { type TemplatePayload } from "../_lib/useTemplateCreator";
 
 type TemplateCardProps = {
@@ -30,7 +30,7 @@ export function TemplateCard({ id, busy, disabled, onUse }: TemplateCardProps) {
           {name}
         </h3>
         <p className="mt-1 text-[12px] leading-snug text-[var(--muted)] line-clamp-2">{description}</p>
-        <p className="mb-3 mt-1.5 text-[11px] text-[var(--muted)]">{t("fieldCount", { count: schema.length })}</p>
+        <p className="mb-3 mt-1.5 text-[11px] text-[var(--muted)]">{t("fieldCount", { count: templateFieldCount(schema) })}</p>
 
         <button
           type="button"

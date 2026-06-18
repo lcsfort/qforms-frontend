@@ -8,10 +8,25 @@ const form: Form = {
   description: null,
   slug: "survey",
   status: "draft",
-  schema: [
-    { id: "q1", type: "radio", label: "Channel", order: 1, options: [] },
-    { id: "q2", type: "number", label: "Score", order: 2 },
-  ],
+  schema: {
+    version: "0.1.0",
+    kind: "renderkit.document",
+    metadata: { name: "Survey" },
+    root: {
+      id: "p",
+      type: "page",
+      children: [
+        { id: "q1", type: "select", props: { label: "Channel" } },
+        { id: "q2", type: "numberInput", props: { label: "Score" } },
+        {
+          id: "go",
+          type: "button",
+          props: { label: "Submit" },
+          actions: { onClick: { type: "submit", target: "p" } },
+        },
+      ],
+    },
+  },
   settings: {},
   createdBy: "user_1",
   createdAt: "2026-03-01T00:00:00.000Z",

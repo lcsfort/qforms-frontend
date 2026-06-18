@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import type { FormAccessSettings, FormField, FormSettings } from "@/lib/types";
+import { collectFieldNodes } from "@renderkit/core";
+import type { FormAccessSettings, FormSettings, RenderKitDocument } from "@/lib/types";
 import { SectionCard, CollapseReveal } from "./SectionCard";
 import { RadioRow } from "./primitives/RadioRow";
 import { DomainChipInput } from "./primitives/DomainChipInput";
@@ -14,7 +15,7 @@ type AccessT = (
 interface AccessControlSectionProps {
   settings: FormSettings;
   setSettings: (s: FormSettings) => void;
-  fields: FormField[];
+  schema: RenderKitDocument;
   userEmail?: string | null;
   t: AccessT;
 }
@@ -30,7 +31,7 @@ function deriveDomainSuggestion(email?: string | null): string | null {
 export function AccessControlSection({
   settings,
   setSettings,
-  fields,
+  schema,
   userEmail,
   t,
 }: AccessControlSectionProps) {
@@ -38,10 +39,20 @@ export function AccessControlSection({
   const mode = access.mode ?? "public";
   const allowedDomains = access.allowedDomains ?? [];
 
-  const hasEmailField = useMemo(
-    () => fields.some((f) => f.type === "email"),
-    [fields],
-  );
+  /* Domain-restricted access needs an email to match against: detect a
+     dedicated email input, or a text input opted into email validation. */
+  const hasEmailField = useMemo(() => {
+    if (!schema || typeof schema !== "object") return false;
+    try {
+      return collectFieldNodes(schema).some(
+        (node) =>
+          node.type === "emailInput" ||
+          (node.type === "textInput" && node.validation?.email === true),
+      );
+    } catch {
+      return false;
+    }
+  }, [schema]);
   const suggestion = deriveDomainSuggestion(userEmail);
 
   const setAccess = (next: FormAccessSettings) => {

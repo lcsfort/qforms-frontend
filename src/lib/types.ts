@@ -1,3 +1,12 @@
+import type { RenderKitDocument } from "@renderkit/schema";
+
+export type { RenderKitDocument };
+
+/** A Kanban pipeline suggestion the AI may emit alongside a generated document. */
+export interface PipelineSuggestion {
+  stages: { name: string; color?: string }[];
+}
+
 export interface FormFieldOption {
   label: string;
   value: string;
@@ -87,7 +96,7 @@ export interface FormSettings {
 export interface FormVersionSnapshot {
   title: string;
   description: string | null;
-  schema: FormField[];
+  schema: RenderKitDocument;
   settings: FormSettings;
   savedAt: string;
 }
@@ -126,7 +135,7 @@ export interface Form {
   description: string | null;
   slug: string;
   status: "draft" | "published";
-  schema: FormField[];
+  schema: RenderKitDocument;
   settings: FormSettings;
   versions?: FormVersionSnapshot[];
   version_cursor?: number;
@@ -241,7 +250,8 @@ export interface FormPlanQuestionsResponse {
 export interface FormPlanReadyResponse {
   status: "ready";
   sessionId: string;
-  schema: GeneratedFormSchema;
+  document: RenderKitDocument;
+  pipelineSuggestion?: PipelineSuggestion;
 }
 
 export type FormPlanResponse = FormPlanQuestionsResponse | FormPlanReadyResponse;
@@ -251,14 +261,14 @@ export interface StoredChatMessage {
   role: "user" | "assistant";
   kind: "text" | "snapshot";
   content?: string;
-  schema?: GeneratedFormSchema;
+  document?: RenderKitDocument;
 }
 
 export interface StoredPlanSessionLinkedForm {
   id: string;
   title: string;
   description: string | null;
-  schema: FormField[];
+  schema: RenderKitDocument;
   settings: FormSettings;
   slug: string;
   status: "draft" | "published";
@@ -279,7 +289,7 @@ export interface StoredPlanSession {
   status: "active" | "completed";
   title: string | null;
   chatMessages: StoredChatMessage[];
-  readySchema: GeneratedFormSchema | null;
+  readySchema: RenderKitDocument | null;
   formId: string | null;
   lastSyncedFormUpdatedAt: string | null;
   createdAt: string;
@@ -312,7 +322,7 @@ export interface ListPlanSessionsParams {
 
 export interface UpdatePlanSessionPayload {
   chatMessages?: StoredChatMessage[];
-  readySchema?: GeneratedFormSchema | null;
+  readySchema?: RenderKitDocument | null;
   title?: string;
 }
 

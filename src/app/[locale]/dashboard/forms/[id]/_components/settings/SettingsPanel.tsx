@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { FormField, FormSettings } from "@/lib/types";
+import type { FormSettings, RenderKitDocument } from "@/lib/types";
 import { PublishingSection } from "./PublishingSection";
 import { AccessControlSection } from "./AccessControlSection";
 import { ShareDistributionSection } from "./ShareDistributionSection";
@@ -16,7 +16,7 @@ type SettingsT = (
 interface SettingsPanelProps {
   settings: FormSettings;
   setSettings: Dispatch<SetStateAction<FormSettings>>;
-  fields: FormField[];
+  schema: RenderKitDocument;
   formId: string;
   status: "draft" | "published";
   shareUrl: string;
@@ -31,7 +31,7 @@ interface SettingsPanelProps {
 export function SettingsPanel({
   settings,
   setSettings,
-  fields,
+  schema,
   formId,
   status,
   shareUrl,
@@ -56,7 +56,7 @@ export function SettingsPanel({
       <AccessControlSection
         settings={settings}
         setSettings={setSettings}
-        fields={fields}
+        schema={schema}
         userEmail={userEmail}
         t={t}
       />

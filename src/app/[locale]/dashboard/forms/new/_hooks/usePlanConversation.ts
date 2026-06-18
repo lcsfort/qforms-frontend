@@ -20,13 +20,12 @@ import {
   updateForm,
 } from "@/lib/redux/formsSlice";
 import { getUserAvatarUrl, getUserInitials } from "@/lib/userAvatar";
-import { formToGeneratedSchema } from "@/lib/forms";
 import type {
   Form,
   FormBuildMode,
   FormPlanQuestion,
   FormPlanResponse,
-  GeneratedFormSchema,
+  RenderKitDocument,
   StoredPlanQaEntry,
   StoredPlanSession,
 } from "@/lib/types";
@@ -57,11 +56,11 @@ export function usePlanConversation() {
   const [pendingQuestions, setPendingQuestions] = useState<FormPlanQuestion[]>([]);
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
   const [capturedDetails, setCapturedDetails] = useState<CapturedDetail[]>([]);
-  const [readySchema, setReadySchema] = useState<GeneratedFormSchema | null>(null);
+  const [readyDocument, setReadyDocument] = useState<RenderKitDocument | null>(null);
   const [finalizing, setFinalizing] = useState(false);
   const [retryTask, setRetryTask] = useState<RetryTask | null>(null);
   const [pendingRefinementBase, setPendingRefinementBase] = useState<{
-    schema: GeneratedFormSchema;
+    document: RenderKitDocument;
     originalPrompt: string;
   } | null>(null);
   const [sessionFormId, setSessionFormId] = useState<string | null>(null);
@@ -99,22 +98,25 @@ export function usePlanConversation() {
     clearAnswers();
     setSubmittingAnswers(false);
     setCapturedDetails([]);
-    setReadySchema(null);
+    setReadyDocument(null);
     setFinalizing(false);
     setPendingRefinementBase(null);
     setSessionFormId(null);
     setResuming(false);
   }, [dispatch, clearAnswers]);
 
-  const createFormFromSchema = useCallback(
-    async (schema: GeneratedFormSchema) => {
+  const createFormFromDocument = useCallback(
+    async (document: RenderKitDocument) => {
+      const title = document.metadata?.name ?? "";
+      const description = document.metadata?.description;
+
       // Make sure we have a session so the chat remains resumable. Every
       // mode seeds a session on the first AI call, but this guards the rare
       // case where the user reaches finalize without one (e.g. imported flow).
       let sessionId = planSessionId;
       if (!sessionId) {
         const seed = await dispatch(
-          startFormPlan(schema.title || "form"),
+          startFormPlan(title || "form"),
         ).unwrap();
         sessionId = seed.sessionId;
         setPlanSessionId(sessionId);
@@ -124,10 +126,9 @@ export function usePlanConversation() {
         const updated = await dispatch(
           updateForm({
             id: sessionFormId,
-            title: schema.title,
-            description: schema.description,
-            schema: schema.fields,
-            settings: schema.settings as Record<string, unknown>,
+            title,
+            description,
+            schema: document as unknown as Record<string, unknown>,
             planSessionId: sessionId ?? undefined,
           }),
         ).unwrap();
@@ -137,10 +138,9 @@ export function usePlanConversation() {
 
       const form = await dispatch(
         createForm({
-          title: schema.title,
-          description: schema.description,
-          schema: schema.fields,
-          settings: schema.settings as Record<string, unknown>,
+          title,
+          description,
+          schema: document as unknown as Record<string, unknown>,
           planSessionId: sessionId ?? undefined,
         }),
       ).unwrap();
@@ -156,8 +156,8 @@ export function usePlanConversation() {
   }, []);
 
   const enterReadyState = useCallback(
-    (schema: GeneratedFormSchema) => {
-      setReadySchema(schema);
+    (document: RenderKitDocument) => {
+      setReadyDocument(document);
       setPendingQuestions([]);
       clearAnswers();
       setChatMessages((prev) => [
@@ -190,7 +190,7 @@ export function usePlanConversation() {
           }
           const response = await dispatch(generateFormSchema(trimmed)).unwrap();
           setPlanSessionId(response.sessionId);
-          enterReadyState(response.schema);
+          enterReadyState(response.document);
           return;
         }
 
@@ -203,7 +203,7 @@ export function usePlanConversation() {
         setPlanSessionId(response.sessionId);
 
         if (response.status === "ready") {
-          enterReadyState(response.schema);
+          enterReadyState(response.document);
           return;
         }
 
@@ -226,7 +226,7 @@ export function usePlanConversation() {
       const isRetry = options?.isRetry === true;
       setError(null);
       setRetryTask(null);
-      setReadySchema(null);
+      setReadyDocument(null);
 
       if (!isRetry) {
         setChatMessages((prev) => [...prev, textMessage("user", trimmed)]);
@@ -239,7 +239,7 @@ export function usePlanConversation() {
         setPlanSessionId(response.sessionId);
 
         if (response.status === "ready") {
-          enterReadyState(response.schema);
+          enterReadyState(response.document);
           return;
         }
 
@@ -257,7 +257,7 @@ export function usePlanConversation() {
   const runBootstrapRefinement = useCallback(
     async (
       text: string,
-      baseSchema: GeneratedFormSchema,
+      baseDocument: RenderKitDocument,
       originalPrompt: string,
       options?: { isRetry?: boolean },
     ) => {
@@ -273,7 +273,7 @@ export function usePlanConversation() {
 
       const bootstrapPrompt = buildRefinementBootstrapPrompt(
         originalPrompt,
-        baseSchema,
+        baseDocument,
         trimmed,
       );
 
@@ -283,7 +283,7 @@ export function usePlanConversation() {
         setPendingRefinementBase(null);
 
         if (response.status === "ready") {
-          enterReadyState(response.schema);
+          enterReadyState(response.document);
           return;
         }
 
@@ -295,7 +295,7 @@ export function usePlanConversation() {
         setRetryTask({
           kind: "bootstrapRefine",
           text: trimmed,
-          baseSchema,
+          baseDocument,
           originalPrompt,
         });
       }
@@ -340,7 +340,7 @@ export function usePlanConversation() {
         ).unwrap();
 
         if (response.status === "ready") {
-          enterReadyState(response.schema);
+          enterReadyState(response.document);
           return;
         }
 
@@ -378,7 +378,7 @@ export function usePlanConversation() {
     if (pendingRefinementBase) {
       void runBootstrapRefinement(
         current,
-        pendingRefinementBase.schema,
+        pendingRefinementBase.document,
         pendingRefinementBase.originalPrompt,
       );
       return;
@@ -401,18 +401,18 @@ export function usePlanConversation() {
   }, [submittingAnswers, generating, answers, pendingQuestions, continuePlanning]);
 
   const handleFinalize = useCallback(async () => {
-    if (!readySchema || finalizing) return;
+    if (!readyDocument || finalizing) return;
     setError(null);
     setRetryTask(null);
     setFinalizing(true);
     try {
-      await createFormFromSchema(readySchema);
+      await createFormFromDocument(readyDocument);
     } catch (err: unknown) {
       setError(toErrorMessage(err, t("error")));
-      setRetryTask({ kind: "finalize", schema: readySchema });
+      setRetryTask({ kind: "finalize", document: readyDocument });
       setFinalizing(false);
     }
-  }, [readySchema, finalizing, createFormFromSchema, t]);
+  }, [readyDocument, finalizing, createFormFromDocument, t]);
 
   const handleRetry = useCallback(() => {
     if (!retryTask) return;
@@ -429,7 +429,7 @@ export function usePlanConversation() {
       case "bootstrapRefine":
         void runBootstrapRefinement(
           task.text,
-          task.baseSchema,
+          task.baseDocument,
           task.originalPrompt,
           { isRetry: true },
         );
@@ -440,9 +440,9 @@ export function usePlanConversation() {
       case "finalize":
         if (finalizing) return;
         setFinalizing(true);
-        void createFormFromSchema(task.schema).catch((err: unknown) => {
+        void createFormFromDocument(task.document).catch((err: unknown) => {
           setError(toErrorMessage(err, t("error")));
-          setRetryTask({ kind: "finalize", schema: task.schema });
+          setRetryTask({ kind: "finalize", document: task.document });
           setFinalizing(false);
         });
         break;
@@ -454,7 +454,7 @@ export function usePlanConversation() {
     runBootstrapRefinement,
     continuePlanning,
     finalizing,
-    createFormFromSchema,
+    createFormFromDocument,
     t,
   ]);
 
@@ -471,26 +471,26 @@ export function usePlanConversation() {
   }, [chatMessages]);
 
   const handleAddMoreDetails = useCallback(() => {
-    if (!readySchema) return;
-    const archivedSchema = readySchema;
+    if (!readyDocument) return;
+    const archivedDocument = readyDocument;
     setChatMessages((prev) => [
       ...prev,
-      snapshotMessage(archivedSchema),
+      snapshotMessage(archivedDocument),
       textMessage("assistant", t("ready.addMorePrompt")),
     ]);
-    setReadySchema(null);
+    setReadyDocument(null);
     // In direct / "straight" mode, every AI call is one-shot, so we must seed
     // a refinement base with the current draft to keep the next message as an
     // edit rather than a fresh form. Planning mode already carries context
     // server-side via refineFormPlan.
     if (mode !== "planning") {
       setPendingRefinementBase({
-        schema: archivedSchema,
+        document: archivedDocument,
         originalPrompt: firstUserPrompt,
       });
     }
     focusComposer();
-  }, [readySchema, mode, firstUserPrompt, t, focusComposer]);
+  }, [readyDocument, mode, firstUserPrompt, t, focusComposer]);
 
   const handleStartOver = useCallback(() => {
     resetConversation();
@@ -524,14 +524,14 @@ export function usePlanConversation() {
     (form: Form) => {
       if (!form) return;
       resetConversation();
-      const liveSchema = formToGeneratedSchema(form);
+      const liveDocument = form.schema;
       setSessionFormId(form.id);
       setChatMessages([
-        snapshotMessage(liveSchema),
+        snapshotMessage(liveDocument),
         textMessage("assistant", t("resume.newChatFromFormPrompt")),
       ]);
       setPendingRefinementBase({
-        schema: liveSchema,
+        document: liveDocument,
         originalPrompt: form.title || "",
       });
       focusComposer();
@@ -578,9 +578,9 @@ export function usePlanConversation() {
         }
 
         if (session.readySchema) {
-          setReadySchema(session.readySchema);
+          setReadyDocument(session.readySchema);
         } else {
-          setReadySchema(null);
+          setReadyDocument(null);
         }
 
         setPendingRefinementBase(null);
@@ -608,18 +608,18 @@ export function usePlanConversation() {
         new Date(formUpdatedIso).getTime() >
           new Date(lastSyncedIso).getTime();
 
-      const liveSchema = formToGeneratedSchema(form);
+      const liveDocument = form.schema;
 
       if (hasNewerEdit) {
         // Form was edited outside the chat since we last synced — inject a
-        // snapshot so the user sees the current live schema and drop any
+        // snapshot so the user sees the current live document and drop any
         // stale ready card from the resumed state.
         setChatMessages((prev) => [
           ...prev,
-          snapshotMessage(liveSchema),
+          snapshotMessage(liveDocument),
           textMessage("assistant", t("resume.externalEditPrompt")),
         ]);
-        setReadySchema(null);
+        setReadyDocument(null);
       }
 
       // Always seed the refinement base so direct-mode follow-ups iterate on
@@ -627,7 +627,7 @@ export function usePlanConversation() {
       // mode this is a no-op (refineFormPlan takes precedence via the
       // existing planSessionId).
       setPendingRefinementBase({
-        schema: liveSchema,
+        document: liveDocument,
         originalPrompt: form.title || "",
       });
     },
@@ -636,7 +636,7 @@ export function usePlanConversation() {
 
   const hasPendingQuestions = pendingQuestions.length > 0;
   const isBusy = generating || submittingAnswers || finalizing;
-  const composerDisabled = Boolean(readySchema) || hasPendingQuestions || isBusy;
+  const composerDisabled = Boolean(readyDocument) || hasPendingQuestions || isBusy;
   const primaryButtonDisabled = composerDisabled || !prompt.trim();
   const showTyping = (generating || submittingAnswers) && chatMessages.length > 0;
 
@@ -644,7 +644,7 @@ export function usePlanConversation() {
     chatMessages.length,
     hasPendingQuestions,
     isBusy,
-    readySchema,
+    readyDocument,
   ]);
 
   const avatarUrl = user ? getUserAvatarUrl(user) : null;
@@ -665,7 +665,7 @@ export function usePlanConversation() {
     setPrompt,
     chatMessages,
     pendingQuestions,
-    readySchema,
+    readyDocument,
     error,
     retryTask,
     capturedDetails,

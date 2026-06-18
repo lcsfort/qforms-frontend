@@ -788,3 +788,18 @@ input[type="number"] {
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* RenderKit form surfaces: let the document's theme background own the whole
+ * canvas so the host never shows a mismatched band beneath/around the form. */
+.qf-form-surface > .rk-theme {
+  min-height: 100vh;
+}
+.qf-preview-surface {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+.qf-preview-surface > .rk-theme {
+  flex: 1 1 auto;
+  min-height: 0;
+}

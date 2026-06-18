@@ -10,6 +10,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@renderkit/schema": "file:../vendor/renderkit/schema",
+    "@renderkit/core": "file:../vendor/renderkit/core",
+    "@renderkit/ui-default": "file:../vendor/renderkit/ui-default",
+    "@renderkit/react": "file:../vendor/renderkit/react",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

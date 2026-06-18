@@ -1,14 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { type FormField, type FormSettings } from "@/lib/types";
+import { collectFieldNodes } from "@renderkit/core";
+import type { RenderKitDocument } from "@renderkit/schema";
+import { type FormSettings } from "@/lib/types";
 
 /* The preview mirrors the real form: its page/paper colors, header image, and
    field layout. Ink tones are fixed (not theme vars) because the paper keeps
    the form's own light colors even when the app is in dark mode. */
 const PREVIEW_ACCENT = "#1F6F66";
 
-function PreviewField({ field }: { field: FormField }) {
+/* A field node distilled to what the thumbnail needs. */
+type PreviewFieldData = { id: string; type: string };
+
+function PreviewField({ field }: { field: PreviewFieldData }) {
   const label = <span className="block h-[3px] w-2/5 rounded-full bg-[#23201B]/15" />;
 
   switch (field.type) {
@@ -20,12 +25,16 @@ function PreviewField({ field }: { field: FormField }) {
         </div>
       );
     case "select":
-    case "date":
+    case "multiSelect":
+    case "combobox":
+    case "dateInput":
+    case "dateTimeInput":
+    case "timeInput":
       return (
         <div className="space-y-1">
           {label}
           <span className="flex h-3.5 items-center justify-end rounded-[4px] border border-[#23201B]/10 bg-[#23201B]/[0.025] pr-1.5">
-            {field.type === "select" ? (
+            {field.type === "select" || field.type === "multiSelect" || field.type === "combobox" ? (
               <span className="mb-0.5 h-1 w-1 rotate-45 border-b border-r border-[#23201B]/40" />
             ) : (
               <span className="h-1.5 w-1.5 rounded-[2px] border border-[#23201B]/30" />
@@ -34,8 +43,10 @@ function PreviewField({ field }: { field: FormField }) {
         </div>
       );
     case "radio":
-    case "checkbox": {
-      const shape = field.type === "radio" ? "rounded-full" : "rounded-[2px]";
+    case "checkbox":
+    case "checkboxGroup":
+    case "yesNo": {
+      const shape = field.type === "radio" || field.type === "yesNo" ? "rounded-full" : "rounded-[2px]";
       return (
         <div className="space-y-1">
           {label}
@@ -49,6 +60,7 @@ function PreviewField({ field }: { field: FormField }) {
       );
     }
     case "rating":
+    case "nps":
       return (
         <div className="space-y-1.5">
           {label}
@@ -59,7 +71,8 @@ function PreviewField({ field }: { field: FormField }) {
           </span>
         </div>
       );
-    case "scale":
+    case "linearScale":
+    case "slider":
       return (
         <div className="space-y-1.5">
           {label}
@@ -70,14 +83,16 @@ function PreviewField({ field }: { field: FormField }) {
           </span>
         </div>
       );
-    case "file":
+    case "fileUpload":
+    case "imageUpload":
+    case "signaturePad":
       return (
         <div className="space-y-1">
           {label}
           <span className="block h-5 w-full rounded-[4px] border border-dashed border-[#23201B]/20" />
         </div>
       );
-    default: // text, email, number
+    default: // textInput, emailInput, numberInput, phoneInput, urlInput, etc.
       return (
         <div className="space-y-1">
           {label}
@@ -90,18 +105,26 @@ function PreviewField({ field }: { field: FormField }) {
 type FormPreviewProps = {
   title: string;
   description?: string | null;
-  schema: FormField[];
+  schema: RenderKitDocument;
   settings?: FormSettings;
   className?: string;
 };
+
+/** Reads the value-bearing field nodes from a document for the thumbnail. */
+function previewFields(schema: RenderKitDocument | undefined | null): PreviewFieldData[] {
+  if (!schema || typeof schema !== "object") return [];
+  try {
+    return collectFieldNodes(schema).map((node) => ({ id: node.id, type: node.type }));
+  } catch {
+    return [];
+  }
+}
 
 export function FormPreview({ title, description, schema, settings, className = "h-36" }: FormPreviewProps) {
   const pageBg = settings?.page_background_color ?? "#F7F4ED";
   const paperBg = settings?.form_background_color ?? "#FFFDF8";
   const twoColumns = (settings?.columns ?? 1) > 1;
-  const fields = [...(schema ?? [])]
-    .sort((a, b) => a.order - b.order)
-    .slice(0, twoColumns ? 6 : 4);
+  const fields = previewFields(schema).slice(0, twoColumns ? 6 : 4);
 
   return (
     <div

@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { updatePlanSession } from "@/lib/redux/formsSlice";
-import type { GeneratedFormSchema, StoredChatMessage } from "@/lib/types";
+import type { RenderKitDocument, StoredChatMessage } from "@/lib/types";
 import type { ChatMessage } from "../_lib/chat";
 
 interface Args {
   sessionId: string | null;
   chatMessages: ChatMessage[];
-  readySchema: GeneratedFormSchema | null;
+  readySchema: RenderKitDocument | null;
   title: string;
   /** Skip saving while the UI is still hydrating from the server. */
   paused?: boolean;
@@ -18,7 +18,7 @@ interface Args {
 function serializeChat(messages: ChatMessage[]): StoredChatMessage[] {
   return messages.map((m) => {
     if (m.kind === "snapshot") {
-      return { id: m.id, role: m.role, kind: "snapshot", schema: m.schema };
+      return { id: m.id, role: m.role, kind: "snapshot", document: m.document };
     }
     return { id: m.id, role: m.role, kind: "text", content: m.content };
   });

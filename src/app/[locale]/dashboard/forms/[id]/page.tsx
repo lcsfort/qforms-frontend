@@ -1,9 +1,13 @@
 "use client";
 
+import "@renderkit/ui-default/styles.css";
 import { useEffect, useState, useCallback, useMemo, useRef, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
+import { SchemaRenderer } from "@renderkit/react";
+import { collectFieldNodes } from "@renderkit/core";
+import type { RenderKitDocument } from "@renderkit/schema";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   fetchForm,
@@ -15,22 +19,46 @@ import {
   stepFormVersionForward,
   setAutosaveStatus,
 } from "@/lib/redux/formsSlice";
-import type { FormField, FieldType, FormSettings, FormFieldOption } from "@/lib/types";
+import type { FormSettings } from "@/lib/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaintbrush } from "@fortawesome/free-solid-svg-icons";
 import { DesignPanel } from "@/components/DesignPanel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SettingsPanel } from "./_components/settings/SettingsPanel";
 
-const FIELD_TYPES: FieldType[] = [
-  "text", "textarea", "email", "number", "select", "radio", "checkbox", "date", "file", "rating", "scale",
-];
+/* An empty but valid document, used before a form loads / when schema is absent
+   so the editor always has a well-formed document to pass through on save. */
+function emptyDocument(name: string): RenderKitDocument {
+  return {
+    version: "0.1.0",
+    kind: "renderkit.document",
+    metadata: { name: name || "Untitled" },
+    root: { id: "page", type: "page", children: [] },
+  } as unknown as RenderKitDocument;
+}
+
+/* Reads the value-bearing field nodes from a document (id + label + type),
+   tolerant of a missing/invalid document. */
+function readFieldNodes(schema: RenderKitDocument | undefined | null) {
+  if (!schema || typeof schema !== "object") return [];
+  try {
+    return collectFieldNodes(schema).map((node) => {
+      const label = node.props?.label;
+      return {
+        id: node.id,
+        type: node.type,
+        label: typeof label === "string" && label.trim() ? label : node.id,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
 
 export default function FormEditorPage() {
   const t = useTranslations("forms.editor");
   const tSettings = useTranslations("forms.editor.settingsPanel");
   const tf = useTranslations("forms");
-  const tft = useTranslations("forms.fieldTypes");
   const tResume = useTranslations("forms.generate.resume");
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -42,10 +70,12 @@ export default function FormEditorPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [fields, setFields] = useState<FormField[]>([]);
+  /* The form's RenderKit document. The editor no longer mutates nodes directly
+     (fields are authored through the AI chat); the document is passed through
+     unchanged on every save. */
+  const [schema, setSchema] = useState<RenderKitDocument>(() => emptyDocument(""));
   const [settings, setSettings] = useState<FormSettings>({});
   const [activeTab, setActiveTab] = useState<"fields" | "settings">("fields");
-  const [editingField, setEditingField] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMatchTitle, setDeleteMatchTitle] = useState("");
@@ -55,16 +85,11 @@ export default function FormEditorPage() {
   const lastSavedSignatureRef = useRef("");
   const saveRequestCounterRef = useRef(0);
   const saveResolvedCounterRef = useRef(0);
-  const nextFieldIdRef = useRef(1);
   const prevSettingsRef = useRef(settings);
   const designBtnRef = useRef<HTMLButtonElement>(null);
   const [designBtnY, setDesignBtnY] = useState<number | null>(null);
 
-  const sortedFields = useMemo(
-    () =>
-      [...fields].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    [fields],
-  );
+  const fieldNodes = useMemo(() => readFieldNodes(schema), [schema]);
 
   const headerStyle = useMemo((): CSSProperties | undefined => {
     const s: CSSProperties = {};
@@ -89,13 +114,6 @@ export default function FormEditorPage() {
 
   const pageBg = settings.page_background_color;
   const formBg = settings.form_background_color;
-  const builderColumns = settings.columns ?? 1;
-  const builderGridClass =
-    builderColumns === 3
-      ? "grid grid-cols-1 md:grid-cols-3 gap-3"
-      : builderColumns === 2
-        ? "grid grid-cols-1 md:grid-cols-2 gap-3"
-        : "space-y-3";
 
   const fontFamiliesToLoad = useMemo(() => {
     const set = new Set<string>();
@@ -140,18 +158,16 @@ export default function FormEditorPage() {
       if (!initializedRef.current) {
         setTitle(currentForm.title);
         setDescription(currentForm.description ?? "");
-        setFields(
-          Array.isArray(currentForm.schema)
-            ? (currentForm.schema as FormField[])
-            : [],
-        );
-        nextFieldIdRef.current =
-          (Array.isArray(currentForm.schema) ? currentForm.schema.length : 0) + 1;
+        const nextSchema =
+          currentForm.schema && typeof currentForm.schema === "object"
+            ? currentForm.schema
+            : emptyDocument(currentForm.title);
+        setSchema(nextSchema);
         setSettings((currentForm.settings as FormSettings) ?? {});
         lastSavedSignatureRef.current = JSON.stringify({
           title: currentForm.title,
           description: currentForm.description ?? "",
-          schema: Array.isArray(currentForm.schema) ? currentForm.schema : [],
+          schema: nextSchema,
           settings: (currentForm.settings as FormSettings) ?? {},
         });
         initializedRef.current = true;
@@ -168,10 +184,10 @@ export default function FormEditorPage() {
     () => ({
       title,
       description,
-      schema: fields,
+      schema,
       settings,
     }),
-    [title, description, fields, settings],
+    [title, description, schema, settings],
   );
 
   const applySnapshotToEditor = useCallback((form: {
@@ -182,15 +198,16 @@ export default function FormEditorPage() {
   }) => {
     setTitle(form.title);
     setDescription(form.description ?? "");
-    const nextSchema = Array.isArray(form.schema) ? (form.schema as FormField[]) : [];
-    setFields(nextSchema);
-    nextFieldIdRef.current = nextSchema.length + 1;
+    const nextSchema =
+      form.schema && typeof form.schema === "object"
+        ? (form.schema as RenderKitDocument)
+        : emptyDocument(form.title);
+    setSchema(nextSchema);
     setSettings((form.settings as FormSettings) ?? {});
-    setEditingField(null);
     const signature = JSON.stringify({
       title: form.title,
       description: form.description ?? "",
-      schema: Array.isArray(form.schema) ? form.schema : [],
+      schema: nextSchema,
       settings: (form.settings as FormSettings) ?? {},
     });
     lastSavedSignatureRef.current = signature;
@@ -208,7 +225,7 @@ export default function FormEditorPage() {
         id: formId,
         title: snapshot.title,
         description: snapshot.description || undefined,
-        schema: snapshot.schema,
+        schema: snapshot.schema as unknown as Record<string, unknown>,
         settings: snapshot.settings as Record<string, unknown>,
       }),
     ).unwrap();
@@ -282,69 +299,6 @@ export default function FormEditorPage() {
     router.push("/dashboard");
   };
 
-  const addField = (type: FieldType) => {
-    const nextFieldId = `field_${nextFieldIdRef.current}`;
-    nextFieldIdRef.current += 1;
-    const newField: FormField = {
-      id: nextFieldId,
-      type,
-      label: tft(type),
-      placeholder: "",
-      help_text: "",
-      required: false,
-      order: fields.length + 1,
-      validation: {},
-      options:
-        type === "select" || type === "radio" || type === "checkbox"
-          ? [{ label: "Option 1", value: "option_1" }]
-          : undefined,
-    };
-    setFields([...fields, newField]);
-    setEditingField(newField.id);
-  };
-
-  const updateField = (fieldId: string, updates: Partial<FormField>) => {
-    setFields(fields.map((f) => (f.id === fieldId ? { ...f, ...updates } : f)));
-  };
-
-  const removeField = (fieldId: string) => {
-    setFields(fields.filter((f) => f.id !== fieldId).map((f, i) => ({ ...f, order: i + 1 })));
-    if (editingField === fieldId) setEditingField(null);
-  };
-
-  const moveField = (fieldId: string, direction: "up" | "down") => {
-    const idx = fields.findIndex((f) => f.id === fieldId);
-    if (idx < 0) return;
-    if (direction === "up" && idx === 0) return;
-    if (direction === "down" && idx === fields.length - 1) return;
-    const newFields = [...fields];
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    [newFields[idx], newFields[swapIdx]] = [newFields[swapIdx], newFields[idx]];
-    setFields(newFields.map((f, i) => ({ ...f, order: i + 1 })));
-  };
-
-  const addOption = (fieldId: string) => {
-    const field = fields.find((f) => f.id === fieldId);
-    if (!field) return;
-    const optNum = (field.options?.length ?? 0) + 1;
-    const newOption: FormFieldOption = { label: `Option ${optNum}`, value: `option_${optNum}` };
-    updateField(fieldId, { options: [...(field.options ?? []), newOption] });
-  };
-
-  const updateOption = (fieldId: string, optIdx: number, updates: Partial<FormFieldOption>) => {
-    const field = fields.find((f) => f.id === fieldId);
-    if (!field?.options) return;
-    const opts = [...field.options];
-    opts[optIdx] = { ...opts[optIdx], ...updates };
-    updateField(fieldId, { options: opts });
-  };
-
-  const removeOption = (fieldId: string, optIdx: number) => {
-    const field = fields.find((f) => f.id === fieldId);
-    if (!field?.options) return;
-    updateField(fieldId, { options: field.options.filter((_, i) => i !== optIdx) });
-  };
-
   const locale = (params.locale as string) ?? "en";
   const respondentLink = typeof window !== "undefined" && currentForm?.slug
     ? `${window.location.origin}/${locale}/f/${currentForm.slug}`
@@ -361,7 +315,7 @@ export default function FormEditorPage() {
     const draft = {
       title,
       description,
-      schema: fields,
+      schema,
       settings,
     };
     try {
@@ -371,6 +325,10 @@ export default function FormEditorPage() {
     }
     window.open(`/${locale}/dashboard/forms/${formId}/preview`, "_blank", "noopener,noreferrer");
   };
+
+  const editHref = currentForm?.planSession?.id
+    ? `/dashboard/forms/new?sessionId=${currentForm.planSession.id}&formId=${formId}`
+    : `/dashboard/forms/new?formId=${formId}`;
 
   if (loading || !currentForm) {
     return (
@@ -463,11 +421,7 @@ export default function FormEditorPage() {
                     : t("autosaveIdle")}
             </div>
             <Link
-              href={
-                currentForm.planSession?.id
-                  ? `/dashboard/forms/new?sessionId=${currentForm.planSession.id}&formId=${formId}`
-                  : `/dashboard/forms/new?formId=${formId}`
-              }
+              href={editHref}
               className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors inline-flex items-center gap-1.5"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
@@ -659,191 +613,43 @@ export default function FormEditorPage() {
           />
         </div>
 
-            {/* Fields Tab */}
+            {/* Fields Tab — read-only summary; fields are authored through the AI chat. */}
             {activeTab === "fields" && (
               <div>
-                {fields.length === 0 ? (
+                {fieldNodes.length === 0 ? (
                   <div
                     className={`border border-[var(--border)] rounded-2xl p-8 text-center ${!formBg ? "bg-[var(--card)]" : ""}`}
                     style={formBg ? { backgroundColor: formBg } : undefined}
                   >
                     <p className="text-[var(--muted)] text-sm">{t("noFields")}</p>
+                    <Link
+                      href={editHref}
+                      className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                      </svg>
+                      {tResume("startChat")}
+                    </Link>
                   </div>
                 ) : (
-                  <div className={builderGridClass}>
-                    {sortedFields.map((field, idx) => (
-                      <div
-                        key={field.id}
-                        className={`border border-[var(--border)] rounded-xl overflow-hidden ${!formBg ? "bg-[var(--card)]" : ""} ${
-                          builderColumns > 1 && editingField === field.id ? "md:col-span-full" : ""
-                        }`}
-                        style={formBg ? { backgroundColor: formBg } : undefined}
-                      >
-                        <div
-                          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                          onClick={() => setEditingField(editingField === field.id ? null : field.id)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-mono text-[var(--muted)] w-6">{idx + 1}</span>
-                            <span className="font-medium text-sm" style={labelStyle}>{field.label}</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-[var(--muted)]" style={labelStyle}>
-                              {tft(field.type)}
-                            </span>
-                            {field.required && (
-                              <span className="text-xs text-red-500 font-medium">*</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); moveField(field.id, "up"); }}
-                              disabled={idx === 0}
-                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition-colors"
-                              title={t("moveUp")}
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); moveField(field.id, "down"); }}
-                              disabled={idx === fields.length - 1}
-                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition-colors"
-                              title={t("moveDown")}
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
-                              className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors"
-                              title={t("removeField")}
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
+                  <div className="space-y-3">
+                    {/* Live preview of the generated RenderKit document. */}
+                    <div className="rounded-2xl border border-[var(--border)] overflow-hidden bg-white">
+                      <SchemaRenderer schema={schema} onSubmit={() => {}} />
+                    </div>
 
-                        {editingField === field.id && (
-                          <div className="px-4 pb-4 border-t border-[var(--border)] pt-4 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldLabel")}</label>
-                                <input
-                                  type="text"
-                                  value={field.label}
-                                  onChange={(e) => updateField(field.id, { label: e.target.value })}
-                                  style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldType")}</label>
-                                <select
-                                  value={field.type}
-                                  onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
-                                  style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                >
-                                  {FIELD_TYPES.map((ft) => (
-                                    <option key={ft} value={ft}>{tft(ft)}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldPlaceholder")}</label>
-                                <input
-                                  type="text"
-                                  value={field.placeholder ?? ""}
-                                  onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
-                                  style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-1" style={labelStyle}>{t("fieldHelpText")}</label>
-                                <input
-                                  type="text"
-                                  value={field.help_text ?? ""}
-                                  onChange={(e) => updateField(field.id, { help_text: e.target.value })}
-                                  style={textStyle}
-                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                              </div>
-                            </div>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer" style={labelStyle}>
-                              <input
-                                type="checkbox"
-                                checked={field.required ?? false}
-                                onChange={(e) => updateField(field.id, { required: e.target.checked })}
-                                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                              />
-                              {t("fieldRequired")}
-                            </label>
-
-                            {(field.type === "select" || field.type === "radio" || field.type === "checkbox") && (
-                              <div>
-                                <label className="block text-xs font-medium text-[var(--muted)] mb-2" style={labelStyle}>{t("fieldOptions")}</label>
-                                <div className="space-y-2">
-                                  {field.options?.map((opt, optIdx) => (
-                                    <div key={optIdx} className="flex items-center gap-2">
-                                      <input
-                                        type="text"
-                                        value={opt.label}
-                                        onChange={(e) => updateOption(field.id, optIdx, { label: e.target.value })}
-                                        placeholder={t("optionLabel")}
-                                        style={textStyle}
-                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={opt.value}
-                                        onChange={(e) => updateOption(field.id, optIdx, { value: e.target.value })}
-                                        placeholder={t("optionValue")}
-                                        style={textStyle}
-                                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 bg-card text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                      />
-                                      <button
-                                        onClick={() => removeOption(field.id, optIdx)}
-                                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 text-xs transition-colors"
-                                      >
-                                        {t("removeOption")}
-                                      </button>
-                                    </div>
-                                  ))}
-                                  <button
-                                    onClick={() => addOption(field.id)}
-                                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                                  >
-                                    + {t("addOption")}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    <Link
+                      href={editHref}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-card text-xs font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                      </svg>
+                      {tResume("continueChat")}
+                    </Link>
                   </div>
                 )}
-
-                <div className="mt-4">
-                  <div className="flex flex-wrap gap-2">
-                    {FIELD_TYPES.map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => addField(type)}
-                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-card text-xs font-medium hover:bg-gray-50 transition-colors"
-                      >
-                        + {tft(type)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
 
@@ -852,7 +658,7 @@ export default function FormEditorPage() {
               <SettingsPanel
                 settings={settings}
                 setSettings={setSettings}
-                fields={fields}
+                schema={schema}
                 formId={formId}
                 status={currentForm.status}
                 shareUrl={respondentLink}

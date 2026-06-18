@@ -1,4 +1,5 @@
-import type { Form, FormField, FormResponse } from "@/lib/types";
+import type { Form, FormResponse } from "@/lib/types";
+import { type ResponseFieldMeta, documentResponseFields } from "../forms";
 
 export interface ResponsesFilters {
   dateFrom: string;
@@ -58,7 +59,7 @@ export interface BiInsights {
 }
 
 export interface ResponsesDashboardData {
-  fields: FormField[];
+  fields: ResponseFieldMeta[];
   filteredResponses: FormResponse[];
   kpis: KpiMetrics;
   trend: TrendPoint[];
@@ -249,11 +250,7 @@ export function buildResponsesDashboardData(
   filters: ResponsesFilters,
   timeZone = "UTC",
 ): ResponsesDashboardData {
-  const fields = Array.isArray(form?.schema)
-    ? ([...form.schema] as FormField[]).sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0),
-      )
-    : [];
+  const fields = documentResponseFields(form?.schema);
 
   const filteredResponses = responses.filter((response) => {
     const date = parseResponseDate(response.submittedAt);

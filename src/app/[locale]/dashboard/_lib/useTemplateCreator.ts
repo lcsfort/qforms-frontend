@@ -5,13 +5,13 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { createForm } from "@/lib/redux/formsSlice";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { type FormField, type FormSettings } from "@/lib/types";
+import { type FormSettings, type RenderKitDocument } from "@/lib/types";
 import { type TemplateId } from "./templates";
 
 export type TemplatePayload = {
   title: string;
   description: string;
-  schema: FormField[];
+  schema: RenderKitDocument;
   settings: FormSettings;
 };
 
@@ -32,7 +32,7 @@ export function useTemplateCreator() {
         createForm({
           title: payload.title,
           description: payload.description,
-          schema: payload.schema as unknown[],
+          schema: payload.schema as unknown as Record<string, unknown>,
           settings: payload.settings as unknown as Record<string, unknown>,
         }),
       ).unwrap();
