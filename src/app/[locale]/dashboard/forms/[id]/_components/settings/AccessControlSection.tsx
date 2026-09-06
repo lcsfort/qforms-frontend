@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { collectFieldNodes } from "@renderkit/core";
 import type { FormAccessSettings, FormSettings, RenderKitDocument } from "@/lib/types";
+import { documentFieldNodes } from "@/lib/forms";
 import { SectionCard, CollapseReveal } from "./SectionCard";
 import { RadioRow } from "./primitives/RadioRow";
 import { DomainChipInput } from "./primitives/DomainChipInput";
@@ -44,7 +44,7 @@ export function AccessControlSection({
   const hasEmailField = useMemo(() => {
     if (!schema || typeof schema !== "object") return false;
     try {
-      return collectFieldNodes(schema).some(
+      return documentFieldNodes(schema).some(
         (node) =>
           node.type === "emailInput" ||
           (node.type === "textInput" && node.validation?.email === true),

@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FocusEvent } from "react";
-import { collectFieldNodes } from "@renderkit/core";
 import type { RenderKitDocument } from "@renderkit/schema";
 import { api } from "@/lib/api";
+import { documentFieldNodes } from "@/lib/forms";
 
 type BehaviorEventType =
   | "form_open"
@@ -50,7 +50,7 @@ export function useRenderkitAnalytics({ slug, locale, document, enabled }: Optio
   const fieldIdSet = useMemo(() => {
     if (!document) return new Set<string>();
     try {
-      return new Set(collectFieldNodes(document).map((n) => n.id));
+      return new Set(documentFieldNodes(document).map((n) => n.id));
     } catch {
       return new Set<string>();
     }

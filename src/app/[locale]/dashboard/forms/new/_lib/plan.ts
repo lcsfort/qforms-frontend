@@ -1,6 +1,6 @@
-import { collectFieldNodes } from "@renderkit/core";
 import type { RenderKitNode } from "@renderkit/schema";
 import type { FormPlanQuestion, RenderKitDocument } from "@/lib/types";
+import { documentFieldNodes } from "@/lib/forms";
 
 export function getQuestionOptions(question: FormPlanQuestion): string[] {
   const fromBackend = Array.isArray(question.options)
@@ -57,7 +57,7 @@ export function buildRefinementBootstrapPrompt(
   const title = document.metadata?.name?.trim() || "Untitled form";
   const description = document.metadata?.description?.trim() ?? "";
 
-  const fieldLines = collectFieldNodes(document).map((field, index) =>
+  const fieldLines = documentFieldNodes(document).map((field, index) =>
     describeFieldForPrompt(field, index),
   );
 

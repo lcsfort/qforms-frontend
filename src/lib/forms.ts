@@ -1,10 +1,55 @@
-import { collectFieldNodes } from "@renderkit/core";
-import type { RenderKitDocument } from "@renderkit/schema";
+import { collectFieldNodes, collectFieldNodesFrom } from "@renderkit/core";
+import type { RenderKitDocument, RenderKitNode } from "@renderkit/schema";
 
 export interface ResponseFieldMeta {
   id: string;
   label: string;
   type: string;
+}
+
+/**
+ * Collect every value-bearing field node in a document — from the root tree AND
+ * from conversational flow steps (one-question / chat modes keep their fields in
+ * `flows[].steps[].field`, which `collectFieldNodes` does not traverse).
+ */
+export function documentFieldNodes(
+  doc: RenderKitDocument | null | undefined,
+): RenderKitNode[] {
+  if (!doc || typeof doc !== "object") return [];
+  const fields: RenderKitNode[] = [];
+  try {
+    fields.push(...collectFieldNodes(doc));
+  } catch {
+    /* ignore malformed root */
+  }
+  for (const flow of doc.flows ?? []) {
+    for (const step of flow.steps ?? []) {
+      if (!step?.field) continue;
+      try {
+        fields.push(...collectFieldNodesFrom(step.field));
+      } catch {
+        /* ignore malformed step field */
+      }
+    }
+  }
+  return fields;
+}
+
+/**
+ * qforms house style: a form is the theme canvas + section/card surfaces — never
+ * an extra full-page background panel. Strip any `appearance.background` from the
+ * document root so the page sits flat on the theme background (no nested,
+ * inset second background that also narrows the content). Returns the document
+ * unchanged when there's nothing to strip.
+ */
+export function normalizeFormDocument(doc: RenderKitDocument): RenderKitDocument {
+  const root = doc?.root as
+    | { appearance?: Record<string, unknown> }
+    | undefined;
+  if (!root?.appearance || !("background" in root.appearance)) return doc;
+  const appearance = { ...root.appearance };
+  delete appearance.background;
+  return { ...doc, root: { ...doc.root, appearance } };
 }
 
 /**
@@ -67,12 +112,7 @@ export function documentResponseFields(
   document: RenderKitDocument | undefined | null,
 ): ResponseFieldMeta[] {
   if (!document || typeof document !== "object") return [];
-  let nodes;
-  try {
-    nodes = collectFieldNodes(document);
-  } catch {
-    return [];
-  }
+  const nodes = documentFieldNodes(document);
   return nodes.map((node) => {
     const label = node.props?.label;
     return {

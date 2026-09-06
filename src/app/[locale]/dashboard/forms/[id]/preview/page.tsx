@@ -10,6 +10,7 @@ import type { RenderKitDocument } from "@renderkit/schema";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { api } from "@/lib/api";
 import type { FormSettings } from "@/lib/types";
+import { normalizeFormDocument } from "@/lib/forms";
 
 export default function FormPreviewPage() {
   const t = useTranslations("forms.publicForm");
@@ -41,7 +42,7 @@ export default function FormPreviewPage() {
         const draft = JSON.parse(raw) as { schema?: unknown; settings?: FormSettings };
         if (draft && draft.schema && typeof draft.schema === "object" && !Array.isArray(draft.schema)) {
           setForm({
-            schema: draft.schema as RenderKitDocument,
+            schema: normalizeFormDocument(draft.schema as RenderKitDocument),
             settings: draft.settings ?? {},
           });
           setLoading(false);
@@ -55,7 +56,7 @@ export default function FormPreviewPage() {
       .getForm(token, formId)
       .then((data) => {
         setForm({
-          schema: data.schema as unknown as RenderKitDocument,
+          schema: normalizeFormDocument(data.schema as unknown as RenderKitDocument),
           settings: (data.settings as FormSettings) ?? {},
         });
       })

@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { collectFieldNodes } from "@renderkit/core";
 import type { RenderKitDocument } from "@renderkit/schema";
 import { type FormSettings } from "@/lib/types";
+import { documentFieldNodes } from "@/lib/forms";
 
 /* The preview mirrors the real form: its page/paper colors, header image, and
    field layout. Ink tones are fixed (not theme vars) because the paper keeps
@@ -114,7 +114,7 @@ type FormPreviewProps = {
 function previewFields(schema: RenderKitDocument | undefined | null): PreviewFieldData[] {
   if (!schema || typeof schema !== "object") return [];
   try {
-    return collectFieldNodes(schema).map((node) => ({ id: node.id, type: node.type }));
+    return documentFieldNodes(schema).map((node) => ({ id: node.id, type: node.type }));
   } catch {
     return [];
   }

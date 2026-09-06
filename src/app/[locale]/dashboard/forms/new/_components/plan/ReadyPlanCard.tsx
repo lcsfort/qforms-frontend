@@ -2,12 +2,9 @@ import "@renderkit/ui-default/styles.css";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { SchemaRenderer } from "@renderkit/react";
-import {
-  collectFieldNodes,
-  documentUsesChat,
-  documentUsesOneQuestion,
-} from "@renderkit/core";
+import { documentUsesChat, documentUsesOneQuestion } from "@renderkit/core";
 import type { RenderKitDocument } from "@/lib/types";
+import { normalizeFormDocument, documentFieldNodes } from "@/lib/forms";
 import { SparkleIcon } from "@/components/icons/SparkleIcon";
 
 type Props = {
@@ -28,7 +25,7 @@ export function ReadyPlanCard({ document, variant = "live", actions }: Props) {
 
   const title = document.metadata?.name?.trim() || t("ready.title");
   const description = document.metadata?.description?.trim() || "";
-  const fieldCount = collectFieldNodes(document).length;
+  const fieldCount = documentFieldNodes(document).length;
   const mode = documentMode(document);
 
   return (
@@ -72,7 +69,7 @@ export function ReadyPlanCard({ document, variant = "live", actions }: Props) {
         </div>
 
         <div className="mt-4 rounded-xl border border-[var(--border)]/60 bg-[var(--background)]/40 overflow-hidden">
-          <SchemaRenderer schema={document} onSubmit={() => {}} />
+          <SchemaRenderer schema={normalizeFormDocument(document)} onSubmit={() => {}} />
         </div>
 
         {!isSnapshot && (

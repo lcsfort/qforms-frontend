@@ -8,6 +8,7 @@ import { SchemaRenderer } from "@renderkit/react";
 import type { RenderKitDocument } from "@renderkit/schema";
 import { api } from "@/lib/api";
 import type { FormSettings } from "@/lib/types";
+import { normalizeFormDocument } from "@/lib/forms";
 import { useRenderkitAnalytics } from "@/components/public-form/useRenderkitAnalytics";
 
 export default function PublicFormPage() {
@@ -30,7 +31,7 @@ export default function PublicFormPage() {
       .getPublicForm(slug)
       .then((data) => {
         setForm({
-          schema: data.schema as unknown as RenderKitDocument,
+          schema: normalizeFormDocument(data.schema as unknown as RenderKitDocument),
           settings: (data.settings as FormSettings) ?? {},
         });
       })

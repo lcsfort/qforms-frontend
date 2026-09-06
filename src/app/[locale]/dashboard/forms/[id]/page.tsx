@@ -6,8 +6,8 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { SchemaRenderer } from "@renderkit/react";
-import { collectFieldNodes } from "@renderkit/core";
 import type { RenderKitDocument } from "@renderkit/schema";
+import { normalizeFormDocument, documentFieldNodes } from "@/lib/forms";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   fetchForm,
@@ -42,7 +42,7 @@ function emptyDocument(name: string): RenderKitDocument {
 function readFieldNodes(schema: RenderKitDocument | undefined | null) {
   if (!schema || typeof schema !== "object") return [];
   try {
-    return collectFieldNodes(schema).map((node) => {
+    return documentFieldNodes(schema).map((node) => {
       const label = node.props?.label;
       return {
         id: node.id,
@@ -636,7 +636,7 @@ export default function FormEditorPage() {
                   <div className="space-y-3">
                     {/* Live preview of the generated RenderKit document. */}
                     <div className="rounded-2xl border border-[var(--border)] overflow-hidden bg-white">
-                      <SchemaRenderer schema={schema} onSubmit={() => {}} />
+                      <SchemaRenderer schema={normalizeFormDocument(schema)} onSubmit={() => {}} />
                     </div>
 
                     <Link

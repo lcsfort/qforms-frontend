@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import { SchemaRenderer } from "@renderkit/react";
-import { collectFieldNodes } from "@renderkit/core";
 import type { RenderKitDocument } from "@/lib/types";
+import { normalizeFormDocument, documentFieldNodes } from "@/lib/forms";
 import { SparkleIcon } from "@/components/icons/SparkleIcon";
 
 type Props = {
@@ -13,7 +13,7 @@ export function PreviewReadyCard({ document }: Props) {
 
   const title = document.metadata?.name?.trim() || t("ready.title");
   const description = document.metadata?.description?.trim() || "";
-  const fieldCount = collectFieldNodes(document).length;
+  const fieldCount = documentFieldNodes(document).length;
 
   return (
     <div className="rounded-2xl border border-[var(--primary)]/25 bg-gradient-to-br from-[var(--card)] to-[var(--surface)]/40 p-4 space-y-2">
@@ -33,7 +33,7 @@ export function PreviewReadyCard({ document }: Props) {
         {t("ready.fieldsCount", { count: fieldCount })}
       </div>
       <div className="mt-2 rounded-xl border border-[var(--border)]/60 bg-[var(--background)]/40 overflow-hidden">
-        <SchemaRenderer schema={document} onSubmit={() => {}} />
+        <SchemaRenderer schema={normalizeFormDocument(document)} onSubmit={() => {}} />
       </div>
       <div className="pt-1 text-[11.5px] text-[var(--muted)]">
         {t("preview.readyDescription")}
